@@ -2,6 +2,9 @@ var express = require('express');
 var jade = require('jade');
 var debug = require('debug')('muncher');
 var compression = require('compression');
+var Promise = require('bluebird');
+
+var exec = require('child_process').exec;
 
 // modules for file upload
 var randomstring = require('randomstring');
@@ -31,7 +34,25 @@ app.get('/upload', (req, res) => {
 });
 
 app.post('/upload', upload.single('package'), (req, res) => {
-  res.send(req.file);
+  var extraction = new Promise((reject,fulfill) => {
+    debug('munching ' + req.file.originalname + ', saved under' + req.file.path);
+    exec('unzip -uq ' + req.file.path + ' -d incoming/extract/' + req.file.filename,
+        (error, stdout, stderr) => {
+          if (error || stderr) {
+            debug(':( could not extract.');
+            debug(error);
+            debug(stderr);
+            reject(error);
+          } else {
+            debug(':) extracted.');
+            fulfill();
+          }
+        });
+  });
+
+  extraction.finally(() => {
+    res.send(req.file);
+  });
 });
 
 app.get('/', (req, res) => {
