@@ -1,0 +1,12 @@
+extends ./base.jade
+
+block pagecontent
+  .container
+    .row
+      .col-md-5
+        p Upload your ERC here! I'll munch it for ya.
+        form(action='/upload', method='POST', enctype='multipart/form-data')
+          div.input
+            input(type='file', name='package', accept='application/zip')
+          div.action
+            input(type='submit', value='upload')
