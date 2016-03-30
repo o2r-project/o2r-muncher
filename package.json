@@ -4,7 +4,8 @@
   "description": "example webinterface for bagtainer operations",
   "main": "index.js",
   "scripts": {
-    "test": "tape test/**/*.js"
+    "test": "tape test/**/*.js",
+    "debug": "DEBUG=muncher,executor node index.js"
   },
   "author": "",
   "license": "ISC",
@@ -12,9 +13,12 @@
     "bluebird": "^3.3.4",
     "compression": "^1.6.1",
     "debug": "^2.2.0",
+    "dockerode": "^2.2.10",
     "express": "^4.13.4",
     "jade": "^1.11.0",
     "multer": "^1.1.0",
-    "randomstring": "^1.1.4"
+    "randomstring": "^1.1.4",
+    "tar": "^2.2.1",
+    "yamljs": "^0.2.7"
   }
 }
