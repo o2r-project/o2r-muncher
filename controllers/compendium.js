@@ -65,13 +65,14 @@ exports.viewSingle = (req, res) => {
     res.status(200).send(JSON.stringify(answer));
   }
   catch (e) {
-    res.status(404).send(JSON.stringify({ error: 'no compendium found' }));
+    res.status(404).send(JSON.stringify({ error: 'no compendium with this id' }));
   }
 };
 
 exports.viewSingleJobs = (req, res) => {
   var id = req.params.id;
-
+  //TODO: this will be implemented when database is integrated - doesn't make
+  //any sense before that.
   res.status(500).send('not yet implemented');
 };
 
@@ -105,7 +106,7 @@ exports.view = (req, res) => {
     });
   }
   catch (e) {
-    res.status(500).send('{ error: \'no compendium found\'}');
+    res.status(404).send(JSON.stringify({ error: 'no compendium found' }));
   }
 };
 

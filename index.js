@@ -40,9 +40,13 @@ controllers.compendium = require('./controllers/compendium');
 controllers.job        = require('./controllers/job');
 
 app.get('/api/v1/compendium', controllers.compendium.view);
-app.get('/api/v1/compendium/:id', controllers.compendium.viewSingle);
 app.post('/api/v1/compendium', upload.single('compendium'), controllers.compendium.create);
-app.get('/api/v1/compendium/:id/jobs', controllers.compendium.viewSingleJobs)
+app.get('/api/v1/compendium/:id', controllers.compendium.viewSingle);
+app.get('/api/v1/compendium/:id/jobs', controllers.compendium.viewSingleJobs);
+
+app.get('/api/v1/job', controllers.job.view);
+app.post('/api/v1/job', upload.any(), controllers.job.create);
+app.get('/api/v1/job/:id', controllers.job.viewSingle);
 
 app.listen(8080, () => {
   debug('muncher waiting for requests on port 8080');
