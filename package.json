@@ -11,8 +11,10 @@
   "license": "ISC",
   "dependencies": {
     "bluebird": "^3.3.4",
+    "body-parser": "^1.15.1",
     "compression": "^1.6.1",
     "debug": "^2.2.0",
+    "directory-tree": "^1.0.0",
     "dockerode": "^2.2.10",
     "express": "^4.13.4",
     "jade": "^1.11.0",

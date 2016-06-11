@@ -1,64 +1,49 @@
-var express = require('express');
-var jade = require('jade');
+// General modules
 var debug = require('debug')('muncher');
-var compression = require('compression');
 var Promise = require('bluebird');
-
 var exec = require('child_process').exec;
-
-// modules for file upload
 var randomstring = require('randomstring');
+// Express modules and tools
+var express = require('express');
+var compression = require('compression');
+var bodyParser = require('body-parser');
+var app = express();
+app.use(compression());
+app.use(bodyParser.json());
+
+// file upload
 var multer = require('multer');
 var storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'incoming/');
   },
   filename: (req, file, cb) => {
-    cb(null, randomstring.generate(7));
+    cb(null, randomstring.generate(5)); //TODO: Magic number. should be a gobal id length.
   }
 });
 var upload = multer({storage: storage});
 
-var app = express();
-app.set('view engine', 'jade');
-app.use(compression());
-app.use(express.static('static'));
-
+// Simple Express Middlewares
 app.use('/', (req, res, next) => {
-  debug('request for ' + req.path);
+  debug(req.method + ' ' + req.path);
   next();
 });
 
-app.get('/upload', (req, res) => {
-  res.render('upload');
+app.use('/api/', (req, res, next) => {
+  res.setHeader('Content-Type', 'application/json');
+  next();
 });
 
-app.post('/upload', upload.single('package'), (req, res) => {
-  var extraction = new Promise((reject,fulfill) => {
-    debug('munching ' + req.file.originalname + ', saved under' + req.file.path);
-    exec('unzip -uq ' + req.file.path + ' -d incoming/extract/' + req.file.filename,
-        (error, stdout, stderr) => {
-          if (error || stderr) {
-            debug(':( could not extract.');
-            debug(error);
-            debug(stderr);
-            reject(error);
-          } else {
-            debug(':) extracted.');
-            fulfill();
-          }
-        });
-  });
+// load controllers
+var controllers = {};
+controllers.compendium = require('./controllers/compendium');
+controllers.job        = require('./controllers/job');
 
-  extraction.finally(() => {
-    res.send(req.file);
-  });
-});
-
-app.get('/', (req, res) => {
-  res.render('index');
-});
+app.get('/api/v1/compendium', controllers.compendium.view);
+app.get('/api/v1/compendium/:id', controllers.compendium.viewSingle);
+app.post('/api/v1/compendium', upload.single('compendium'), controllers.compendium.create);
+app.get('/api/v1/compendium/:id/jobs', controllers.compendium.viewSingleJobs)
 
 app.listen(8080, () => {
-  debug('webserver is listening on port 8080');
+  debug('muncher waiting for requests on port 8080');
 });
