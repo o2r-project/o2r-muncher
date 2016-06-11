@@ -1,4 +1,5 @@
 // General modules
+var c = require('../config/config');
 var debug = require('debug')('compendium');
 var exec = require('child_process').exec;
 var randomstring = require('randomstring');
@@ -17,8 +18,10 @@ exports.create = (req, res) => {
     switch(req.file.mimetype) {
       case 'application/zip':
       case 'adsf':
-        cmd = 'unzip -uq ' + req.file.path + ' -d incoming/extract/' + id +
-         ' && rm ' + req.file.path;
+        cmd = 'unzip -uq ' + req.file.path + ' -d '+ c.fs.compendium + id;
+        if(c.fs.delete_inc) { // should incoming files be deleted after extraction?
+         cmd += ' && rm ' + req.file.path;
+        }
         break;
       default:
         cmd = 'false';
@@ -39,12 +42,11 @@ exports.viewSingle = (req, res) => {
   var answer = {};
   // Dirty mockup - no database integration yet, so search on disk!
   try {
-    //TODO: Magic Number. ID Length should be equal to global ID length.
-    if(id.length !== 5) {
+    if(id.length !== c.id_length) {
       throw 'id length wrong';
     }
-    fs.accessSync('incoming/extract/' + id); //throws if does not exist
-    var tree = dirTree('incoming/extract/' + id);
+    fs.accessSync(c.fs.compendium + id); //throws if does not exist
+    var tree = dirTree(c.fs.compendium + id);
     /* TODO:
      *
      * directory-tree has no support for a alternative basename. this is needed
@@ -78,13 +80,10 @@ exports.viewSingleJobs = (req, res) => {
 
 exports.view = (req, res) => {
   var answer = {};
-  var limit = parseInt(req.query.limit || 3); //TODO: Magic Number.
+  var limit = parseInt(req.query.limit || c.list_limit);
   var start = parseInt(req.query.start || 1);
-  try{
-    fs.readdir('incoming/extract/', (err, files) => {
-      if(files.length <= 0) {
-        throw 'no compendium found';
-      }
+  try {
+    fs.readdir(c.fs.compendium, (err, files) => {
       var firstElem = start - 1; //subtract 1 because 0-indexed array
       var lastElem = firstElem + limit;
       // check length of file listing - if elements are left, generate next link

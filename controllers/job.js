@@ -1,4 +1,5 @@
 // General modules
+var c = require('../config/config');
 var debug = require('debug')('compendium');
 var exec = require('child_process').exec;
 var randomstring = require('randomstring');
@@ -11,14 +12,11 @@ var Executor = require('../lib/executor').Executor;
 
 exports.view = (req, res) => {
   var answer = {};
-  var limit = parseInt(req.query.limit || 3); //TODO: Magic Number.
+  var limit = parseInt(req.query.limit || c.list_limit);
   var start = parseInt(req.query.start || 1);
   try {
     // TODO: needs proper database!!!
-    fs.readdir('workspace/', (err, files) => {
-      if(files.length <= 0) {
-        throw 'no compendium found';
-      }
+    fs.readdir(c.fs.job, (err, files) => {
       var firstElem = start - 1; //subtract 1 because 0-indexed array
       var lastElem = firstElem + limit;
       // check length of file listing - if elements are left, generate next link
@@ -54,8 +52,8 @@ exports.viewSingle = (req, res) => {
     if(id.length !== 5) {
       throw 'id length wrong';
     }
-    fs.accessSync('workspace/jobs/' + id); //throws if does not exist
-    var tree = dirTree('workspace/jobs/' + id);
+    fs.accessSync(c.fs.job + id); //throws if does not exist
+    var tree = dirTree(c.fs.job + id);
     /* TODO:
      *
      * directory-tree has no support for a alternative basename. this is needed
@@ -82,7 +80,7 @@ exports.viewSingle = (req, res) => {
 };
 exports.create = (req, res) => {
   var compendium_id = '';
-  var job_id = randomstring.generate(5);
+  var job_id = randomstring.generate(c.id_length);
   try {
     if(!(req.body.compendium_id)) {
       throw 'need compendium_id';
@@ -91,10 +89,10 @@ exports.create = (req, res) => {
     }
     // TODO: needs proper database check
     // TODO: needs to throw right message. easily solved with database.
-    fs.accessSync('incoming/extract/' + compendium_id);
-    // make job-copy of compendium
-    fse.copySync('incoming/extract/' + compendium_id, 'workspace/jobs/' + job_id);
-    var execution = new Executor(job_id, 'workspace/jobs/').execute();
+    fs.accessSync(c.fs.compendium + compendium_id);
+    // make job-copy of compendium TODO: copy async
+    fse.copySync(c.fs.compendium + compendium_id, c.fs.job + job_id);
+    var execution = new Executor(job_id, c.fs.job).execute();
     res.status(200).send(JSON.stringify(job_id));
   }
   catch (error) {
