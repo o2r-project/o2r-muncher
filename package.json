@@ -8,7 +8,7 @@
     "debug": "DEBUG=muncher,executor node index.js"
   },
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "dependencies": {
     "bagit": "^0.0.1",
     "bluebird": "^3.3.4",
