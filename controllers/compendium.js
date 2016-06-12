@@ -33,10 +33,9 @@ exports.create = (req, res) => {
     var cmd = '';
     switch(req.file.mimetype) {
       case 'application/zip':
-      case 'adsf':
         cmd = 'unzip -uq ' + req.file.path + ' -d '+ c.fs.compendium + id;
         if(c.fs.delete_inc) { // should incoming files be deleted after extraction?
-         cmd += ' && rm ' + req.file.path;
+          cmd += ' && rm ' + req.file.path;
         }
         break;
       default:

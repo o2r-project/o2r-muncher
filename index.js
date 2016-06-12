@@ -18,12 +18,17 @@
 // General modules
 var debug = require('debug')('muncher');
 var c = require('./config/config');
-debug(c);
-
 var Promise = require('bluebird');
 var exec = require('child_process').exec;
 var randomstring = require('randomstring');
 var fse = require('fs-extra');
+// mongo connection
+var mongoose = require('mongoose');
+mongoose.connect(c.mongo.location + c.mongo.collection);
+mongoose.connection.on('error', () => {
+  debug('could not connect to mongodb on ' + c.mongo.location + c.mongo.collection +', ABORT');
+  process.exit(1);
+});
 // Express modules and tools
 var express = require('express');
 var compression = require('compression');
@@ -63,9 +68,10 @@ app.use('/api/', (req, res, next) => {
 
 app.use('/', (req, res, next) => {
   // prevent directory traversal via ids
-  if(req.params.id !== null) {
+  if(req.params != null && req.params.id != null) {
     req.params.id = req.params.id.replace('/', '');
   }
+  next();
 });
 
 // load controllers

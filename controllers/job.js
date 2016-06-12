@@ -26,37 +26,40 @@ var dirTree = require('directory-tree');
 
 var Executor = require('../lib/executor').Executor;
 
+var Job = require('../lib/model/job');
+
 exports.view = (req, res) => {
   var answer = {};
-  var limit = parseInt(req.query.limit || c.list_limit);
-  var start = parseInt(req.query.start || 1);
-  try {
-    // TODO: needs proper database!!!
-    fs.readdir(c.fs.job, (err, files) => {
-      var firstElem = start - 1; //subtract 1 because 0-indexed array
-      var lastElem = firstElem + limit;
-      // check length of file listing - if elements are left, generate next link
-      if(files.length < lastElem) {
-        lastElem = files.length;
+  var filter_query = '';
+  var filter = {};
+  var limit  = parseInt(req.query.limit || c.list_limit);
+  var start  = parseInt(req.query.start || 1) - 1;
+  if(req.query.compendium_id != null) {
+    filter.compendium_id = req.query.compendium_id;
+    filter_query = '&compendium_id=' + req.query.compendium_id;
+  }
+  if(start > 1) {
+    answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
+  }
+  var that = this;
+  Job.find(filter).select('id').skip(start * limit).limit(limit).exec((err, jobs) => {
+    if(err) {
+      res.status(500).send(JSON.stringify({ error: 'query failed'}));
+    } else {
+      var count = jobs.length;
+      if (count <= 0) {
+        res.status(404).send(JSON.stringify({ error: 'no jobs found' }));
       } else {
-        answer.next = req.route.path + '?limit=' + limit +
-          '&start=' + (start + 1);
+        if (count >= limit) {
+          answer.next = req.route.path + '?limit=' + limit + '&start' +
+            (start + 2) + filter_query;
+        }
+
+        answer.results = jobs.map((job) => { return job.id; });
+        res.status(200).send(JSON.stringify(answer));
       }
-
-      if(start > 1) {
-        answer.previous = req.route.path + '?limit=' + limit +
-          '&start=' + (start - 1);
-      }
-
-      filesSlice = files.slice(firstElem, lastElem);
-      answer.results = filesSlice;
-      res.status(200).send(JSON.stringify(answer));
-    });
-  }
-  catch (e) {
-    res.status(404).send(JSON.stringify({ error: 'no jobs found' }));
-  }
-
+    }
+  });
 };
 
 exports.viewSingle = (req, res) => {
@@ -103,13 +106,28 @@ exports.create = (req, res) => {
     } else {
       compendium_id = req.body.compendium_id;
     }
+    /*
     // TODO: needs proper database check
     // TODO: needs to throw right message. easily solved with database.
     fs.accessSync(c.fs.compendium + compendium_id);
     // make job-copy of compendium TODO: copy async
     fse.copySync(c.fs.compendium + compendium_id, c.fs.job + job_id);
     var execution = new Executor(job_id, c.fs.job).execute();
-    res.status(200).send(JSON.stringify(job_id));
+    res.status(200).send(JSON.stringify(job_id));*/
+    var executionJob = new Job({
+      id : job_id,
+      compendium_id : compendium_id,
+    });
+    executionJob.save((err) => {
+      if (err) {
+        throw 'error creating job';
+      } else {
+        fse.copySync(c.fs.compendium + compendium_id, c.fs.job + job_id);
+        var execution = new Executor(job_id, c.fs.job).execute();
+        res.status(200).send(JSON.stringify(job_id));
+      }
+    });
+
   }
   catch (error) {
     res.status(500).send(JSON.stringify(error));

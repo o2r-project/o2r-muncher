@@ -20,6 +20,7 @@
     "express": "^4.13.4",
     "fs-extra": "^0.30.0",
     "jade": "^1.11.0",
+    "mongoose": "^4.4.20",
     "multer": "^1.1.0",
     "randomstring": "^1.1.4",
     "tar": "^2.2.1",
