@@ -64,15 +64,8 @@ exports.view = (req, res) => {
 
 exports.viewSingle = (req, res) => {
   var id = req.params.id;
-  var answer = {};
-  // Dirty mockup - no database integration yet, so search on disk!
-  try {
-    //TODO: Magic Number. ID Length should be equal to global ID length.
-    if(id.length !== 5) {
-      throw 'id length wrong';
-    }
-    fs.accessSync(c.fs.job + id); //throws if does not exist
-    var tree = dirTree(c.fs.job + id);
+  var answer = {id};
+  var tree;
     /* TODO:
      *
      * directory-tree has no support for a alternative basename. this is needed
@@ -86,16 +79,22 @@ exports.viewSingle = (req, res) => {
      *
      * We also need additional features, like MIME type recognition, etc.
      */
-    answer.id = id;
-    answer.metadata = {};
-    answer.files = tree;
-
-    res.status(200).send(JSON.stringify(answer));
-  }
-  catch (e) {
-    res.status(404).send(JSON.stringify({ error: 'no job with this id' }));
-  }
-
+  Job.findOne(id).exec((err, job) => {
+    if (err) {
+      res.status(404).send(JSON.stringify({ error: 'no job with this id' }));
+    } else {
+      answer.compendium_id = job.compendium_id;
+      answer.steps = job.steps;
+      try {
+        fs.accessSync(c.fs.job + id); //throws if does not exist
+        answer.files = dirTree(c.fs.job + id);
+      } catch (e) {
+        res.status(500).send(JSON.stringify({ error: 'internal error', job}));
+        return;
+      }
+      res.status(200).send(JSON.stringify(answer));
+    }
+  });
 };
 exports.create = (req, res) => {
   var compendium_id = '';
@@ -106,14 +105,6 @@ exports.create = (req, res) => {
     } else {
       compendium_id = req.body.compendium_id;
     }
-    /*
-    // TODO: needs proper database check
-    // TODO: needs to throw right message. easily solved with database.
-    fs.accessSync(c.fs.compendium + compendium_id);
-    // make job-copy of compendium TODO: copy async
-    fse.copySync(c.fs.compendium + compendium_id, c.fs.job + job_id);
-    var execution = new Executor(job_id, c.fs.job).execute();
-    res.status(200).send(JSON.stringify(job_id));*/
     var executionJob = new Job({
       id : job_id,
       compendium_id : compendium_id,
@@ -127,7 +118,6 @@ exports.create = (req, res) => {
         res.status(200).send(JSON.stringify(job_id));
       }
     });
-
   }
   catch (error) {
     res.status(500).send(JSON.stringify(error));
