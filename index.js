@@ -61,6 +61,13 @@ app.use('/api/', (req, res, next) => {
   next();
 });
 
+app.use('/', (req, res, next) => {
+  // prevent directory traversal via ids
+  if(req.params.id !== null) {
+    req.params.id = req.params.id.replace('/', '');
+  }
+});
+
 // load controllers
 var controllers = {};
 controllers.compendium = require('./controllers/compendium');
