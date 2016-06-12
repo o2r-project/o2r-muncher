@@ -80,7 +80,7 @@ exports.viewSingle = (req, res) => {
      * We also need additional features, like MIME type recognition, etc.
      */
   Job.findOne(id).exec((err, job) => {
-    if (err) {
+    if (err || job == null) {
       res.status(404).send(JSON.stringify({ error: 'no job with this id' }));
     } else {
       answer.compendium_id = job.compendium_id;
@@ -89,7 +89,7 @@ exports.viewSingle = (req, res) => {
         fs.accessSync(c.fs.job + id); //throws if does not exist
         answer.files = dirTree(c.fs.job + id);
       } catch (e) {
-        res.status(500).send(JSON.stringify({ error: 'internal error', job}));
+        res.status(500).send(JSON.stringify({ error: 'internal error', e}));
         return;
       }
       res.status(200).send(JSON.stringify(answer));
@@ -115,11 +115,11 @@ exports.create = (req, res) => {
       } else {
         fse.copySync(c.fs.compendium + compendium_id, c.fs.job + job_id);
         var execution = new Executor(job_id, c.fs.job).execute();
-        res.status(200).send(JSON.stringify(job_id));
+        res.status(200).send(JSON.stringify({job_id}));
       }
     });
   }
   catch (error) {
-    res.status(500).send(JSON.stringify(error));
+    res.status(500).send(JSON.stringify({error}));
   }
 };

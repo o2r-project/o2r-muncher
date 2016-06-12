@@ -23,6 +23,7 @@ var fs = require('fs');
 
 var dirTree = require('directory-tree');
 
+var Compendium = require('../lib/model/compendium');
 
 exports.create = (req, res) => {
   var id = req.file.filename;
@@ -46,7 +47,14 @@ exports.create = (req, res) => {
         debug(error, stderr, stdout);
         res.status(500).send(JSON.stringify({error: 'extracting failed'}));
       } else {
-        res.status(200).send(JSON.stringify(id));
+        var comp = new Compendium({id, metadata: {}});
+        comp.save((err) => {
+          if (err) {
+            res.status(500).send(JSON.stringify({error: 'internal error'}));
+          } else {
+            res.status(200).send(JSON.stringify({id}));
+          }
+        });
       }
     });
   }
@@ -54,19 +62,13 @@ exports.create = (req, res) => {
 
 exports.viewSingle = (req, res) => {
   var id = req.params.id;
-  var answer = {};
-  // Dirty mockup - no database integration yet, so search on disk!
-  try {
-    if(id.length !== c.id_length) {
-      throw 'id length wrong';
-    }
-    fs.accessSync(c.fs.compendium + id); //throws if does not exist
-    var tree = dirTree(c.fs.compendium + id);
+  var answer = {id};
+  var tree;
     /* TODO:
      *
      * directory-tree has no support for a alternative basename. this is needed
      * so that we can substitute the on-disk basepath (which is returned by
-     * default) with a api-relative basepath, e.g. /api/v1/compendium/:id/files
+     * default) with a api-relative basepath, e.g. /api/v1/job/:id/files
      *
      * Options:
      * - add functionality to directory-tree, make pull request
@@ -75,15 +77,21 @@ exports.viewSingle = (req, res) => {
      *
      * We also need additional features, like MIME type recognition, etc.
      */
-    answer.id = id;
-    answer.metadata = {};
-    answer.files = tree;
-
-    res.status(200).send(JSON.stringify(answer));
-  }
-  catch (e) {
-    res.status(404).send(JSON.stringify({ error: 'no compendium with this id' }));
-  }
+  Compendium.findOne(id).select('id metadata').exec((err, compendium) => {
+    if (err || compendium == null) {
+      res.status(404).send(JSON.stringify({ error: 'no compendium with this id' }));
+    } else {
+      answer.metadata = compendium.metadata;
+      try {
+        fs.accessSync(c.fs.compendium + id); //throws if does not exist
+        answer.files = dirTree(c.fs.compendium + id);
+      } catch (e) {
+        res.status(500).send(JSON.stringify({ error: 'internal error', e}));
+        return;
+      }
+      res.status(200).send(JSON.stringify(answer));
+    }
+  });
 };
 
 exports.viewSingleJobs = (req, res) => {
@@ -95,32 +103,35 @@ exports.viewSingleJobs = (req, res) => {
 
 exports.view = (req, res) => {
   var answer = {};
-  var limit = parseInt(req.query.limit || c.list_limit);
-  var start = parseInt(req.query.start || 1);
-  try {
-    fs.readdir(c.fs.compendium, (err, files) => {
-      var firstElem = start - 1; //subtract 1 because 0-indexed array
-      var lastElem = firstElem + limit;
-      // check length of file listing - if elements are left, generate next link
-      if(files.length < lastElem) {
-        lastElem = files.length;
+  var filter_query = '';
+  var filter = {};
+  var limit  = parseInt(req.query.limit || c.list_limit);
+  var start  = parseInt(req.query.start || 1) - 1;
+  if(req.query.job_id != null) {
+    filter.job_id = req.query.job_id;
+    filter_query = '&job_id=' + req.query.job_id;
+  }
+  if(start > 1) {
+    answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
+  }
+  var that = this;
+  Compendium.find(filter).select('id').skip(start * limit).limit(limit).exec((err, comps) => {
+    if(err) {
+      res.status(500).send(JSON.stringify({ error: 'query failed'}));
+    } else {
+      var count = comps.length;
+      if (count <= 0) {
+        res.status(404).send(JSON.stringify({ error: 'no compendium found' }));
       } else {
-        answer.next = req.route.path + '?limit=' + limit +
-          '&start=' + (start + 1);
-      }
+        if (count >= limit) {
+          answer.next = req.route.path + '?limit=' + limit + '&start' +
+            (start + 2) + filter_query;
+        }
 
-      if(start > 1) {
-        answer.previous = req.route.path + '?limit=' + limit +
-          '&start=' + (start - 1);
+        answer.results = comps.map((comp) => { return comp.id; });
+        res.status(200).send(JSON.stringify(answer));
       }
-
-      filesSlice = files.slice(firstElem, lastElem);
-      answer.results = filesSlice;
-      res.status(200).send(JSON.stringify(answer));
-    });
-  }
-  catch (e) {
-    res.status(404).send(JSON.stringify({ error: 'no compendium found' }));
-  }
+    }
+  });
 };
 
