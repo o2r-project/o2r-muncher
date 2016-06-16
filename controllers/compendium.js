@@ -77,7 +77,7 @@ exports.viewSingle = (req, res) => {
      *
      * We also need additional features, like MIME type recognition, etc.
      */
-  Compendium.findOne(id).select('id metadata').exec((err, compendium) => {
+  Compendium.findOne({id}).select('id metadata').exec((err, compendium) => {
     if (err || compendium == null) {
       res.status(404).send(JSON.stringify({ error: 'no compendium with this id' }));
     } else {
