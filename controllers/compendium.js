@@ -24,6 +24,7 @@ var fs = require('fs');
 var dirTree = require('directory-tree');
 
 var Compendium = require('../lib/model/compendium');
+var Job = require('../lib/model/job');
 
 exports.create = (req, res) => {
   var id = req.file.filename;
@@ -96,9 +97,33 @@ exports.viewSingle = (req, res) => {
 
 exports.viewSingleJobs = (req, res) => {
   var id = req.params.id;
-  //TODO: this will be implemented when database is integrated - doesn't make
-  //any sense before that.
-  res.status(500).send('not yet implemented');
+  var answer = {};
+  var filter_query = '';
+  var filter = {'compendium_id':id};
+  var limit  = parseInt(req.query.limit || c.list_limit);
+  var start  = parseInt(req.query.start || 1) - 1;
+  if(start > 1) {
+    answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
+  }
+  var that = this;
+  Job.find(filter).select('id').skip(start * limit).limit(limit).exec((err, jobs) => {
+    if(err) {
+      res.status(500).send(JSON.stringify({ error: 'query failed'}));
+    } else {
+      var count = jobs.length;
+      if (count <= 0) {
+        res.status(404).send(JSON.stringify({ error: 'no job found' }));
+      } else {
+        if (count >= limit) {
+          answer.next = req.route.path + '?limit=' + limit + '&start' +
+            (start + 2) + filter_query;
+        }
+
+        answer.results = jobs.map((job) => { return job.id; });
+        res.status(200).send(JSON.stringify(answer));
+      }
+    }
+  });
 };
 
 exports.view = (req, res) => {
