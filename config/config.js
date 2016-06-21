@@ -29,8 +29,8 @@ c.version.api    = 1;
 
 // network & database
 c.net.port         = env.MUNCHER_PORT || 8080;
-c.mongo.location   = 'mongodb://localhost/';
-c.mongo.collection = 'muncher';
+c.mongo.location   = env.MUNCHER_MONGODB || 'mongodb://localhost/';
+c.mongo.collection = env.MUNCHER_MONGODB_COLLECTION || 'muncher';
 c.mongo.creds      = {};
 
 // fs paths
