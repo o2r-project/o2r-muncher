@@ -25,9 +25,11 @@ services:
       - db
     volumes:
       - data:/tmp/muncher
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - MUNCHER_MONGODB=mongodb://db
+      - MUNCHER_MONGODB=mongodb://db/
       - MUNCHER_PORT=8080
+      - DEBUG=*,-express:*
     ports:
       - "8080:8080"
 
