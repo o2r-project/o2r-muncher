@@ -15,7 +15,7 @@
     "url": "https://github.com/o2r-project/o2r-muncher.git"
   },
   "dependencies": {
-    "bagit": "^0.0.1",
+    "bagit": "^0.0.2",
     "bluebird": "^3.3.4",
     "body-parser": "^1.15.1",
     "compression": "^1.6.1",
