@@ -20,7 +20,7 @@ volumes:
   data: {}
 services:
   muncher:
-    image: orrproject/o2r-muncher:latest
+    image: o2rproject/o2r-muncher:latest
     depends_on:
       - db
     volumes:
