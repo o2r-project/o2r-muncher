@@ -85,7 +85,19 @@ exports.viewSingle = (req, res) => {
       answer.metadata = compendium.metadata;
       try {
         fs.accessSync(c.fs.compendium + id); //throws if does not exist
-        answer.files = dirTree(c.fs.compendium + id);
+        /*
+         *  Rewrite file URLs with api path. directory-tree creates path like
+         *  c.fs.compendium + id + filepath
+         *
+         *  We are only interested in the filepath itself and want to create a
+         *  url like
+         *  host/api/v1/compendium/id/data/filepath
+         *
+         */
+        answer.files = rewriteTree(dirTree(c.fs.compendium + id),
+            c.fs.compendium.length + c.id_length, //remove local fs path and id
+            '/api/v1/compendium/'+ id + '/data' //prepend proper location
+            );
       } catch (e) {
         res.status(500).send(JSON.stringify({ error: 'internal error', e}));
         return;
