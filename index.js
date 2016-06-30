@@ -61,6 +61,16 @@ app.use('/', (req, res, next) => {
   next();
 });
 
+// check for api key when uploading new compendium
+app.use('/api/v1/compendium', (req, res, next) => {
+  if ( (req.method === 'POST') && (req.get('X-API-Key') !== c.api_key) ) {
+      res.status(401).send('{"error":"missing or wrong api key"}');
+  } else {
+    next();
+  }
+});
+
+
 app.use('/api/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   next();
