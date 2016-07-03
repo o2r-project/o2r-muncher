@@ -33,6 +33,11 @@ c.mongo.location   = env.MUNCHER_MONGODB || 'mongodb://localhost/';
 c.mongo.collection = env.MUNCHER_MONGODB_COLLECTION || 'muncher';
 c.mongo.creds      = {};
 
+// fix mongo location if trailing slash was omitted
+if (c.mongo.location[c.mongo.location-1] !== '/') {
+  c.mongo.location += '/';
+}
+
 // fs paths
 c.fs.base       = env.MUNCHER_BASEPATH || '/tmp/muncher/';
 c.fs.incoming   = c.fs.base + 'incoming/';
