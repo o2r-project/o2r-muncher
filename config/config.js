@@ -34,7 +34,7 @@ c.mongo.collection = env.MUNCHER_MONGODB_COLLECTION || 'muncher';
 c.mongo.creds      = {};
 
 // fix mongo location if trailing slash was omitted
-if (c.mongo.location[c.mongo.location-1] !== '/') {
+if (c.mongo.location[c.mongo.location.length-1] !== '/') {
   c.mongo.location += '/';
 }
 
