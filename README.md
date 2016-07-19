@@ -51,3 +51,9 @@ environment variables.
   Base path for the compendia storage. Defaults to `/tmp/muncher`. If you want persistent compendia storage, you should point this to a separate volume.
 * `MUNCHER_APIKEY` __Recomended__
   The API key that is required for posting a new compendium. It is highly recommended that you change this to a secure key. Defaults to `CHANGE_ME`.
+
+##License
+
+o2r muncher is licensed under Apache License, Version 2.0, see file LICENSE.
+
+Copyright (C) 2016 - o2r project.
