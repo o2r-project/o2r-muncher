@@ -22,6 +22,7 @@ var randomstring = require('randomstring');
 var fs = require('fs');
 
 var dirTree = require('directory-tree');
+var rewriteTree = require('../lib/rewrite-tree');
 
 var Compendium = require('../lib/model/compendium');
 var Job = require('../lib/model/job');
