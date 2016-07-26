@@ -26,7 +26,9 @@ The image can then be run and configured via environment variables. For convenie
 we include a `docker-compose` configuration, which can be run with
 
 ```
-docker-compose up
+cd docker-compose && docker-compose up
+# after you're done, shutdown and delete all volumes (data):
+docker-compose down -v
 ```
 
 __Please keep in mind that muncher needs access to a Docker daemon.__ For this
@@ -51,3 +53,13 @@ environment variables.
   Base path for the compendia storage. Defaults to `/tmp/muncher`. If you want persistent compendia storage, you should point this to a separate volume.
 * `MUNCHER_APIKEY` __Recomended__
   The API key that is required for posting a new compendium. It is highly recommended that you change this to a secure key. Defaults to `CHANGE_ME`.
+
+### Full API service with docker-compose
+
+The o2r muncher only provides the main parts of the o2r web API. For example, serving the data (files) from the compendia is handled by o2r-contentbutler. To show a simple example implementation integrating both services, there is a additional compose file.
+
+```
+cd docker-compose && docker-compose -f docker-compose.full.yml up
+# after you're done, shutdown and delete all volumes (data):
+docker-compose -f docker-compose.full.yml down -v
+```
