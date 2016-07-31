@@ -36,7 +36,15 @@ var bodyParser = require('body-parser');
 var app = express();
 app.use(compression());
 app.use(bodyParser.json());
-
+// load controllers
+var controllers = {};
+controllers.compendium = require('./controllers/compendium');
+controllers.job        = require('./controllers/job');
+// Passport modules for OAuth2
+var passport = require('passport');
+var OAuth2Strategy = require('passport-oauth2').Strategy;
+var User = require('./lib/model/user');
+var authorization = require('./lib/authorization.js');
 // file upload
 
 // check fs & create dirs if necessary
@@ -70,7 +78,17 @@ app.use('/api/v1/compendium', (req, res, next) => {
   }
 });
 
-
+// OAuth2 Authentication
+//
+var oauth2 = new OAuth2Strategy(
+  config.oauth.default,
+  (accessToken, refreshToken, profile, cb) => {
+    User.findOrCreate({ exampleId: profile.id }, (err, user) => {
+      return cb(err, user);
+    });
+  }
+);
+app.use('/', passport.authenticate('oauth2'));
 app.use('/api/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   next();
@@ -84,10 +102,6 @@ app.use('/', (req, res, next) => {
   next();
 });
 
-// load controllers
-var controllers = {};
-controllers.compendium = require('./controllers/compendium');
-controllers.job        = require('./controllers/job');
 
 app.get('/api/v1/compendium', controllers.compendium.view);
 app.post('/api/v1/compendium', upload.single('compendium'), controllers.compendium.create);

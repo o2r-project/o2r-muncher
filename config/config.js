@@ -19,6 +19,7 @@ c.version = {};
 c.net = {};
 c.mongo = {};
 c.fs = {};
+c.oauth = {};
 var env = process.env;
 
 // Information about muncher
@@ -52,4 +53,12 @@ c.api_key       = env.MUNCHER_APIKEY || 'CHANGE_ME';
 c.list_limit           = 100; // amount of results per page
 c.id_length            = 5;   // length of job & compendium ids [0-9,a-z,A-Z]
 
+// oauth providers
+c.oauth.default = {
+  authorizationURL: env.OAUTH_URL_AUTHORIZATION,
+  tokenURL: env.OAUTH_URL_TOKEN,
+  callbackURL: env.OAUTH_URL_CALLBACK,
+  clientID: env.OAUTH_CLIENT_ID,
+  clientSecret: env.OAUTH_CLIENT_SECRET
+};
 module.exports = c;
