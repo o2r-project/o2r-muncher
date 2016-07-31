@@ -1,3 +1,4 @@
+![Travis CI](https://api.travis-ci.org/o2r-project/o2r-muncher.svg)
 #o2r muncher
 
 Node.js implementation of the o2r-web-api.
