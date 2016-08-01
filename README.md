@@ -62,16 +62,16 @@ The o2r muncher only provides the main parts of the o2r web API. For example, se
 ```bash
 docker-compose -f docker-compose/docker-compose.full.yml up
 # after you're done, shutdown and delete all volumes (data):
-docker-compose -f docker-compose.full.yml down -v
+docker-compose -f docker-compose/docker-compose.full.yml down -v
 ```
 
-The API is then available at http://localhost/api/v1/compendium
+The API is then available at http://localhost/api/v1/compendium and should reply "no compendium found".
 
 To inspect the database, run `docker network inspect dockercompose_default` (or find out the network name before with `docker network ls`) to find out the IP of the database container. Then connect to it (e.g. with adminMongo) using `mongodb://<ip>`.
 
 ## Testing
 
-Needs a completely new environment (empty database),which is preferably startet with the docker-compose files.
+Needs a completely new environment (empty database),which is preferably started with the docker-compose files.
 
 ```bash
 npm install
@@ -94,9 +94,28 @@ docker-compose -f docker-compose/docker-compose.yml down -v
 
 ### Steps for starting a local development environment
 
-```bash
+The following steps assume that you have all the required projects (`o2r-contentbutler`, `o2r-muncher`, `o2r-platform`) in one directory. Repository updates (`git pull`, `npm install`, `bower install` and the like) are not shown.
 
+```bash
+mkdir /tmp/o2r-mongodb-data
+mongod --dbpath /tmp/o2r-mongodb-data
+# new terminal: start contentbutler (default port 8081)
+cd ../o2r-contentbutler
+DEBUG=* npm start
+# new terminal: start muncher (default port 8080)
+cd ../o2r-muncher
+DEBUG=* npm start
+# new terminal: run tests to add test data
+npm test
+# new terminal: run a webservice container in daemon mode on port 80 with (a) a proxy in front of the microservices and (b) the client project at / (must change app constant manually!)
+cd ../o2r-platform
+docker run --rm --name o2r-platform -p 80:80 -v $(pwd)/test/nginx.conf:/etc/nginx/nginx.conf -v $(pwd):/etc/nginx/html nginx
+# do work, restart respective apps as needed
 ```
+
+Alternatively, start the component under development from your IDE.
+
+Be aware that the different services run on their own port, so it might have to be changed manually when navigating through the API.
 
 ## License
 
