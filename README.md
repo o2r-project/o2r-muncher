@@ -92,6 +92,12 @@ docker-compose -f docker-compose/docker-compose.yml down -v
   - `DEBUG=* MUNCHER_MONGODB=mongodb://172.19.0.2 MUNCHER_PORT=8079 npm start`
   - has considerable limitations, because the data is stored somewhere in the containers etc.
 
+### Steps for starting a local development environment
+
+```bash
+
+```
+
 ## License
 
 o2r muncher is licensed under Apache License, Version 2.0, see file LICENSE.
