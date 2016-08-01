@@ -81,7 +81,8 @@ exports.viewSingle = (req, res) => {
      * We also need additional features, like MIME type recognition, etc.
      */
   Job.findOne({id}).exec((err, job) => {
-    if (err || job === null) {
+    // eslint-disable-next-line no-eq-null, eqeqeq
+    if (err || job == null) { // intentially loose comparison
       res.status(404).send(JSON.stringify({ error: 'no job with this id' }));
     } else {
       debug(job);

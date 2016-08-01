@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-5f2a97c0a065836b58ad5fbb939526f3 manifest-md5.txt
-45dea51233e600bae64ff51aece2e4b0 bag-info.txt
-9e5ad981e0d29adc278f6a294b8c2aca bagit.txt
-=======
 9e5ad981e0d29adc278f6a294b8c2aca bagit.txt
 3669c485cd1e864abd71b6363fe8cc9c bag-info.txt
 d41d8cd98f00b204e9800998ecf8427e manifest-md5.txt
->>>>>>> 83e784ca9702ca6c954c6da280adf03fe5932360
