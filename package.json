@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "tape test/**/*.js",
+    "test": "mocha",
     "debug": "DEBUG=muncher,executor node index.js"
   },
   "author": "o2r-project",
@@ -29,5 +29,10 @@
     "randomstring": "^1.1.4",
     "tar": "^2.2.1",
     "yamljs": "^0.2.7"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^2.5.3",
+    "request": "^2.74.0"
   }
 }
