@@ -78,11 +78,13 @@ exports.viewSingle = (req, res) => {
      *
      * We also need additional features, like MIME type recognition, etc.
      */
-  Compendium.findOne({id}).select('id metadata').exec((err, compendium) => {
-    if (err || compendium === null) {
+  Compendium.findOne({id}).select('id metadata created').exec((err, compendium) => {
+    // eslint-disable-next-line no-eq-null, eqeqeq
+    if (err || compendium == null) {
       res.status(404).send(JSON.stringify({error: 'no compendium with this id'}));
     } else {
       answer.metadata = compendium.metadata;
+      answer.created = compendium.created;
       try {
         fs.accessSync(c.fs.compendium + id); //throws if does not exist
         /*
