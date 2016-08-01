@@ -81,7 +81,8 @@ exports.viewSingle = (req, res) => {
      * We also need additional features, like MIME type recognition, etc.
      */
   Job.findOne({id}).exec((err, job) => {
-    if (err || job == null) {
+    // eslint-disable-next-line no-eq-null, eqeqeq
+    if (err || job == null) { // intentially loose comparison
       res.status(404).send(JSON.stringify({ error: 'no job with this id' }));
     } else {
       debug(job);
@@ -114,7 +115,7 @@ exports.create = (req, res) => {
   var compendium_id = '';
   var job_id = randomstring.generate(c.id_length);
   try {
-    if(!(req.body.compendium_id)) {
+    if (!(req.body.compendium_id)) {
       throw 'need compendium_id';
     } else {
       compendium_id = req.body.compendium_id;
@@ -132,8 +133,7 @@ exports.create = (req, res) => {
         res.status(200).send(JSON.stringify({job_id}));
       }
     });
-  }
-  catch (error) {
+  } catch (error) {
     res.status(500).send(JSON.stringify({error}));
   }
 };

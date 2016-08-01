@@ -34,12 +34,12 @@ c.mongo.collection = env.MUNCHER_MONGODB_COLLECTION || 'muncher';
 c.mongo.creds      = {};
 
 // fix mongo location if trailing slash was omitted
-if (c.mongo.location[c.mongo.location.length-1] !== '/') {
+if (c.mongo.location[c.mongo.location.length - 1] !== '/') {
   c.mongo.location += '/';
 }
 
 // fs paths
-c.fs.base       = env.MUNCHER_BASEPATH || '/tmp/muncher/';
+c.fs.base       = env.MUNCHER_BASEPATH || '/tmp/o2r/';
 c.fs.incoming   = c.fs.base + 'incoming/';
 c.fs.compendium = c.fs.base + 'compendium/';
 c.fs.job        = c.fs.base + 'job/';

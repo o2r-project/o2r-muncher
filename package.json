@@ -1,14 +1,14 @@
 {
   "name": "muncher",
   "version": "1.0.0",
-  "description": "example webinterface for bagtainer operations",
+  "description": "Node.js implementation of parts of the [o2r web api](http://o2r.info/o2r-web-api).",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "test": "mocha",
     "debug": "DEBUG=muncher,executor node index.js"
   },
-  "author": "o2r-project",
+  "author": "o2r-project (http://o2r.info)",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -31,6 +31,8 @@
     "yamljs": "^0.2.7"
   },
   "devDependencies": {
+    "eslint": "^3.2.0",
+    "eslint-config-google": "^0.6.0",
     "chai": "^3.5.0",
     "mocha": "^2.5.3",
     "request": "^2.74.0"

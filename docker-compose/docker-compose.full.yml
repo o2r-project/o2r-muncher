@@ -39,7 +39,7 @@ services:
     depends_on:
       - db
     volumes:
-      - bagtainers:/tmp/muncher
+      - bagtainers:/tmp/o2r
     environment:
       - CONTENTBUTLER_MONGODB=mongodb://db/
       - CONTENTBUTLER_PORT=8081
@@ -51,7 +51,7 @@ services:
     depends_on:
       - db
     volumes:
-      - bagtainers:/tmp/muncher
+      - bagtainers:/tmp/o2r
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - MUNCHER_MONGODB=mongodb://db/
