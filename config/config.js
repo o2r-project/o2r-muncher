@@ -39,7 +39,7 @@ if (c.mongo.location[c.mongo.location.length - 1] !== '/') {
 }
 
 // fs paths
-c.fs.base       = env.MUNCHER_BASEPATH || '/tmp/muncher/';
+c.fs.base       = env.MUNCHER_BASEPATH || '/tmp/o2r-muncher/';
 c.fs.incoming   = c.fs.base + 'incoming/';
 c.fs.compendium = c.fs.base + 'compendium/';
 c.fs.job        = c.fs.base + 'job/';
