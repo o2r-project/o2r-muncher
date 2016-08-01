@@ -26,7 +26,7 @@ var fse = require('fs-extra');
 var mongoose = require('mongoose');
 mongoose.connect(c.mongo.location + c.mongo.collection);
 mongoose.connection.on('error', () => {
-  console.log('could not connect to mongodb on ' + c.mongo.location + c.mongo.collection +', ABORT');
+  console.log('could not connect to mongodb on ' + c.mongo.location + c.mongo.collection + ', ABORT');
   process.exit(2);
 });
 // Express modules and tools
@@ -63,8 +63,8 @@ app.use('/', (req, res, next) => {
 
 // check for api key when uploading new compendium
 app.use('/api/v1/compendium', (req, res, next) => {
-  if ( (req.method === 'POST') && (req.get('X-API-Key') !== c.api_key) ) {
-      res.status(401).send('{"error":"missing or wrong api key"}');
+  if ((req.method === 'POST') && (req.get('X-API-Key') !== c.api_key)) {
+    res.status(401).send('{"error":"missing or wrong api key"}');
   } else {
     next();
   }
@@ -78,7 +78,7 @@ app.use('/api/', (req, res, next) => {
 
 app.use('/', (req, res, next) => {
   // prevent directory traversal via ids
-  if(req.params != null && req.params.id != null) {
+  if (req.params !== null && req.params.id !== null) {
     req.params.id = req.params.id.replace('/', '');
   }
   next();
@@ -99,7 +99,7 @@ app.post('/api/v1/job', upload.any(), controllers.job.create);
 app.get('/api/v1/job/:id', controllers.job.viewSingle);
 
 app.listen(c.net.port, () => {
-  debug('muncher '+  c.version.major + '.' + c.version.minor + '.' +
+  debug('muncher ' + c.version.major + '.' + c.version.minor + '.' +
       c.version.bug + ' with api version ' + c.version.api +
       ' waiting for requests on port ' + c.net.port);
 });
