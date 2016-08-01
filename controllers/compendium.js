@@ -18,7 +18,6 @@
 var c = require('../config/config');
 var debug = require('debug')('compendium');
 var exec = require('child_process').exec;
-var randomstring = require('randomstring');
 var fs = require('fs');
 
 var dirTree = require('directory-tree');
@@ -29,15 +28,12 @@ var Job = require('../lib/model/job');
 
 exports.create = (req, res) => {
   var id = req.file.filename;
-  if(req.body.content_type !== 'compendium_v1') {
-    res.status(500).send('not yet implemented');
-    debug('uploaded content_type not yet implemented:' + req.body.content_type);
-  } else {
+  if (req.body.content_type === 'compendium_v1') {
     var cmd = '';
-    switch(req.file.mimetype) {
+    switch (req.file.mimetype) {
       case 'application/zip':
         cmd = 'unzip -uq ' + req.file.path + ' -d '+ c.fs.compendium + id;
-        if(c.fs.delete_inc) { // should incoming files be deleted after extraction?
+        if (c.fs.delete_inc) { // should incoming files be deleted after extraction?
           cmd += ' && rm ' + req.file.path;
         }
         break;
@@ -59,6 +55,9 @@ exports.create = (req, res) => {
         });
       }
     });
+  } else {
+    res.status(500).send('not yet implemented');
+    debug('uploaded content_type not yet implemented:' + req.body.content_type);
   }
 };
 
@@ -80,8 +79,8 @@ exports.viewSingle = (req, res) => {
      * We also need additional features, like MIME type recognition, etc.
      */
   Compendium.findOne({id}).select('id metadata').exec((err, compendium) => {
-    if (err || compendium == null) {
-      res.status(404).send(JSON.stringify({ error: 'no compendium with this id' }));
+    if (err || compendium === null) {
+      res.status(404).send(JSON.stringify({error: 'no compendium with this id'}));
     } else {
       answer.metadata = compendium.metadata;
       try {
@@ -96,8 +95,8 @@ exports.viewSingle = (req, res) => {
          *
          */
         answer.files = rewriteTree(dirTree(c.fs.compendium + id),
-            c.fs.compendium.length + c.id_length, //remove local fs path and id
-            '/api/v1/compendium/'+ id + '/data' //prepend proper location
+            c.fs.compendium.length + c.id_length, // remove local fs path and id
+            '/api/v1/compendium/' + id + '/data' // prepend proper location
             );
       } catch (e) {
         res.status(500).send(JSON.stringify({ error: 'internal error', e}));
@@ -115,12 +114,12 @@ exports.viewSingleJobs = (req, res) => {
   var filter = {'compendium_id':id};
   var limit  = parseInt(req.query.limit || c.list_limit);
   var start  = parseInt(req.query.start || 1) - 1;
-  if(start > 1) {
+  if (start > 1) {
     answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
   }
   var that = this;
   Job.find(filter).select('id').skip(start * limit).limit(limit).exec((err, jobs) => {
-    if(err) {
+    if (err) {
       res.status(500).send(JSON.stringify({ error: 'query failed'}));
     } else {
       var count = jobs.length;
@@ -145,16 +144,16 @@ exports.view = (req, res) => {
   var filter = {};
   var limit  = parseInt(req.query.limit || c.list_limit);
   var start  = parseInt(req.query.start || 1) - 1;
-  if(req.query.job_id != null) {
+  if (req.query.job_id != null) {
     filter.job_id = req.query.job_id;
     filter_query = '&job_id=' + req.query.job_id;
   }
-  if(start > 1) {
+  if (start > 1) {
     answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
   }
   var that = this;
   Compendium.find(filter).select('id').skip(start * limit).limit(limit).exec((err, comps) => {
-    if(err) {
+    if (err) {
       res.status(500).send(JSON.stringify({ error: 'query failed'}));
     } else {
       var count = comps.length;
@@ -166,7 +165,9 @@ exports.view = (req, res) => {
             (start + 2) + filter_query;
         }
 
-        answer.results = comps.map((comp) => { return comp.id; });
+        answer.results = comps.map(comp => {
+          return comp.id;
+        });
         res.status(200).send(JSON.stringify(answer));
       }
     }

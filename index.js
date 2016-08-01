@@ -18,8 +18,6 @@
 // General modules
 var debug = require('debug')('muncher');
 var c = require('./config/config');
-var Promise = require('bluebird');
-var exec = require('child_process').exec;
 var randomstring = require('randomstring');
 var fse = require('fs-extra');
 // mongo connection
@@ -70,17 +68,9 @@ app.use('/api/v1/compendium', (req, res, next) => {
   }
 });
 
-
+// set content type for all responses (muncher never serves content)
 app.use('/api/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
-  next();
-});
-
-app.use('/', (req, res, next) => {
-  // prevent directory traversal via ids
-  if (req.params !== null && req.params.id !== null) {
-    req.params.id = req.params.id.replace('/', '');
-  }
   next();
 });
 
