@@ -2,7 +2,7 @@
 
 ![Travis CI](https://api.travis-ci.org/o2r-project/o2r-muncher.svg)
 
-Node.js implementation of the endpoints `api/v1/compendium` and `api/v1/jobs` of the [o2r-web-api](http://o2r.info/o2r-web-api/).
+Node.js implementation of the endpoints `/api/v1/compendium` and `/api/v1/jobs` of the [o2r-web-api](http://o2r.info/o2r-web-api/).
 
 Requirements:
 
@@ -25,12 +25,14 @@ The image can then be run and configured via environment variables. For convenie
 we include a `docker-compose` configuration, which can be run with
 
 ```bash
-cd docker-compose && docker-compose up
+cd docker-compose
+docker-compose up
 # after you're done, shutdown and delete all volumes (data):
 docker-compose down -v
 ```
 
-__Please keep in mind that muncher needs access to a Docker daemon.__ For this
+__Please keep in mind that muncher needs access to a Docker daemon.__
+For this
 purpose the `docker-compose` configuration will expose your local Docker socket
 to the muncher container. If you do not want that, you can point muncher to a
 different Docker host via the `MUNCHER_DOCKER_HOST` and `MUNCHER_DOCKER_PORT`
@@ -51,7 +53,7 @@ You can override these environment variables (configured in `config/config.js`) 
 - `MUNCHER_MONGODB_COLLECTION`
   Which collection inside the mongo db should be used. Defaults to `muncher`.
 - `MUNCHER_BASEPATH`
-  Base path for the compendia storage. Defaults to `/tmp/muncher`. If you want persistent compendia storage, you should point this to a separate volume.
+  Base path for the compendia storage. Defaults to `/tmp/o2r`. If you want persistent compendia storage, you should point this to a separate volume.
 - `MUNCHER_APIKEY` __Recomended__
   The API key that is required for posting a new compendium. It is highly recommended that you change this to a secure key. Defaults to `CHANGE_ME`.
 
