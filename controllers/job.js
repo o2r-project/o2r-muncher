@@ -52,7 +52,7 @@ exports.view = (req, res) => {
         res.status(404).send(JSON.stringify({ error: 'no jobs found' }));
       } else {
         if (count >= limit) {
-          answer.next = req.route.path + '?limit=' + limit + '&start' +
+          answer.next = req.route.path + '?limit=' + limit + '&start=' +
             (start + 2) + filter_query;
         }
 

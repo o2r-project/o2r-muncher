@@ -129,7 +129,7 @@ exports.viewSingleJobs = (req, res) => {
         res.status(404).send(JSON.stringify({ error: 'no job found' }));
       } else {
         if (count >= limit) {
-          answer.next = req.route.path + '?limit=' + limit + '&start' +
+          answer.next = req.route.path + '?limit=' + limit + '&start=' +
             (start + 2) + filter_query;
         }
 
@@ -163,7 +163,7 @@ exports.view = (req, res) => {
         res.status(404).send(JSON.stringify({ error: 'no compendium found' }));
       } else {
         if (count >= limit) {
-          answer.next = req.route.path + '?limit=' + limit + '&start' +
+          answer.next = req.route.path + '?limit=' + limit + '&start=' +
             (start + 2) + filter_query;
         }
 
