@@ -24,6 +24,7 @@
     "dockerode": "^2.2.10",
     "express": "^4.13.4",
     "fs-extra": "^0.30.0",
+    "mimos": "^3.0.3",
     "mongoose": "^4.4.20",
     "multer": "^1.1.0",
     "randomstring": "^1.1.4",
