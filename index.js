@@ -16,43 +16,51 @@
  */
 
 // General modules
-var debug = require('debug')('muncher');
-var c = require('./config/config');
-var Promise = require('bluebird');
-var exec = require('child_process').exec;
-var randomstring = require('randomstring');
-var fse = require('fs-extra');
+var debug               = require('debug')('muncher');
+var c                   = require('./config/config');
+var Promise             = require('bluebird');
+var exec                = require('child_process').exec;
+var randomstring        = require('randomstring');
+var fse                 = require('fs-extra');
+
 // mongo connection
-var mongoose = require('mongoose');
+var mongoose            = require('mongoose');
 mongoose.connect(c.mongo.location + c.mongo.collection);
 mongoose.connection.on('error', () => {
   console.log('could not connect to mongodb on ' + c.mongo.location + c.mongo.collection +', ABORT');
   process.exit(2);
 });
+
 // Express modules and tools
-var express = require('express');
-var compression = require('compression');
-var bodyParser = require('body-parser');
-var app = express();
+var express             = require('express');
+var compression         = require('compression');
+var bodyParser          = require('body-parser');
+var app                 = express();
 app.use(compression());
 app.use(bodyParser.json());
+
 // load controllers
 var controllers = {};
-controllers.compendium = require('./controllers/compendium');
-controllers.job        = require('./controllers/job');
+controllers.compendium  = require('./controllers/compendium');
+controllers.job         = require('./controllers/job');
+
 // Passport modules for OAuth2
-var passport = require('passport');
-var OAuth2Strategy = require('passport-oauth2').Strategy;
-var User = require('./lib/model/user');
-var authorization = require('./lib/authorization.js');
-// file upload
+var User                = require('./lib/model/user');
+var passport            = require('passport');
+var OAuth2Strategy      = require('passport-oauth2').Strategy;
+var session             = require('express-session');
+var MongoDBStore        = require('connect-mongodb-session')(session);
+
+/*
+ *  File Upload
+ */
 
 // check fs & create dirs if necessary
 fse.mkdirsSync(c.fs.incoming);
 fse.mkdirsSync(c.fs.compendium);
 fse.mkdirsSync(c.fs.job);
 
-var multer = require('multer');
+var multer              = require('multer');
 var storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, c.fs.incoming);
@@ -63,13 +71,12 @@ var storage = multer.diskStorage({
 });
 var upload = multer({storage: storage});
 
-// Simple Express Middlewares
-app.use('/', (req, res, next) => {
-  debug(req.method + ' ' + req.path);
-  next();
-});
 
-// check for api key when uploading new compendium
+/*
+ *  Authentication & Authorization
+ */
+
+// simple check for api key when uploading new compendium
 app.use('/api/v1/compendium', (req, res, next) => {
   if ( (req.method === 'POST') && (req.get('X-API-Key') !== c.api_key) ) {
       res.status(401).send('{"error":"missing or wrong api key"}');
@@ -78,31 +85,84 @@ app.use('/api/v1/compendium', (req, res, next) => {
   }
 });
 
-// OAuth2 Authentication
-//
+// OAuth2 Strategy, configured with config.js settings.
 var oauth2 = new OAuth2Strategy(
-  config.oauth.default,
+  c.oauth.default,
   (accessToken, refreshToken, profile, cb) => {
-    User.findOrCreate({ exampleId: profile.id }, (err, user) => {
-      return cb(err, user);
-    });
+    console.log(profile);
+    return cb(null, profile);
   }
 );
-app.use('/', passport.authenticate('oauth2'));
+
+oauth2.userProfile = (accessToken, cb) => {
+  console.log('overwritten accesToken', accessToken);
+  // At this point, the Request for a access Token has already been made, and the original orcid id can't be accessed anymore in the request. 
+  // If it would be possible to gather the orcid id from a API request with this access token, we could retrieve the User Profile and the problem would be solved.
+  return cb(null, {});
+};
+
+
+passport.use(oauth2);
+
+// minimal serialize/deserialize to make authdetails cookie-compatible.
+passport.serializeUser((user, cb) => {
+  debug('serialize');
+  debug(user);
+  cb(null, user);
+});
+passport.deserializeUser((user, cb) => {
+  debug('deserialize');
+  debug(user);
+  cb(null, user);
+});
+
+// configure express-session, stores reference to authdetails in cookie.
+// authdetails themselves are stored in MongoDBStore
+var mongoStore = new MongoDBStore({
+  uri: c.mongo.location + c.mongo.database,
+  collection: 'Sessions'
+});
+
+mongoStore.on('error', err => {
+  debug(err);
+});
+
+app.use(session({
+  secret: c.sessionsecret,
+  resave: true,
+  saveUninitialized: true,
+  maxAge: 60*60*24*7, // cookies become invalid after one week
+  store: mongoStore
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+// This is the authentication route, should be used as a Callback URL in OAuth2 workflow.
+app.get('/auth/orcid', passport.authenticate('oauth2'), (req, res) => {
+  debug(req.query.code);
+  res.send('authenticated!');
+});
+
+/*
+ *  Routes & general Middleware
+ */
+
 app.use('/api/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   next();
 });
 
 app.use('/', (req, res, next) => {
-  // prevent directory traversal via ids
-  if(req.params != null && req.params.id != null) {
-    req.params.id = req.params.id.replace('/', '');
+  debug(req.method + ' ' + req.path);
+  if(req.isAuthenticated()) {
+    debug('authenticated user');
+    debug(req.user);
   }
   next();
 });
 
-
+// Set up Routes
 app.get('/api/v1/compendium', controllers.compendium.view);
 app.post('/api/v1/compendium', upload.single('compendium'), controllers.compendium.create);
 app.get('/api/v1/compendium/:id', controllers.compendium.viewSingle);

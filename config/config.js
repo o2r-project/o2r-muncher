@@ -31,7 +31,7 @@ c.version.api    = 1;
 // network & database
 c.net.port         = env.MUNCHER_PORT || 8080;
 c.mongo.location   = env.MUNCHER_MONGODB || 'mongodb://localhost/';
-c.mongo.collection = env.MUNCHER_MONGODB_COLLECTION || 'muncher';
+c.mongo.database   = env.MUNCHER_MONGODB_DATABASE || 'muncher';
 c.mongo.creds      = {};
 
 // fix mongo location if trailing slash was omitted
@@ -55,10 +55,14 @@ c.id_length            = 5;   // length of job & compendium ids [0-9,a-z,A-Z]
 
 // oauth providers
 c.oauth.default = {
-  authorizationURL: env.OAUTH_URL_AUTHORIZATION,
-  tokenURL: env.OAUTH_URL_TOKEN,
-  callbackURL: env.OAUTH_URL_CALLBACK,
+  authorizationURL: env.OAUTH_URL_AUTHORIZATION || 'https://orcid.org/oauth/authorize',
+  tokenURL: env.OAUTH_URL_TOKEN || 'https://pub.orcid.org/oauth/token',
+  callbackURL: env.OAUTH_URL_CALLBACK || 'http://localhost:' + c.net.port + '/auth/orcid',
   clientID: env.OAUTH_CLIENT_ID,
-  clientSecret: env.OAUTH_CLIENT_SECRET
+  clientSecret: env.OAUTH_CLIENT_SECRET,
+  scope: env.OAUTH_SCOPE || '/authenticate'
 };
+// session secret
+c.sessionsecret = env.SESSION_SECRET || 'o2r';
+
 module.exports = c;
