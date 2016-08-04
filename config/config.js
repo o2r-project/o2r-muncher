@@ -60,7 +60,8 @@ c.oauth.default = {
   callbackURL: env.OAUTH_URL_CALLBACK || 'http://localhost:' + c.net.port + '/auth/orcid',
   clientID: env.OAUTH_CLIENT_ID,
   clientSecret: env.OAUTH_CLIENT_SECRET,
-  scope: env.OAUTH_SCOPE || '/authenticate'
+  scope: env.OAUTH_SCOPE || '/authenticate',
+  passReqToCallback: true
 };
 // session secret
 c.sessionsecret = env.SESSION_SECRET || 'o2r';

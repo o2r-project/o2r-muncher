@@ -88,8 +88,8 @@ app.use('/api/v1/compendium', (req, res, next) => {
 // OAuth2 Strategy, configured with config.js settings.
 var oauth2 = new OAuth2Strategy(
   c.oauth.default,
-  (accessToken, refreshToken, profile, cb) => {
-    console.log(profile);
+  (req, accessToken, refreshToken, params, profile, cb) => {
+    console.log("params:", params);
     return cb(null, profile);
   }
 );
