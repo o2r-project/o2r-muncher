@@ -16,33 +16,48 @@
  */
 
 // General modules
-var debug = require('debug')('muncher');
-var c = require('./config/config');
-var randomstring = require('randomstring');
-var fse = require('fs-extra');
+var debug               = require('debug')('muncher');
+var c                   = require('./config/config');
+var randomstring        = require('randomstring');
+var fse                 = require('fs-extra');
+
 // mongo connection
-var mongoose = require('mongoose');
+var mongoose            = require('mongoose');
 mongoose.connect(c.mongo.location + c.mongo.collection);
 mongoose.connection.on('error', () => {
   console.log('could not connect to mongodb on ' + c.mongo.location + c.mongo.collection + ', ABORT');
   process.exit(2);
 });
+
 // Express modules and tools
-var express = require('express');
-var compression = require('compression');
-var bodyParser = require('body-parser');
-var app = express();
+var express             = require('express');
+var compression         = require('compression');
+var bodyParser          = require('body-parser');
+var app                 = express();
 app.use(compression());
 app.use(bodyParser.json());
 
-// file upload
+// load controllers
+var controllers = {};
+controllers.compendium  = require('./controllers/compendium');
+controllers.job         = require('./controllers/job');
+
+// Passport & session modules for authenticating users.
+var User                = require('./lib/model/user');
+var passport            = require('passport');
+var session             = require('express-session');
+var MongoDBStore        = require('connect-mongodb-session')(session);
+
+/*
+ *  File Upload
+ */
 
 // check fs & create dirs if necessary
 fse.mkdirsSync(c.fs.incoming);
 fse.mkdirsSync(c.fs.compendium);
 fse.mkdirsSync(c.fs.job);
 
-var multer = require('multer');
+var multer              = require('multer');
 var storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, c.fs.incoming);
@@ -53,13 +68,13 @@ var storage = multer.diskStorage({
 });
 var upload = multer({storage: storage});
 
-// Simple Express Middlewares
-app.use('/', (req, res, next) => {
-  debug(req.method + ' ' + req.path);
-  next();
-});
 
-// check for api key when uploading new compendium
+/*
+ *  Authentication & Authorization
+ *  This would be needed in every service that wants to check if a user is authenticated.
+ */
+
+// simple check for api key when uploading new compendium
 app.use('/api/v1/compendium', (req, res, next) => {
   if ((req.method === 'POST') && (req.get('X-API-Key') !== c.api_key)) {
     res.status(401).send('{"error":"missing or wrong api key"}');
@@ -68,17 +83,55 @@ app.use('/api/v1/compendium', (req, res, next) => {
   }
 });
 
+// minimal serialize/deserialize to make authdetails cookie-compatible.
+passport.serializeUser((user, cb) => {
+  cb(null, user.orcid);
+});
+passport.deserializeUser((user, cb) => {
+  User.findOne({orcid: user}, (err, user) => {
+    if (err) cb(err);
+    cb(null, user);
+  });
+});
+
+// configure express-session, stores reference to authdetails in cookie.
+// authdetails themselves are stored in MongoDBStore
+var mongoStore = new MongoDBStore({
+  uri: c.mongo.location + c.mongo.database,
+  collection: 'sessions'
+});
+
+mongoStore.on('error', err => {
+  debug(err);
+});
+
+app.use(session({
+  secret: c.sessionsecret,
+  resave: true,
+  saveUninitialized: true,
+  maxAge: 60*60*24*7, // cookies become invalid after one week
+  store: mongoStore
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+/*
+ *  Routes & general Middleware
+ */
+
 // set content type for all responses (muncher never serves content)
 app.use('/api/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   next();
 });
 
-// load controllers
-var controllers = {};
-controllers.compendium = require('./controllers/compendium');
-controllers.job        = require('./controllers/job');
+app.use('/', (req, res, next) => {
+  debug(req.method + ' ' + req.path + ' authenticated user: ' + req.isAuthenticated());
+  next();
+});
 
+// Set up Routes
 app.get('/api/v1/compendium', controllers.compendium.view);
 app.post('/api/v1/compendium', upload.single('compendium'), controllers.compendium.create);
 app.get('/api/v1/compendium/:id', controllers.compendium.viewSingle);
