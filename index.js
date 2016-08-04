@@ -18,8 +18,6 @@
 // General modules
 var debug               = require('debug')('muncher');
 var c                   = require('./config/config');
-var Promise             = require('bluebird');
-var exec                = require('child_process').exec;
 var randomstring        = require('randomstring');
 var fse                 = require('fs-extra');
 
@@ -27,7 +25,7 @@ var fse                 = require('fs-extra');
 var mongoose            = require('mongoose');
 mongoose.connect(c.mongo.location + c.mongo.collection);
 mongoose.connection.on('error', () => {
-  console.log('could not connect to mongodb on ' + c.mongo.location + c.mongo.collection +', ABORT');
+  console.log('could not connect to mongodb on ' + c.mongo.location + c.mongo.collection + ', ABORT');
   process.exit(2);
 });
 
@@ -78,13 +76,12 @@ var upload = multer({storage: storage});
 
 // simple check for api key when uploading new compendium
 app.use('/api/v1/compendium', (req, res, next) => {
-  if ( (req.method === 'POST') && (req.get('X-API-Key') !== c.api_key) ) {
-      res.status(401).send('{"error":"missing or wrong api key"}');
+  if ((req.method === 'POST') && (req.get('X-API-Key') !== c.api_key)) {
+    res.status(401).send('{"error":"missing or wrong api key"}');
   } else {
     next();
   }
 });
-
 
 // minimal serialize/deserialize to make authdetails cookie-compatible.
 passport.serializeUser((user, cb) => {
@@ -123,6 +120,7 @@ app.use(passport.session());
  *  Routes & general Middleware
  */
 
+// set content type for all responses (muncher never serves content)
 app.use('/api/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   next();
@@ -144,7 +142,7 @@ app.post('/api/v1/job', upload.any(), controllers.job.create);
 app.get('/api/v1/job/:id', controllers.job.viewSingle);
 
 app.listen(c.net.port, () => {
-  debug('muncher '+  c.version.major + '.' + c.version.minor + '.' +
+  debug('muncher ' + c.version.major + '.' + c.version.minor + '.' +
       c.version.bug + ' with api version ' + c.version.api +
       ' waiting for requests on port ' + c.net.port);
 });

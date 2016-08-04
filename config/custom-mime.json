@@ -1,0 +1,9 @@
+{
+  "application/octet-stream": {
+    "source": "custom",
+    "charset": "UTF-8",
+    "compressible": true,
+    "extensions": ["R", "r"],
+    "type": "script/x-R"
+  }
+}

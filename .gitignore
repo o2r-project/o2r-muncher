@@ -1,3 +1,5 @@
 node_modules
 incoming
 workspace
+.vscode
+npm-debug.log
