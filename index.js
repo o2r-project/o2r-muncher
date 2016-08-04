@@ -44,10 +44,9 @@ var controllers = {};
 controllers.compendium  = require('./controllers/compendium');
 controllers.job         = require('./controllers/job');
 
-// Passport modules for OAuth2
+// Passport & session modules for authenticating users.
 var User                = require('./lib/model/user');
 var passport            = require('passport');
-var OAuth2Strategy      = require('passport-oauth2').Strategy;
 var session             = require('express-session');
 var MongoDBStore        = require('connect-mongodb-session')(session);
 
@@ -74,6 +73,7 @@ var upload = multer({storage: storage});
 
 /*
  *  Authentication & Authorization
+ *  This would be needed in every service that wants to check if a user is authenticated.
  */
 
 // simple check for api key when uploading new compendium
@@ -85,42 +85,23 @@ app.use('/api/v1/compendium', (req, res, next) => {
   }
 });
 
-// OAuth2 Strategy, configured with config.js settings.
-var oauth2 = new OAuth2Strategy(
-  c.oauth.default,
-  (req, accessToken, refreshToken, params, profile, cb) => {
-    console.log("params:", params);
-    return cb(null, profile);
-  }
-);
-
-oauth2.userProfile = (accessToken, cb) => {
-  console.log('overwritten accesToken', accessToken);
-  // At this point, the Request for a access Token has already been made, and the original orcid id can't be accessed anymore in the request. 
-  // If it would be possible to gather the orcid id from a API request with this access token, we could retrieve the User Profile and the problem would be solved.
-  return cb(null, {});
-};
-
-
-passport.use(oauth2);
 
 // minimal serialize/deserialize to make authdetails cookie-compatible.
 passport.serializeUser((user, cb) => {
-  debug('serialize');
-  debug(user);
-  cb(null, user);
+  cb(null, user.orcid);
 });
 passport.deserializeUser((user, cb) => {
-  debug('deserialize');
-  debug(user);
-  cb(null, user);
+  User.findOne({orcid: user}, (err, user) => {
+    if (err) cb(err);
+    cb(null, user);
+  });
 });
 
 // configure express-session, stores reference to authdetails in cookie.
 // authdetails themselves are stored in MongoDBStore
 var mongoStore = new MongoDBStore({
   uri: c.mongo.location + c.mongo.database,
-  collection: 'Sessions'
+  collection: 'sessions'
 });
 
 mongoStore.on('error', err => {
@@ -138,12 +119,6 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// This is the authentication route, should be used as a Callback URL in OAuth2 workflow.
-app.get('/auth/orcid', passport.authenticate('oauth2'), (req, res) => {
-  debug(req.query.code);
-  res.send('authenticated!');
-});
-
 /*
  *  Routes & general Middleware
  */
@@ -154,11 +129,7 @@ app.use('/api/', (req, res, next) => {
 });
 
 app.use('/', (req, res, next) => {
-  debug(req.method + ' ' + req.path);
-  if(req.isAuthenticated()) {
-    debug('authenticated user');
-    debug(req.user);
-  }
+  debug(req.method + ' ' + req.path + ' authenticated user: ' + req.isAuthenticated());
   next();
 });
 

@@ -53,16 +53,6 @@ c.api_key       = env.MUNCHER_APIKEY || 'CHANGE_ME';
 c.list_limit           = 100; // amount of results per page
 c.id_length            = 5;   // length of job & compendium ids [0-9,a-z,A-Z]
 
-// oauth providers
-c.oauth.default = {
-  authorizationURL: env.OAUTH_URL_AUTHORIZATION || 'https://orcid.org/oauth/authorize',
-  tokenURL: env.OAUTH_URL_TOKEN || 'https://pub.orcid.org/oauth/token',
-  callbackURL: env.OAUTH_URL_CALLBACK || 'http://localhost:' + c.net.port + '/auth/orcid',
-  clientID: env.OAUTH_CLIENT_ID,
-  clientSecret: env.OAUTH_CLIENT_SECRET,
-  scope: env.OAUTH_SCOPE || '/authenticate',
-  passReqToCallback: true
-};
 // session secret
 c.sessionsecret = env.SESSION_SECRET || 'o2r';
 
