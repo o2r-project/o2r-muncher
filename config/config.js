@@ -19,6 +19,7 @@ c.version = {};
 c.net = {};
 c.mongo = {};
 c.fs = {};
+c.oauth = {};
 var env = process.env;
 
 // Information about muncher
@@ -30,7 +31,7 @@ c.version.api    = 1;
 // network & database
 c.net.port         = env.MUNCHER_PORT || 8080;
 c.mongo.location   = env.MUNCHER_MONGODB || 'mongodb://localhost/';
-c.mongo.collection = env.MUNCHER_MONGODB_COLLECTION || 'muncher';
+c.mongo.database   = env.MUNCHER_MONGODB_DATABASE || 'muncher';
 c.mongo.creds      = {};
 
 // fix mongo location if trailing slash was omitted
@@ -51,5 +52,8 @@ c.api_key       = env.MUNCHER_APIKEY || 'CHANGE_ME';
 // muncher behaviour & defaults
 c.list_limit           = 100; // amount of results per page
 c.id_length            = 5;   // length of job & compendium ids [0-9,a-z,A-Z]
+
+// session secret
+c.sessionsecret = env.SESSION_SECRET || 'o2r';
 
 module.exports = c;
