@@ -129,6 +129,7 @@ See `o2r-bagtainers/README.md` how to pass the cookie to the uploader container.
 
 Users are authenticated via OAuth and the actions on the website are limited by the `level` assocciated with an account.
 On registration, each account is assigned a level `0`. Below is a list of actions and the corresponding required user level.
+_To adjust a user's level, you currently have to log in to the database and change the stored JSON string._
 
 - `20` Create new jobs
 - `100` Upload new compendium
