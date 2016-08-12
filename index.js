@@ -23,9 +23,9 @@ var fse                 = require('fs-extra');
 
 // mongo connection
 var mongoose            = require('mongoose');
-mongoose.connect(c.mongo.location + c.mongo.collection);
+mongoose.connect(c.mongo.location + c.mongo.database);
 mongoose.connection.on('error', () => {
-  console.log('could not connect to mongodb on ' + c.mongo.location + c.mongo.collection + ', ABORT');
+  console.log('could not connect to mongodb on ' + c.mongo.location + c.mongo.database + ', ABORT');
   process.exit(2);
 });
 
