@@ -49,9 +49,6 @@ describe('API Compendium', () => {
           }
         }
       };
-      let headers = {
-        'X-API-Key' : 'CHANGE_ME'
-      };
       request.post({url: host + '/api/v1/compendium', formData: formData, headers: headers},
        (err, res, body) => {
         assert.ifError(err);
@@ -94,9 +91,6 @@ describe('API Compendium', () => {
             contentType: 'application/zip'
           }
         }
-      };
-      let headers = {
-        'X-API-Key' : 'CHANGE_ME'
       };
       request.post({url: host + '/api/v1/compendium', formData: formData, headers: headers},
        (err, res, body) => {

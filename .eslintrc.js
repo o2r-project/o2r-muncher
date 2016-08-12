@@ -10,5 +10,6 @@ module.exports = {
                 ignoreUrls: true
             }
             ],
+        'camelcase': 'off'
     }
 };

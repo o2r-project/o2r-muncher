@@ -17,7 +17,6 @@
 // General modules
 var c = require('../config/config');
 var debug = require('debug')('compendium');
-var exec = require('child_process').exec;
 var randomstring = require('randomstring');
 var fs = require('fs');
 var fse = require('fs-extra');
@@ -35,16 +34,16 @@ exports.view = (req, res) => {
   var filter = {};
   var limit  = parseInt(req.query.limit || c.list_limit);
   var start  = parseInt(req.query.start || 1) - 1;
-  if(req.query.compendium_id != null) {
+  if (req.query.compendium_id !== null) {
     filter.compendium_id = req.query.compendium_id;
     filter_query = '&compendium_id=' + req.query.compendium_id;
   }
-  if(start > 1) {
+  if (start > 1) {
     answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
   }
-  var that = this;
+
   Job.find(filter).select('id').skip(start * limit).limit(limit).exec((err, jobs) => {
-    if(err) {
+    if (err) {
       res.status(500).send(JSON.stringify({ error: 'query failed'}));
     } else {
       var count = jobs.length;
@@ -66,7 +65,6 @@ exports.view = (req, res) => {
 exports.viewSingle = (req, res) => {
   var id = req.params.id;
   var answer = {id};
-  var tree;
     /* TODO:
      *
      * directory-tree has no support for a alternative basename. this is needed
@@ -114,6 +112,17 @@ exports.viewSingle = (req, res) => {
 exports.create = (req, res) => {
   var compendium_id = '';
   var job_id = randomstring.generate(c.id_length);
+
+  // check user level
+  if (!req.isAuthenticated()) {
+    res.status(401).send('{"error":"user is not authenticated"}');
+    return;
+  }
+  if (req.user.level < c.user.level.create_job) {
+    res.status(401).send('{"error":"user level does not allow job creation"}');
+    return;
+  }
+
   try {
     if (!(req.body.compendium_id)) {
       throw 'need compendium_id';

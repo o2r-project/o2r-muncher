@@ -77,15 +77,6 @@ var upload = multer({storage: storage});
  *  This is be needed in every service that wants to check if a user is authenticated.
  */
 
-// simple check for api key when uploading new compendium
-app.use('/api/v1/compendium', (req, res, next) => {
-  if ((req.method === 'POST') && (req.get('X-API-Key') !== c.api_key)) {
-    res.status(401).send('{"error":"missing or wrong api key"}');
-  } else {
-    next();
-  }
-});
-
 // minimal serialize/deserialize to make authdetails cookie-compatible.
 passport.serializeUser((user, cb) => {
   cb(null, user.orcid);
@@ -130,12 +121,17 @@ app.use('/api/', (req, res, next) => {
 });
 
 app.use('/', (req, res, next) => {
-  debug(req.method + ' ' + req.path + ' authenticated user: ' + req.isAuthenticated());
+  var orcid = '';
+  if (req.user && req.user.orcid) {
+    orcid = ' | orcid: ' + req.user.orcid;
+  }
+  debug('%s %s authenticated user: %s | session: %s',
+    req.method, req.path, req.isAuthenticated(), req.session.id, orcid);
   next();
 });
 
 const indexResponse = {};
-indexResponse.about = "http://o2r.info";
+indexResponse.about = 'http://o2r.info';
 indexResponse.versions = {};
 indexResponse.versions.current = '/api/v1';
 indexResponse.versions.v1 = '/api/v1';

@@ -28,6 +28,17 @@ var Job = require('../lib/model/job');
 
 exports.create = (req, res) => {
   var id = req.file.filename;
+
+  // check user level
+  if (!req.isAuthenticated()) {
+    res.status(401).send('{"error":"user is not authenticated"}');
+    return;
+  }
+  if (req.user.level < c.user.level.create_compendium) {
+    res.status(401).send('{"error":"user level does not allow compendium creation"}');
+    return;
+  }
+
   if (req.body.content_type === 'compendium_v1') {
     var cmd = '';
     switch (req.file.mimetype) {

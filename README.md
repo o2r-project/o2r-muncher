@@ -68,7 +68,7 @@ To inspect the database, run `docker network inspect dockercompose_default` (or 
 
 ## Testing
 
-Needs a completely new environment (empty database), which is preferably started with the docker-compose files.
+Testing needs a completely new environment (empty database), which is preferably started with the docker-compose files.
 
 ```bash
 npm install
@@ -112,6 +112,29 @@ docker run --rm --name o2r-platform -p 80:80 -v $(pwd)/test/nginx.conf:/etc/ngin
 Alternatively, start the component under development from your IDE.
 
 Be aware that the different services run on their own port, so it might have to be changed manually when navigating through the API.
+
+### Authentication and upload
+
+You can authenticate locally with OAuth as well.
+
+To upload compendia, the user must have the appropriate level. If you want to upload from the command line, get the session cookie out of the browser and use it in the curl request:
+
+```bash
+curl --cookie connect.sid=s:S1oH7... -F "compendium=@/<path to compendium.zip>;type=application/zip" -F "content_type=compendium_v1"
+```
+
+See `o2r-bagtainers/README.md` how to pass the cookie to the uploader container.
+
+### User levels
+
+Users are authenticated via OAuth and the actions on the website are limited by the `level` assocciated with an account.
+On registration, each account is assigned a level `0`. Below is a list of actions and the corresponding required user level.
+
+- `20` Create new jobs
+- `100` Upload new compendium
+- `1000` and above are admins
+  - list all users
+  - delete compendia and jobs
 
 ## License
 
