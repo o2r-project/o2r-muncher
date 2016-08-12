@@ -46,7 +46,7 @@ exports.create = (req, res) => {
         res.status(500).send(JSON.stringify({error: 'extracting failed'}));
       } else {
         var comp = new Compendium({id, metadata: {}});
-        comp.save((err) => {
+        comp.save(err => {
           if (err) {
             res.status(500).send(JSON.stringify({error: 'internal error'}));
           } else {
@@ -56,16 +56,17 @@ exports.create = (req, res) => {
       }
     });
   } else {
-    res.status(500).send('not yet implemented');
-    debug('uploaded content_type not yet implemented:' + req.body.content_type);
+    res.status(500).send('Provided content_type not yet implemented, only "compendium_v1" is supported.');
+    debug('Uploaded content_type not yet implemented:' + req.body.content_type);
   }
 };
 
 exports.viewSingle = (req, res) => {
   var id = req.params.id;
   var answer = {id};
-  var tree;
-    /* TODO:
+
+    /*
+     * TODO:
      *
      * directory-tree has no support for a alternative basename. this is needed
      * so that we can substitute the on-disk basepath (which is returned by
@@ -86,7 +87,7 @@ exports.viewSingle = (req, res) => {
       answer.metadata = compendium.metadata;
       answer.created = compendium.created;
       try {
-        fs.accessSync(c.fs.compendium + id); //throws if does not exist
+        fs.accessSync(c.fs.compendium + id); // throws if does not exist
         /*
          *  Rewrite file URLs with api path. directory-tree creates path like
          *  c.fs.compendium + id + filepath
@@ -101,7 +102,7 @@ exports.viewSingle = (req, res) => {
             '/api/v1/compendium/' + id + '/data' // prepend proper location
             );
       } catch (e) {
-        res.status(500).send(JSON.stringify({ error: 'internal error', e}));
+        res.status(500).send(JSON.stringify({error: 'internal error', e}));
         return;
       }
       res.status(200).send(JSON.stringify(answer));
@@ -113,27 +114,29 @@ exports.viewSingleJobs = (req, res) => {
   var id = req.params.id;
   var answer = {};
   var filter_query = '';
-  var filter = {'compendium_id':id};
+  var filter = {compendium_id: id};
   var limit  = parseInt(req.query.limit || c.list_limit);
   var start  = parseInt(req.query.start || 1) - 1;
   if (start > 1) {
     answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
   }
-  var that = this;
+
   Job.find(filter).select('id').skip(start * limit).limit(limit).exec((err, jobs) => {
     if (err) {
-      res.status(500).send(JSON.stringify({ error: 'query failed'}));
+      res.status(500).send(JSON.stringify({error: 'query failed'}));
     } else {
       var count = jobs.length;
       if (count <= 0) {
-        res.status(404).send(JSON.stringify({ error: 'no job found' }));
+        res.status(404).send(JSON.stringify({error: 'no job found'}));
       } else {
         if (count >= limit) {
           answer.next = req.route.path + '?limit=' + limit + '&start=' +
             (start + 2) + filter_query;
         }
 
-        answer.results = jobs.map((job) => { return job.id; });
+        answer.results = jobs.map(job => {
+          return job.id;
+        });
         res.status(200).send(JSON.stringify(answer));
       }
     }
