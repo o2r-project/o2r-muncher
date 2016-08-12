@@ -21,8 +21,7 @@ This project includes a `Dockerfile` which can be built with
 docker build -t muncher .
 ```
 
-The image can then be run and configured via environment variables. For convenience,
-we include a `docker-compose` configuration, which can be run with
+The image can then be run and configured via environment variables. For convenience, we include a `docker-compose` configuration, which can be run with
 
 ```bash
 cd docker-compose
@@ -32,11 +31,7 @@ docker-compose down -v
 ```
 
 __Please keep in mind that muncher needs access to a Docker daemon.__
-For this
-purpose the `docker-compose` configuration will expose your local Docker socket
-to the muncher container. If you do not want that, you can point muncher to a
-different Docker host via the `MUNCHER_DOCKER_HOST` and `MUNCHER_DOCKER_PORT`
-environment variables.
+For this purpose the `docker-compose` configuration will expose your local Docker socket to the muncher container. If you do not want that, you can point muncher to a different Docker host via the `MUNCHER_DOCKER_HOST` and `MUNCHER_DOCKER_PORT` environment variables.
 
 ### Available environment variables
 
@@ -73,7 +68,7 @@ To inspect the database, run `docker network inspect dockercompose_default` (or 
 
 ## Testing
 
-Needs a completely new environment (empty database),which is preferably started with the docker-compose files.
+Needs a completely new environment (empty database), which is preferably started with the docker-compose files.
 
 ```bash
 npm install
@@ -88,9 +83,8 @@ docker-compose -f docker-compose/docker-compose.yml down -v
 
 ### Notes
 
-- mongoose models can be independent in the different microservices (must only contain the "fields" that are needed), writing microservices should contain the whole schema (copy and paste it)
-- to develop the muncher (or any other microservice) it is easiest to run the full Docker compose configuration and point the microservice to the database within that configuration
-  - see above..
+- mongoose models can be independent in the different microservices (must only contain the "fields" that are needed), writing microservices should contain the whole schema (copy and paste it) - to develop the muncher (or any other microservice) it is easiest to run the full Docker compose configuration and point the microservice to the database within that configuration
+  - see above for instructions to run compose configuration
   - `DEBUG=* MUNCHER_MONGODB=mongodb://172.19.0.2 MUNCHER_PORT=8079 npm start`
   - has considerable limitations, because the data is stored somewhere in the containers etc.
 
