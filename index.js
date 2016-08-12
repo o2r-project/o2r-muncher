@@ -48,6 +48,9 @@ var passport            = require('passport');
 var session             = require('express-session');
 var MongoDBStore        = require('connect-mongodb-session')(session);
 
+// Less crucial things
+var starwars            = require('starwars');
+
 /*
  *  File Upload
  */
@@ -71,7 +74,7 @@ var upload = multer({storage: storage});
 
 /*
  *  Authentication & Authorization
- *  This would be needed in every service that wants to check if a user is authenticated.
+ *  This is be needed in every service that wants to check if a user is authenticated.
  */
 
 // simple check for api key when uploading new compendium
@@ -109,7 +112,7 @@ app.use(session({
   secret: c.sessionsecret,
   resave: true,
   saveUninitialized: true,
-  maxAge: 60*60*24*7, // cookies become invalid after one week
+  maxAge: 60 * 60 * 24 * 7, // cookies become invalid after one week
   store: mongoStore
 }));
 
@@ -131,7 +134,26 @@ app.use('/', (req, res, next) => {
   next();
 });
 
+var indexResponse = {};
+indexResponse.about = "http://o2r.info";
+indexResponse.versions = {};
+indexResponse.versions.current = '/api/v1';
+indexResponse.versions.v1 = '/api/v1';
+
+var indexResponseV1 = {};
+indexResponseV1.compendia = '/api/v1/compendium';
+indexResponseV1.jobs = '/api/v1/job';
+
 // Set up Routes
+app.get('/api', function(req, res) {
+  indexResponse.quote = starwars();
+  res.send(indexResponse);
+});
+
+app.get('/api/v1', function(req, res) {
+  res.send(indexResponseV1);
+});
+
 app.get('/api/v1/compendium', controllers.compendium.view);
 app.post('/api/v1/compendium', upload.single('compendium'), controllers.compendium.create);
 app.get('/api/v1/compendium/:id', controllers.compendium.viewSingle);
