@@ -165,11 +165,13 @@ exports.view = (req, res) => {
   var start = parseInt(req.query.start || 1, 10) - 1;
 
   // add query element to filter (used in database search) and to the query (used for previous/next links)
-  if (req.query.job_id !== null) {
+  // eslint-disable-next-line no-eq-null, eqeqeq
+  if (req.query.job_id != null) {
     filter.job_id = req.query.job_id;
     filter_query = '&job_id=' + req.query.job_id;
   }
-  if (req.query.user !== null) {
+  // eslint-disable-next-line no-eq-null, eqeqeq
+  if (req.query.user != null) {
     filter.user = req.query.user;
     filter_query = filter_query + '&user=' + req.query.user;
   }

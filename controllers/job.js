@@ -34,11 +34,14 @@ exports.view = (req, res) => {
   var filter = {};
   var limit = parseInt(req.query.limit || c.list_limit, 10);
   var start = parseInt(req.query.start || 1, 10) - 1;
-  if (req.query.compendium_id !== null) {
+
+  // eslint-disable-next-line no-eq-null, eqeqeq
+  if (req.query.compendium_id != null) {
     filter.compendium_id = req.query.compendium_id;
     filter_query = '&compendium_id=' + req.query.compendium_id;
   }
-  if (req.query.user !== null) {
+  // eslint-disable-next-line no-eq-null, eqeqeq
+  if (req.query.user != null) {
     filter.user = req.query.user;
     filter_query = filter_query + '&user=' + req.query.user;
   }
