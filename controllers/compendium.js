@@ -163,21 +163,28 @@ exports.view = (req, res) => {
   var filter = {};
   var limit = parseInt(req.query.limit || c.list_limit, 10);
   var start = parseInt(req.query.start || 1, 10) - 1;
-  if (req.query.job_id != null) {
+
+  // add query element to filter (used in database search) and to the query (used for previous/next links)
+  if (req.query.job_id !== null) {
     filter.job_id = req.query.job_id;
     filter_query = '&job_id=' + req.query.job_id;
   }
+  if (req.query.user !== null) {
+    filter.user = req.query.user;
+    filter_query = filter_query + '&user=' + req.query.user;
+  }
+
   if (start > 1) {
     answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
   }
 
   Compendium.find(filter).select('id').skip(start * limit).limit(limit).exec((err, comps) => {
     if (err) {
-      res.status(500).send(JSON.stringify({ error: 'query failed'}));
+      res.status(500).send(JSON.stringify({error: 'query failed'}));
     } else {
       var count = comps.length;
       if (count <= 0) {
-        res.status(404).send(JSON.stringify({ error: 'no compendium found' }));
+        res.status(404).send(JSON.stringify({error: 'no compendium found'}));
       } else {
         if (count >= limit) {
           answer.next = req.route.path + '?limit=' + limit + '&start=' +
