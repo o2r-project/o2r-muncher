@@ -39,6 +39,8 @@ exports.create = (req, res) => {
     return;
   }
 
+  var userid = req.user.orcid;
+
   if (req.body.content_type === 'compendium_v1') {
     var cmd = '';
     switch (req.file.mimetype) {
@@ -56,7 +58,7 @@ exports.create = (req, res) => {
         debug(error, stderr, stdout);
         res.status(500).send(JSON.stringify({error: 'extracting failed'}));
       } else {
-        var comp = new Compendium({id, metadata: {}});
+        var comp = new Compendium({id: id, user: userid, metadata: {}});
         comp.save(err => {
           if (err) {
             res.status(500).send(JSON.stringify({error: 'internal error'}));
@@ -90,13 +92,14 @@ exports.viewSingle = (req, res) => {
      *
      * We also need additional features, like MIME type recognition, etc.
      */
-  Compendium.findOne({id}).select('id metadata created').exec((err, compendium) => {
+  Compendium.findOne({id}).select('id user metadata created').exec((err, compendium) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (err || compendium == null) {
       res.status(404).send(JSON.stringify({error: 'no compendium with this id'}));
     } else {
       answer.metadata = compendium.metadata;
       answer.created = compendium.created;
+      answer.user = compendium.user;
       try {
         fs.accessSync(c.fs.compendium + id); // throws if does not exist
         /*
@@ -126,8 +129,8 @@ exports.viewSingleJobs = (req, res) => {
   var answer = {};
   var filter_query = '';
   var filter = {compendium_id: id};
-  var limit  = parseInt(req.query.limit || c.list_limit);
-  var start  = parseInt(req.query.start || 1) - 1;
+  var limit = parseInt(req.query.limit || c.list_limit, 10);
+  var start = parseInt(req.query.start || 1, 10) - 1;
   if (start > 1) {
     answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
   }
@@ -158,8 +161,8 @@ exports.view = (req, res) => {
   var answer = {};
   var filter_query = '';
   var filter = {};
-  var limit  = parseInt(req.query.limit || c.list_limit);
-  var start  = parseInt(req.query.start || 1) - 1;
+  var limit = parseInt(req.query.limit || c.list_limit, 10);
+  var start = parseInt(req.query.start || 1, 10) - 1;
   if (req.query.job_id != null) {
     filter.job_id = req.query.job_id;
     filter_query = '&job_id=' + req.query.job_id;
@@ -167,7 +170,7 @@ exports.view = (req, res) => {
   if (start > 1) {
     answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
   }
-  var that = this;
+
   Compendium.find(filter).select('id').skip(start * limit).limit(limit).exec((err, comps) => {
     if (err) {
       res.status(500).send(JSON.stringify({ error: 'query failed'}));

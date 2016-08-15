@@ -32,8 +32,8 @@ exports.view = (req, res) => {
   var answer = {};
   var filter_query = '';
   var filter = {};
-  var limit  = parseInt(req.query.limit || c.list_limit);
-  var start  = parseInt(req.query.start || 1) - 1;
+  var limit = parseInt(req.query.limit || c.list_limit, 10);
+  var start = parseInt(req.query.start || 1, 10) - 1;
   if (req.query.compendium_id !== null) {
     filter.compendium_id = req.query.compendium_id;
     filter_query = '&compendium_id=' + req.query.compendium_id;
@@ -109,6 +109,7 @@ exports.viewSingle = (req, res) => {
     }
   });
 };
+
 exports.create = (req, res) => {
   var compendium_id = '';
   var job_id = randomstring.generate(c.id_length);
@@ -123,23 +124,29 @@ exports.create = (req, res) => {
     return;
   }
 
+  var user_id = req.user.orcid;
+
   try {
-    if (!(req.body.compendium_id)) {
-      throw 'need compendium_id';
-    } else {
+    if (req.body.compendium_id) {
       compendium_id = req.body.compendium_id;
+    } else {
+      throw new Error('compendium_id required');
     }
     var executionJob = new Job({
-      id : job_id,
-      compendium_id : compendium_id,
+      id: job_id,
+      user: user_id,
+      compendium_id: compendium_id
     });
-    executionJob.save((err) => {
+    executionJob.save(err => {
       if (err) {
-        throw 'error creating job';
+        debug("ERROR starting job %s", job_id);
+        throw new Error('error creating job');
       } else {
         fse.copySync(c.fs.compendium + compendium_id, c.fs.job + job_id);
-        var execution = new Executor(job_id, c.fs.job).execute();
+        var execution = new Executor(job_id, c.fs.job);
+        execution.execute();
         res.status(200).send(JSON.stringify({job_id}));
+        debug("Job %s started and saved to database", job_id);
       }
     });
   } catch (error) {
