@@ -46,14 +46,17 @@ c.fs.compendium = c.fs.base + 'compendium/';
 c.fs.job        = c.fs.base + 'job/';
 c.fs.delete_inc = true;
 
-// api key for uploading new compenidum
-c.api_key       = env.MUNCHER_APIKEY || 'CHANGE_ME';
-
 // muncher behaviour & defaults
 c.list_limit           = 100; // amount of results per page
 c.id_length            = 5;   // length of job & compendium ids [0-9,a-z,A-Z]
 
 // session secret
 c.sessionsecret = env.SESSION_SECRET || 'o2r';
+
+// user levels
+c.user = {};
+c.user.level = {};
+c.user.level.create_compendium = 100;
+c.user.level.create_job = 0;
 
 module.exports = c;

@@ -23,9 +23,9 @@ var fse                 = require('fs-extra');
 
 // mongo connection
 var mongoose            = require('mongoose');
-mongoose.connect(c.mongo.location + c.mongo.collection);
+mongoose.connect(c.mongo.location + c.mongo.database);
 mongoose.connection.on('error', () => {
-  console.log('could not connect to mongodb on ' + c.mongo.location + c.mongo.collection + ', ABORT');
+  console.log('could not connect to mongodb on ' + c.mongo.location + c.mongo.database + ', ABORT');
   process.exit(2);
 });
 
@@ -47,6 +47,9 @@ var User                = require('./lib/model/user');
 var passport            = require('passport');
 var session             = require('express-session');
 var MongoDBStore        = require('connect-mongodb-session')(session);
+
+// Less crucial things
+var starwars            = require('starwars');
 
 /*
  *  File Upload
@@ -71,17 +74,8 @@ var upload = multer({storage: storage});
 
 /*
  *  Authentication & Authorization
- *  This would be needed in every service that wants to check if a user is authenticated.
+ *  This is be needed in every service that wants to check if a user is authenticated.
  */
-
-// simple check for api key when uploading new compendium
-app.use('/api/v1/compendium', (req, res, next) => {
-  if ((req.method === 'POST') && (req.get('X-API-Key') !== c.api_key)) {
-    res.status(401).send('{"error":"missing or wrong api key"}');
-  } else {
-    next();
-  }
-});
 
 // minimal serialize/deserialize to make authdetails cookie-compatible.
 passport.serializeUser((user, cb) => {
@@ -109,7 +103,7 @@ app.use(session({
   secret: c.sessionsecret,
   resave: true,
   saveUninitialized: true,
-  maxAge: 60*60*24*7, // cookies become invalid after one week
+  maxAge: 60 * 60 * 24 * 7, // cookies become invalid after one week
   store: mongoStore
 }));
 
@@ -127,11 +121,35 @@ app.use('/api/', (req, res, next) => {
 });
 
 app.use('/', (req, res, next) => {
-  debug(req.method + ' ' + req.path + ' authenticated user: ' + req.isAuthenticated());
+  var orcid = '';
+  if (req.user && req.user.orcid) {
+    orcid = ' | orcid: ' + req.user.orcid;
+  }
+  debug('%s %s authenticated user: %s | session: %s',
+    req.method, req.path, req.isAuthenticated(), req.session.id, orcid);
   next();
 });
 
+const indexResponse = {};
+indexResponse.about = 'http://o2r.info';
+indexResponse.versions = {};
+indexResponse.versions.current = '/api/v1';
+indexResponse.versions.v1 = '/api/v1';
+
+const indexResponseV1 = {};
+indexResponseV1.compendia = '/api/v1/compendium';
+indexResponseV1.jobs = '/api/v1/job';
+
 // Set up Routes
+app.get('/api', function(req, res) {
+  indexResponse.quote = starwars();
+  res.send(indexResponse);
+});
+
+app.get('/api/v1', function(req, res) {
+  res.send(indexResponseV1);
+});
+
 app.get('/api/v1/compendium', controllers.compendium.view);
 app.post('/api/v1/compendium', upload.single('compendium'), controllers.compendium.create);
 app.get('/api/v1/compendium/:id', controllers.compendium.viewSingle);

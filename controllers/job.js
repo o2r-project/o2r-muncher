@@ -17,7 +17,6 @@
 // General modules
 var c = require('../config/config');
 var debug = require('debug')('compendium');
-var exec = require('child_process').exec;
 var randomstring = require('randomstring');
 var fs = require('fs');
 var fse = require('fs-extra');
@@ -33,18 +32,22 @@ exports.view = (req, res) => {
   var answer = {};
   var filter_query = '';
   var filter = {};
-  var limit  = parseInt(req.query.limit || c.list_limit);
-  var start  = parseInt(req.query.start || 1) - 1;
-  if(req.query.compendium_id != null) {
+  var limit = parseInt(req.query.limit || c.list_limit, 10);
+  var start = parseInt(req.query.start || 1, 10) - 1;
+  if (req.query.compendium_id !== null) {
     filter.compendium_id = req.query.compendium_id;
     filter_query = '&compendium_id=' + req.query.compendium_id;
   }
-  if(start > 1) {
+  if (req.query.user !== null) {
+    filter.user = req.query.user;
+    filter_query = filter_query + '&user=' + req.query.user;
+  }
+  if (start > 1) {
     answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
   }
-  var that = this;
+
   Job.find(filter).select('id').skip(start * limit).limit(limit).exec((err, jobs) => {
-    if(err) {
+    if (err) {
       res.status(500).send(JSON.stringify({ error: 'query failed'}));
     } else {
       var count = jobs.length;
@@ -66,7 +69,6 @@ exports.view = (req, res) => {
 exports.viewSingle = (req, res) => {
   var id = req.params.id;
   var answer = {id};
-  var tree;
     /* TODO:
      *
      * directory-tree has no support for a alternative basename. this is needed
@@ -111,26 +113,44 @@ exports.viewSingle = (req, res) => {
     }
   });
 };
+
 exports.create = (req, res) => {
   var compendium_id = '';
   var job_id = randomstring.generate(c.id_length);
+
+  // check user level
+  if (!req.isAuthenticated()) {
+    res.status(401).send('{"error":"user is not authenticated"}');
+    return;
+  }
+  if (req.user.level < c.user.level.create_job) {
+    res.status(401).send('{"error":"user level does not allow job creation"}');
+    return;
+  }
+
+  var user_id = req.user.orcid;
+
   try {
-    if (!(req.body.compendium_id)) {
-      throw 'need compendium_id';
-    } else {
+    if (req.body.compendium_id) {
       compendium_id = req.body.compendium_id;
+    } else {
+      throw new Error('compendium_id required');
     }
     var executionJob = new Job({
-      id : job_id,
-      compendium_id : compendium_id,
+      id: job_id,
+      user: user_id,
+      compendium_id: compendium_id
     });
-    executionJob.save((err) => {
+    executionJob.save(err => {
       if (err) {
-        throw 'error creating job';
+        debug("ERROR starting job %s", job_id);
+        throw new Error('error creating job');
       } else {
         fse.copySync(c.fs.compendium + compendium_id, c.fs.job + job_id);
-        var execution = new Executor(job_id, c.fs.job).execute();
+        var execution = new Executor(job_id, c.fs.job);
+        execution.execute();
         res.status(200).send(JSON.stringify({job_id}));
+        debug("Job %s started and saved to database", job_id);
       }
     });
   } catch (error) {

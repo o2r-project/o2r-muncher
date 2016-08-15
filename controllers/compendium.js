@@ -28,6 +28,19 @@ var Job = require('../lib/model/job');
 
 exports.create = (req, res) => {
   var id = req.file.filename;
+
+  // check user level
+  if (!req.isAuthenticated()) {
+    res.status(401).send('{"error":"user is not authenticated"}');
+    return;
+  }
+  if (req.user.level < c.user.level.create_compendium) {
+    res.status(401).send('{"error":"user level does not allow compendium creation"}');
+    return;
+  }
+
+  var userid = req.user.orcid;
+
   if (req.body.content_type === 'compendium_v1') {
     var cmd = '';
     switch (req.file.mimetype) {
@@ -45,8 +58,8 @@ exports.create = (req, res) => {
         debug(error, stderr, stdout);
         res.status(500).send(JSON.stringify({error: 'extracting failed'}));
       } else {
-        var comp = new Compendium({id, metadata: {}});
-        comp.save((err) => {
+        var comp = new Compendium({id: id, user: userid, metadata: {}});
+        comp.save(err => {
           if (err) {
             res.status(500).send(JSON.stringify({error: 'internal error'}));
           } else {
@@ -56,16 +69,17 @@ exports.create = (req, res) => {
       }
     });
   } else {
-    res.status(500).send('not yet implemented');
-    debug('uploaded content_type not yet implemented:' + req.body.content_type);
+    res.status(500).send('Provided content_type not yet implemented, only "compendium_v1" is supported.');
+    debug('Uploaded content_type not yet implemented:' + req.body.content_type);
   }
 };
 
 exports.viewSingle = (req, res) => {
   var id = req.params.id;
   var answer = {id};
-  var tree;
-    /* TODO:
+
+    /*
+     * TODO:
      *
      * directory-tree has no support for a alternative basename. this is needed
      * so that we can substitute the on-disk basepath (which is returned by
@@ -78,15 +92,16 @@ exports.viewSingle = (req, res) => {
      *
      * We also need additional features, like MIME type recognition, etc.
      */
-  Compendium.findOne({id}).select('id metadata created').exec((err, compendium) => {
+  Compendium.findOne({id}).select('id user metadata created').exec((err, compendium) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (err || compendium == null) {
       res.status(404).send(JSON.stringify({error: 'no compendium with this id'}));
     } else {
       answer.metadata = compendium.metadata;
       answer.created = compendium.created;
+      answer.user = compendium.user;
       try {
-        fs.accessSync(c.fs.compendium + id); //throws if does not exist
+        fs.accessSync(c.fs.compendium + id); // throws if does not exist
         /*
          *  Rewrite file URLs with api path. directory-tree creates path like
          *  c.fs.compendium + id + filepath
@@ -101,7 +116,7 @@ exports.viewSingle = (req, res) => {
             '/api/v1/compendium/' + id + '/data' // prepend proper location
             );
       } catch (e) {
-        res.status(500).send(JSON.stringify({ error: 'internal error', e}));
+        res.status(500).send(JSON.stringify({error: 'internal error', e}));
         return;
       }
       res.status(200).send(JSON.stringify(answer));
@@ -113,27 +128,29 @@ exports.viewSingleJobs = (req, res) => {
   var id = req.params.id;
   var answer = {};
   var filter_query = '';
-  var filter = {'compendium_id':id};
-  var limit  = parseInt(req.query.limit || c.list_limit);
-  var start  = parseInt(req.query.start || 1) - 1;
+  var filter = {compendium_id: id};
+  var limit = parseInt(req.query.limit || c.list_limit, 10);
+  var start = parseInt(req.query.start || 1, 10) - 1;
   if (start > 1) {
     answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
   }
-  var that = this;
+
   Job.find(filter).select('id').skip(start * limit).limit(limit).exec((err, jobs) => {
     if (err) {
-      res.status(500).send(JSON.stringify({ error: 'query failed'}));
+      res.status(500).send(JSON.stringify({error: 'query failed'}));
     } else {
       var count = jobs.length;
       if (count <= 0) {
-        res.status(404).send(JSON.stringify({ error: 'no job found' }));
+        res.status(404).send(JSON.stringify({error: 'no job found'}));
       } else {
         if (count >= limit) {
           answer.next = req.route.path + '?limit=' + limit + '&start=' +
             (start + 2) + filter_query;
         }
 
-        answer.results = jobs.map((job) => { return job.id; });
+        answer.results = jobs.map(job => {
+          return job.id;
+        });
         res.status(200).send(JSON.stringify(answer));
       }
     }
@@ -144,23 +161,30 @@ exports.view = (req, res) => {
   var answer = {};
   var filter_query = '';
   var filter = {};
-  var limit  = parseInt(req.query.limit || c.list_limit);
-  var start  = parseInt(req.query.start || 1) - 1;
-  if (req.query.job_id != null) {
+  var limit = parseInt(req.query.limit || c.list_limit, 10);
+  var start = parseInt(req.query.start || 1, 10) - 1;
+
+  // add query element to filter (used in database search) and to the query (used for previous/next links)
+  if (req.query.job_id !== null) {
     filter.job_id = req.query.job_id;
     filter_query = '&job_id=' + req.query.job_id;
   }
+  if (req.query.user !== null) {
+    filter.user = req.query.user;
+    filter_query = filter_query + '&user=' + req.query.user;
+  }
+
   if (start > 1) {
     answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
   }
-  var that = this;
+
   Compendium.find(filter).select('id').skip(start * limit).limit(limit).exec((err, comps) => {
     if (err) {
-      res.status(500).send(JSON.stringify({ error: 'query failed'}));
+      res.status(500).send(JSON.stringify({error: 'query failed'}));
     } else {
       var count = comps.length;
       if (count <= 0) {
-        res.status(404).send(JSON.stringify({ error: 'no compendium found' }));
+        res.status(404).send(JSON.stringify({error: 'no compendium found'}));
       } else {
         if (count >= limit) {
           answer.next = req.route.path + '?limit=' + limit + '&start=' +
