@@ -45,7 +45,7 @@ exports.create = (req, res) => {
     var cmd = '';
     switch (req.file.mimetype) {
       case 'application/zip':
-        cmd = 'unzip -uq ' + req.file.path + ' -d '+ c.fs.compendium + id;
+        cmd = 'unzip -uq ' + req.file.path + ' -d ' + c.fs.compendium + id;
         if (c.fs.delete_inc) { // should incoming files be deleted after extraction?
           cmd += ' && rm ' + req.file.path;
         }
@@ -165,11 +165,13 @@ exports.view = (req, res) => {
   var start = parseInt(req.query.start || 1, 10) - 1;
 
   // add query element to filter (used in database search) and to the query (used for previous/next links)
-  if (req.query.job_id !== null) {
+  // eslint-disable-next-line no-eq-null, eqeqeq
+  if (req.query.job_id != null) {
     filter.job_id = req.query.job_id;
     filter_query = '&job_id=' + req.query.job_id;
   }
-  if (req.query.user !== null) {
+  // eslint-disable-next-line no-eq-null, eqeqeq
+  if (req.query.user != null) {
     filter.user = req.query.user;
     filter_query = filter_query + '&user=' + req.query.user;
   }
