@@ -125,7 +125,7 @@ app.use('/', (req, res, next) => {
   if (req.user && req.user.orcid) {
     orcid = ' | orcid: ' + req.user.orcid;
   }
-  debug('%s %s authenticated user: %s | session: %s',
+  debug('REQUEST %s %s authenticated user: %s | session: %s',
     req.method, req.path, req.isAuthenticated(), req.session.id, orcid);
   next();
 });
