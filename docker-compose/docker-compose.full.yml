@@ -56,7 +56,6 @@ services:
     environment:
       - MUNCHER_MONGODB=mongodb://db/
       - MUNCHER_PORT=8080
-      - MUNCHER_APIKEY=CHANGE_ME
     ports:
       - "8080:8080"
 
