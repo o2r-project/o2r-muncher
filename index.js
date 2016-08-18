@@ -114,12 +114,6 @@ app.use(passport.session());
  *  Routes & general Middleware
  */
 
-// set content type for all responses (muncher never serves content)
-app.use('/api/', (req, res, next) => {
-  res.setHeader('Content-Type', 'application/json');
-  next();
-});
-
 app.use('/', (req, res, next) => {
   var orcid = '';
   if (req.user && req.user.orcid) {
@@ -137,10 +131,34 @@ indexResponse.versions.current = '/api/v1';
 indexResponse.versions.v1 = '/api/v1';
 
 const indexResponseV1 = {};
+indexResponseV1.auth = '/api/v1/auth';
 indexResponseV1.compendia = '/api/v1/compendium';
 indexResponseV1.jobs = '/api/v1/job';
+indexResponseV1.users = '/api/v1/user';
 
-// Set up Routes
+// set up routes
+app.get('/status', function(req, res) {
+  res.setHeader('Content-Type', 'application/json');
+  if (!req.isAuthenticated() || req.user.level < c.user.level.view_status) {
+    res.status(401).send('{"error":"not authenticated or not allowed"}');
+    return;
+  }
+
+  var response = {
+    version: c.version,
+    levels: c.user.level,
+    mongodb: c.mongo,
+    filesystem: c.fs
+  };
+  res.send(response);
+});
+
+// set content type for all responses (muncher never serves content)
+app.use('/api/', (req, res, next) => {
+  res.setHeader('Content-Type', 'application/json');
+  next();
+});
+
 app.get('/api', function(req, res) {
   indexResponse.quote = starwars();
   res.send(indexResponse);

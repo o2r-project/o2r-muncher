@@ -57,5 +57,6 @@ c.user = {};
 c.user.level = {};
 c.user.level.create_compendium = 100;
 c.user.level.create_job = 0;
+c.user.level.view_status = 500;
 
 module.exports = c;
