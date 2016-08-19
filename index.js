@@ -71,7 +71,6 @@ var storage = multer.diskStorage({
 });
 var upload = multer({storage: storage});
 
-
 /*
  *  Authentication & Authorization
  *  This is be needed in every service that wants to check if a user is authenticated.
@@ -145,6 +144,7 @@ app.get('/status', function(req, res) {
   }
 
   var response = {
+    name: "muncher",
     version: c.version,
     levels: c.user.level,
     mongodb: c.mongo,
