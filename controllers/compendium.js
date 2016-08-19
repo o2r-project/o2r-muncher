@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2016 Jan Koppe.
+ * (C) Copyright 2016 o2r project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
  * limitations under the License.
  *
  */
+
 // General modules
 var c = require('../config/config');
 var debug = require('debug')('compendium');
