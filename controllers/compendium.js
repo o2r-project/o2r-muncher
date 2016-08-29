@@ -79,20 +79,6 @@ exports.viewSingle = (req, res) => {
   var id = req.params.id;
   var answer = {id};
 
-    /*
-     * TODO:
-     *
-     * directory-tree has no support for a alternative basename. this is needed
-     * so that we can substitute the on-disk basepath (which is returned by
-     * default) with a api-relative basepath, e.g. /api/v1/job/:id/files
-     *
-     * Options:
-     * - add functionality to directory-tree, make pull request
-     * - wrapper around directory-tree
-     * - fork directory-tree
-     *
-     * We also need additional features, like MIME type recognition, etc.
-     */
   Compendium.findOne({id}).select('id user metadata created').exec((err, compendium) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (err || compendium == null) {
