@@ -64,6 +64,27 @@ The API is then available at http://localhost/api/v1/compendium and should reply
 
 To inspect the database, run `docker network inspect dockercompose_default` (or find out the network name before with `docker network ls`) to find out the IP of the database container. Then connect to it (e.g. with adminMongo) using `mongodb://<ip>`.
 
+## Job execution steps
+
+The following steps are part of a job execution.
+(Note to developers: function names for these steps may differ!)
+
+All of these steps can be in one of three status: running, failure, success.
+
+- **validate_bag**
+  Validate the BagIt bag based on npm's [bagit](https://www.npmjs.com/package/bagit)
+- **validate_compendium**
+  Currently only parses the bagtainer configuration file. _extend this_
+- **image_prepare**
+  Create an archive of the payload of the BagIt bag, which allows to build and run the image also on remote Docker hosts.
+- **image_build**
+  Send the bag's payload as a tarballed archive to Docker to build an image, which is tagged `bagtainer:<jobid>`.
+- **image_execute**
+  Run the container and return based on status code of program that ran inside the container.
+- **cleanup**
+  Currently does nothing, could remove image or job files.
+
+
 ## Testing
 
 Testing needs a completely new environment (empty database), which is preferably started with the docker-compose files.

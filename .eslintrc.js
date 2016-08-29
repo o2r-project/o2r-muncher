@@ -10,6 +10,7 @@ module.exports = {
                 ignoreUrls: true
             }
             ],
-        'camelcase': 'off'
+        'camelcase': 'off',
+        'object-curly-spacing': 'off'
     }
 };
