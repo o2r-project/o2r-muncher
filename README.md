@@ -64,6 +64,30 @@ The API is then available at http://localhost/api/v1/compendium and should reply
 
 To inspect the database, run `docker network inspect dockercompose_default` (or find out the network name before with `docker network ls`) to find out the IP of the database container. Then connect to it (e.g. with adminMongo) using `mongodb://<ip>`.
 
+## Job execution steps
+
+The following steps are part of a job execution.
+(Note to developers: function names for these steps may differ!)
+
+All of these steps can be in one of three status: running, failure, success.
+
+- **validate_bag**
+  Validate the BagIt bag based on npm's [bagit](https://www.npmjs.com/package/bagit)
+- **validate_compendium**
+  Currently only parses the bagtainer configuration file. _extend this_
+- **image_prepare**
+  Create an archive of the payload of the BagIt bag, which allows to build and run the image also on remote Docker hosts.
+- **image_build**
+  Send the bag's payload as a tarballed archive to Docker to build an image, which is tagged `bagtainer:<jobid>`.
+- **image_execute**
+  Run the container and return based on status code of program that ran inside the container.
+- **cleanup**
+  Currently does nothing, could remove image or job files.
+
+## Docker connection
+
+The connection to the Docker API is build on [dockerode](https://www.npmjs.com/package/dockerode) which allows execution on any Docker host that exposes the port. Most commonly, the default configuration will be used, i.e. the local Docker socket is mounted at the default location into the container running muncher.
+
 ## Testing
 
 Testing needs a completely new environment (empty database), which is preferably started with the docker-compose files.
@@ -81,10 +105,11 @@ docker-compose -f docker-compose/docker-compose.yml down -v
 
 ### Notes
 
-- mongoose models can be independent in the different microservices (must only contain the "fields" that are needed), writing microservices should contain the whole schema (copy and paste it) - to develop the muncher (or any other microservice) it is easiest to run the full Docker compose configuration and point the microservice to the database within that configuration
+- mongoose models are independent in the different microservices (i.e. they must only contain the "fields" that are needed in each service), though writing microservices should contain the whole schema (copy and paste it)
+- to develop the muncher (or any other microservice) it is easiest to run the full Docker compose configuration and point the microservice to the database within that configuration
   - see above for instructions to run compose configuration
   - `DEBUG=* MUNCHER_MONGODB=mongodb://172.19.0.2 MUNCHER_PORT=8079 npm start`
-  - has considerable limitations, because the data is stored somewhere in the containers etc.
+  - Note that this has considerable limitations, because the data is stored somewhere in the containers etc.
 
 ### Steps for starting a local development environment
 
@@ -121,7 +146,7 @@ To upload compendia, the user must have the appropriate level. If you want to up
 curl --cookie connect.sid=s:S1oH7... -F "compendium=@/<path to compendium.zip>;type=application/zip" -F "content_type=compendium_v1"
 ```
 
-See `o2r-bagtainers/README.md` how to pass the cookie to the uploader container.
+See `o2r-bagtainers/README.md` on using the much more convenient *uploader container*.
 
 ### User levels
 
@@ -129,11 +154,11 @@ Users are authenticated via OAuth and the actions on the website are limited by 
 On registration, each account is assigned a level `0`. Below is a list of actions and the corresponding required user level.
 _To adjust a user's level, you currently have to log in to the database and change the stored JSON string._
 
-- `20` Create new jobs
+- `0` Create new jobs
 - `100` Upload new compendium
 - `1000` and above are admins
-  - list all users
-  - delete compendia and jobs
+  - edit users
+  - delete compendia and jobs (TBD)
 
 ## License
 

@@ -52,7 +52,7 @@ exports.view = (req, res) => {
 
   Job.find(filter).select('id').skip(start * limit).limit(limit).exec((err, jobs) => {
     if (err) {
-      res.status(500).send(JSON.stringify({ error: 'query failed'}));
+      res.status(500).send(JSON.stringify({ error: 'query failed' }));
     } else {
       var count = jobs.length;
       if (count <= 0) {
@@ -72,21 +72,9 @@ exports.view = (req, res) => {
 
 exports.viewSingle = (req, res) => {
   var id = req.params.id;
-  var answer = {id};
-    /* TODO:
-     *
-     * directory-tree has no support for a alternative basename. this is needed
-     * so that we can substitute the on-disk basepath (which is returned by
-     * default) with a api-relative basepath, e.g. /api/v1/job/:id/files
-     *
-     * Options:
-     * - add functionality to directory-tree, make pull request
-     * - wrapper around directory-tree
-     * - fork directory-tree
-     *
-     * We also need additional features, like MIME type recognition, etc.
-     */
-  Job.findOne({id}).exec((err, job) => {
+  var answer = { id };
+
+  Job.findOne({ id }).exec((err, job) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (err || job == null) { // intentially loose comparison
       res.status(404).send(JSON.stringify({ error: 'no job with this id' }));
@@ -95,7 +83,7 @@ exports.viewSingle = (req, res) => {
       answer.compendium_id = job.compendium_id;
       answer.steps = job.steps;
       try {
-        fs.accessSync(c.fs.job + id); //throws if does not exist
+        fs.accessSync(c.fs.job + id); // throws if directory does not exist
         /*
          *  Rewrite file URLs with api path. directory-tree creates path like
          *  c.fs.job + id + filepath
@@ -106,11 +94,11 @@ exports.viewSingle = (req, res) => {
          *
          */
         answer.files = rewriteTree(dirTree(c.fs.job + id),
-            c.fs.job.length + c.id_length, //remove local fs path and id
-            '/api/v1/job/'+ id + '/data' //prepend proper location
-            );
+          c.fs.job.length + c.id_length, // remove local fs path and id
+          '/api/v1/job/' + id + '/data' // prepend proper location
+        );
       } catch (e) {
-        res.status(500).send(JSON.stringify({ error: 'internal error', e}));
+        res.status(500).send(JSON.stringify({ error: 'internal error', e }));
         return;
       }
       res.status(200).send(JSON.stringify(answer));
@@ -140,6 +128,7 @@ exports.create = (req, res) => {
     } else {
       throw new Error('compendium_id required');
     }
+
     var executionJob = new Job({
       id: job_id,
       user: user_id,
@@ -147,17 +136,21 @@ exports.create = (req, res) => {
     });
     executionJob.save(err => {
       if (err) {
-        debug("ERROR starting job %s", job_id);
+        debug("ERROR starting job %s for compendium %s and user %s", job_id, compendium_id, user_id);
         throw new Error('error creating job');
       } else {
-        fse.copySync(c.fs.compendium + compendium_id, c.fs.job + job_id);
+        var job_path = c.fs.job + job_id;
+        var compendium_path = c.fs.compendium + compendium_id;
+        fse.copySync(compendium_path, job_path); // throws error if it does not exist
+
         var execution = new Executor(job_id, c.fs.job);
         execution.execute();
         res.status(200).send(JSON.stringify({job_id}));
-        debug("Job %s started and saved to database", job_id);
+        debug("Job %s started for compendium %s and saved to database; job files are at %s", job_id, compendium_id, job_path);
+        //  throw new Error('compendium path does not exist for compendium id ' + compendium_id);
       }
     });
   } catch (error) {
-    res.status(500).send(JSON.stringify({error}));
+    res.status(500).send(JSON.stringify({ error }));
   }
 };
