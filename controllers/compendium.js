@@ -103,10 +103,10 @@ exports.viewSingle = (req, res) => {
             '/api/v1/compendium/' + id + '/data' // prepend proper location
             );
       } catch (e) {
-        res.status(500).send(JSON.stringify({error: 'internal error', e}));
+        res.status(500).send({error: 'internal error: could not read compendium contents from storage', e});
         return;
       }
-      res.status(200).send(JSON.stringify(answer));
+      res.status(200).send(answer);
     }
   });
 };
