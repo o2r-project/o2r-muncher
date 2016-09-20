@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
 FROM alpine:3.4
 MAINTAINER o2r-project, https://o2r.info
 
@@ -32,5 +31,5 @@ RUN apk add --no-cache \
   && rm -rf /var/cache
 
 WORKDIR /muncher
-RUN npm install
+RUN npm install --production
 CMD npm start
