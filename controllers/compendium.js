@@ -29,8 +29,6 @@ var Job = require('../lib/model/job');
 var errorMessageHelper = require('../lib/error-message');
 
 exports.create = (req, res) => {
-  var id = req.file.filename;
-
   // check user level
   if (!req.isAuthenticated()) {
     res.status(401).send('{"error":"user is not authenticated"}');
@@ -41,10 +39,11 @@ exports.create = (req, res) => {
     return;
   }
 
+  var id = req.file.filename;
   var userid = req.user.orcid;
 
   if (req.body.content_type === 'compendium_v1') {
-    debug('Creating new ' + req.body.content_type + ' for user ' + userid + ': ' + id);
+    debug('Creating new ' + req.body.content_type + ' for user ' + userid + ': ' + id + ' (original file name: ' + req.file.originalname + ')');
 
     var cmd = '';
     switch (req.file.mimetype) {
@@ -64,15 +63,15 @@ exports.create = (req, res) => {
         debug(error, stderr, stdout);
         let errors = error.message.split(':');
         let message = errorMessageHelper(errors[errors.length - 1]);
-        res.status(500).send(JSON.stringify({error: 'extraction failed: ' + message}));
+        res.status(500).send(JSON.stringify({ error: 'extraction failed: ' + message }));
       } else {
         debug('Unzip of ' + id + ' complete!');
-        var comp = new Compendium({id: id, user: userid, metadata: {}});
+        var comp = new Compendium({ id: id, user: userid, metadata: {} });
         comp.save(err => {
           if (err) {
-            res.status(500).send(JSON.stringify({error: 'internal error'}));
+            res.status(500).send(JSON.stringify({ error: 'internal error' }));
           } else {
-            res.status(200).send(JSON.stringify({id}));
+            res.status(200).send(JSON.stringify({ id }));
           }
         });
       }
@@ -85,12 +84,12 @@ exports.create = (req, res) => {
 
 exports.viewSingle = (req, res) => {
   var id = req.params.id;
-  var answer = {id};
+  var answer = { id };
 
-  Compendium.findOne({id}).select('id user metadata created').exec((err, compendium) => {
+  Compendium.findOne({ id }).select('id user metadata created').exec((err, compendium) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (err || compendium == null) {
-      res.status(404).send(JSON.stringify({error: 'no compendium with this id'}));
+      res.status(404).send(JSON.stringify({ error: 'no compendium with this id' }));
     } else {
       answer.metadata = compendium.metadata;
       answer.created = compendium.created;
@@ -107,11 +106,11 @@ exports.viewSingle = (req, res) => {
          *
          */
         answer.files = rewriteTree(dirTree(c.fs.compendium + id),
-            c.fs.compendium.length + c.id_length, // remove local fs path and id
-            '/api/v1/compendium/' + id + '/data' // prepend proper location
-            );
+          c.fs.compendium.length + c.id_length, // remove local fs path and id
+          '/api/v1/compendium/' + id + '/data' // prepend proper location
+        );
       } catch (e) {
-        res.status(500).send({error: 'internal error: could not read compendium contents from storage', e});
+        res.status(500).send({ error: 'internal error: could not read compendium contents from storage', e });
         return;
       }
       res.status(200).send(answer);
@@ -123,7 +122,7 @@ exports.viewSingleJobs = (req, res) => {
   var id = req.params.id;
   var answer = {};
   var filter_query = '';
-  var filter = {compendium_id: id};
+  var filter = { compendium_id: id };
   var limit = parseInt(req.query.limit || c.list_limit, 10);
   var start = parseInt(req.query.start || 1, 10) - 1;
   if (start > 1) {
@@ -132,11 +131,11 @@ exports.viewSingleJobs = (req, res) => {
 
   Job.find(filter).select('id').skip(start * limit).limit(limit).exec((err, jobs) => {
     if (err) {
-      res.status(500).send(JSON.stringify({error: 'query failed'}));
+      res.status(500).send(JSON.stringify({ error: 'query failed' }));
     } else {
       var count = jobs.length;
       if (count <= 0) {
-        res.status(404).send(JSON.stringify({error: 'no job found'}));
+        res.status(404).send(JSON.stringify({ error: 'no job found' }));
       } else {
         if (count >= limit) {
           answer.next = req.route.path + '?limit=' + limit + '&start=' +
@@ -177,11 +176,11 @@ exports.view = (req, res) => {
 
   Compendium.find(filter).select('id').skip(start * limit).limit(limit).exec((err, comps) => {
     if (err) {
-      res.status(500).send(JSON.stringify({error: 'query failed'}));
+      res.status(500).send(JSON.stringify({ error: 'query failed' }));
     } else {
       var count = comps.length;
       if (count <= 0) {
-        res.status(404).send(JSON.stringify({error: 'no compendium found'}));
+        res.status(404).send(JSON.stringify({ error: 'no compendium found' }));
       } else {
         if (count >= limit) {
           answer.next = req.route.path + '?limit=' + limit + '&start=' +

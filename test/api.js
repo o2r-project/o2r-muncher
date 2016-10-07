@@ -16,7 +16,7 @@ describe('API Compendium', () => {
    *  The listing thus should return a 404 error.
    */
   describe('GET /api/v1/compendium (no compendium loaded)', () => {
-    it('should respond with HTTP 404 OK', (done) => {
+    it('should respond with HTTP 404 Not Found', (done) => {
       request(host + '/api/v1/compendium', (err, res) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 404);
