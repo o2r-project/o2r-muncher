@@ -5,6 +5,8 @@ const config    = require('../config/config');
 
 const host      = 'http://localhost:' + config.net.port;
 
+require("./setup")
+
 describe('API', () => {
   describe('GET /', () => {
     it('should respond with 404 Not Found', (done) => {

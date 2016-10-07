@@ -1,0 +1,2 @@
+d9ebec0edba82012c3954305e049393c  data/bagtainer.yml
+26c8f3fb10f42f5e2988ef87ee78793f  data/test.txt

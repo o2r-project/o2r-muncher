@@ -46,7 +46,7 @@ exports.view = (req, res) => {
     filter.user = req.query.user;
     filter_query = filter_query + '&user=' + req.query.user;
   }
-  if (start > 1) {
+  if (start >= 1) {
     answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
   }
 

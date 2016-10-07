@@ -61,7 +61,8 @@ c.user.level.view_status = 500;
 
 // bagtainer configuration
 c.bagtainer = {};
-c.bagtainer.configFile = '/data/Bagtainer.yml';
+c.bagtainer.supportedVersions = ['0.1'];
+c.bagtainer.configFile = '/data/bagtainer.yml';
 c.bagtainer.validateFast = false;
 
 module.exports = c;
