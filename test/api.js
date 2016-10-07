@@ -1,8 +1,14 @@
+/* eslint-env mocha */
 const assert    = require('chai').assert;
 const request   = require('request');
 const config    = require('../config/config');
 const fs        = require('fs');
 const host      = 'http://localhost:' + config.net.port;
+const chai = require('chai');
+chai.use(require('chai-datetime'));
+
+require("./setup")
+const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 
 describe('API Compendium', () => {
   /*
@@ -11,7 +17,7 @@ describe('API Compendium', () => {
    */
   describe('GET /api/v1/compendium (no compendium loaded)', () => {
     it('should respond with HTTP 404 OK', (done) => {
-      request(host + '/api/v1/compendium', (err, res, body) => {
+      request(host + '/api/v1/compendium', (err, res) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 404);
         done();
@@ -37,7 +43,6 @@ describe('API Compendium', () => {
    *  POST a valid trivial BagIt archive to create a new compendium.
    */
   let compendium_id = '';
-
   describe('POST /api/v1/compendium success-load.zip', () => {
     it('should respond with HTTP 200 OK and new ID', (done) => {
       let formData = {
@@ -49,8 +54,17 @@ describe('API Compendium', () => {
           }
         }
       };
-      request.post({url: host + '/api/v1/compendium', formData: formData, headers: headers},
-       (err, res, body) => {
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie);
+      j.setCookie(ck, host);
+
+      request({
+        uri: host + '/api/v1/compendium',
+        method: 'POST',
+        jar: j,
+        formData: formData,
+        timeout: 1000
+      }, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         assert.isObject(JSON.parse(body), 'returned JSON');
@@ -61,11 +75,7 @@ describe('API Compendium', () => {
     });
   });
 
-  /*
-   *  should now return a 'results' array with the previously generated id.
-   */
-
-  describe('GET /api/v1/compendium (compendium loaded)', () => {
+  describe('GET /api/v1/compendium (after compendium loaded)', () => {
     it('should respond with HTTP 200 OK and \'results\' array', (done) => {
       request(host + '/api/v1/compendium', (err, res, body) => {
         assert.ifError(err);
@@ -77,30 +87,173 @@ describe('API Compendium', () => {
     });
   });
 
+  describe('GET /api/v1/compendium/<id of loaded compendium>', () => {
+    it('should respond with HTTP 200 OK', (done) => {
+      request(host + '/api/v1/compendium', (err, res) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        done();
+      });
+    });
+    it('should respond with a valid JSON document', (done) => {
+      request(host + '/api/v1/compendium', (err, res, body) => {
+        assert.ifError(err);
+        assert.isObject(JSON.parse(body));
+        done();
+      });
+    });
+    it('should respond with document containing correct properties, including compendium id and user id', (done) => {
+      request(host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.property(response, 'id');
+        assert.property(response, 'created');
+        assert.property(response, 'user');
+        assert.property(response, 'files');
+        assert.propertyVal(response, 'id', compendium_id);
+        assert.propertyVal(response, 'user', '0000-0001-6021-1617');
+        done();
+      });
+    });
+    it('should respond with files listing including children', (done) => {
+      request(host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.isObject(response.files);
+        assert.isArray(response.files.children);
+        done();
+      });
+    });
+    it('should respond with a creation date just a few seconds ago', (done) => {
+      request(host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        let created = new Date(response.created);
+        let now = new Date();
+        let afewsecondsago = new Date(now.getTime() - (1000 * 42));
+        assert.equalDate(created, now);
+        assert.beforeTime(created, now);
+        assert.afterTime(created, afewsecondsago);
+        done();
+      });
+    });
+  });
 
-  /*
-   *  POST a invalid trivial BagIt archive, should fail
-   */
-  describe('POST /api/v1/compendium fail-load.zip', () => {
+  describe('POST /api/v1/compendium invalid.zip (not a zip file)', () => {
     it('should respond with HTTP 500 error', (done) => {
       let formData = {
         'content_type': 'compendium_v1',
         'compendium': {
-          value: fs.createReadStream('./test/bagtainers/invalid-zip'),
+          value: fs.createReadStream('./test/bagtainers/invalid.zip'),
           options: {
             contentType: 'application/zip'
           }
         }
       };
-      request.post({url: host + '/api/v1/compendium', formData: formData, headers: headers},
-       (err, res, body) => {
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie);
+      j.setCookie(ck, host);
+
+      request({
+        uri: host + '/api/v1/compendium',
+        method: 'POST',
+        jar: j,
+        formData: formData,
+        timeout: 1000
+      }, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 500);
         assert.isObject(JSON.parse(body), 'returned JSON');
         assert.isDefined(JSON.parse(body).error, 'returned error');
-        assert.equal(JSON.parse(body).error, 'extracting failed');
+        assert.include(JSON.parse(body).error, 'extraction failed: ');
         done();
       });
     });
+
+
+    it('should NOT respond with internal configuration of the server', (done) => {
+      let formData = {
+        'content_type': 'compendium_v1',
+        'compendium': {
+          value: fs.createReadStream('./test/bagtainers/invalid.zip'),
+          options: {
+            contentType: 'application/zip'
+          }
+        }
+      };
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie);
+      j.setCookie(ck, host);
+
+      request({
+        uri: host + '/api/v1/compendium',
+        method: 'POST',
+        jar: j,
+        formData: formData,
+        timeout: 1000
+      }, (err, res, body) => {
+        assert.ifError(err);
+        assert.notInclude(JSON.parse(body).error, config.fs.base);
+        done();
+      });
+    });
+  });
+
+  describe('POST /api/v1/compendium empty.zip (empty zip file)', () => {
+    it('should respond with ERROR 500 and valid JSON document', (done) => {
+      let formData = {
+        'content_type': 'compendium_v1',
+        'compendium': {
+          value: fs.createReadStream('./test/bagtainers/empty.zip'),
+          options: {
+            contentType: 'application/zip'
+          }
+        }
+      };
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie);
+      j.setCookie(ck, host);
+
+      request({
+        uri: host + '/api/v1/compendium',
+        method: 'POST',
+        jar: j,
+        formData: formData,
+        timeout: 1000 * 60
+      }, (err, res, body) => {
+         assert.ifError(err);
+         assert.equal(res.statusCode, 500);
+         assert.isObject(JSON.parse(body), 'returned JSON');
+         done();
+        });
+    }).timeout(1000 * 60);
+
+    it('should respond provide a helpful error message', (done) => {
+      let formData = {
+        'content_type': 'compendium_v1',
+        'compendium': {
+          value: fs.createReadStream('./test/bagtainers/empty.zip'),
+          options: {
+            contentType: 'application/zip'
+          }
+        }
+      };
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie);
+      j.setCookie(ck, host);
+
+      request({
+        uri: host + '/api/v1/compendium',
+        method: 'POST',
+        jar: j,
+        formData: formData,
+        timeout: 1000
+      }, (err, res, body) => {
+         assert.ifError(err);
+         assert.include(JSON.parse(body).error, 'zipfile is empty');
+         done();
+        });
+    });
+
   });
 });

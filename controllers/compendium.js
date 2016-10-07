@@ -26,6 +26,7 @@ var rewriteTree = require('../lib/rewrite-tree');
 
 var Compendium = require('../lib/model/compendium');
 var Job = require('../lib/model/job');
+var errorMessageHelper = require('../lib/error-message');
 
 exports.create = (req, res) => {
   var id = req.file.filename;
@@ -43,6 +44,8 @@ exports.create = (req, res) => {
   var userid = req.user.orcid;
 
   if (req.body.content_type === 'compendium_v1') {
+    debug('Creating new ' + req.body.content_type + ' for user ' + userid + ': ' + id);
+
     var cmd = '';
     switch (req.file.mimetype) {
       case 'application/zip':
@@ -54,11 +57,16 @@ exports.create = (req, res) => {
       default:
         cmd = 'false';
     }
+
+    debug('Unzipping with command ' + cmd);
     exec(cmd, (error, stdout, stderr) => {
       if (error || stderr) {
         debug(error, stderr, stdout);
-        res.status(500).send(JSON.stringify({error: 'extracting failed'}));
+        let errors = error.message.split(':');
+        let message = errorMessageHelper(errors[errors.length - 1]);
+        res.status(500).send(JSON.stringify({error: 'extraction failed: ' + message}));
       } else {
+        debug('Unzip of ' + id + ' complete!');
         var comp = new Compendium({id: id, user: userid, metadata: {}});
         comp.save(err => {
           if (err) {
@@ -71,7 +79,7 @@ exports.create = (req, res) => {
     });
   } else {
     res.status(500).send('Provided content_type not yet implemented, only "compendium_v1" is supported.');
-    debug('Uploaded content_type not yet implemented:' + req.body.content_type);
+    debug('Provided content_type not yet implemented:' + req.body.content_type);
   }
 };
 
