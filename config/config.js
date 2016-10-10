@@ -65,4 +65,11 @@ c.bagtainer.supportedVersions = ['0.1'];
 c.bagtainer.configFile = '/data/bagtainer.yml';
 c.bagtainer.validateFast = false;
 
+c.payload = {};
+c.payload.tarball = {};
+c.payload.tarball.tmpdir = c.fs.base + 'payloads/';
+c.payload.tarball.statConcurrency = 4; // concurrency when creating payload tarballs
+c.payload.tarball.gzip = false;
+c.payload.tarball.gzipOptions = {};
+
 module.exports = c;

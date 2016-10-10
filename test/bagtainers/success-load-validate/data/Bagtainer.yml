@@ -6,7 +6,6 @@ run_mount: "/o2r_run"
 data:
     working_directory: ""
     run_file: "Bagtainer.R"
-    config_file: "Bagtainer.yml"
 packages:
 environment:
     TZ: CET

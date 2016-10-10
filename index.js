@@ -59,6 +59,7 @@ var starwars            = require('starwars');
 fse.mkdirsSync(c.fs.incoming);
 fse.mkdirsSync(c.fs.compendium);
 fse.mkdirsSync(c.fs.job);
+fse.mkdirsSync(c.payload.tarball.tmpdir);
 
 var multer              = require('multer');
 var storage = multer.diskStorage({

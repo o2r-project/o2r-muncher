@@ -328,7 +328,7 @@ describe('API Job', () => {
     });
 
 
-    it('should return job ID when starting _another job execution (different from the previous id)', (done) => {
+    it('should return job ID when starting _another_ job execution (different from the previous id)', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_plain);
       j.setCookie(ck, host);
@@ -429,6 +429,85 @@ describe('API Job', () => {
         let response = JSON.parse(body);
         assert.isArray(response.results);
         assert.equal(response.results.length, 2);
+        done();
+      });
+    });
+  });
+
+  describe('EXECUTION step_image_prepare', () => {
+    let compendium_id = '';
+    let job_id = '';
+
+    it('upload compendium should succeed and return an ID', (done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_prepare', cookie_o2r);
+      // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
+
+      request(req, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        assert.property(JSON.parse(body), 'id');
+        compendium_id = JSON.parse(body).id;
+        done();
+      });
+    });
+
+    it('should return job ID when starting job execution', (done) => {
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie_plain);
+      j.setCookie(ck, host);
+
+      request({
+        uri: host + '/api/v1/job',
+        method: 'POST',
+        jar: j,
+        formData: {
+          compendium_id: compendium_id
+        },
+        timeout: 1000
+      }, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.property(response, 'job_id');
+        job_id = response.job_id;
+        done();
+      });
+    });
+
+    it('should complete step "image_prepare" __after some waiting__', (done) => {
+      sleep.sleep(sleepSecs);
+
+      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.image_prepare, 'status', 'success');
+        done();
+      });
+    }).timeout(sleepSecs * 1000 * 2);
+
+    it('should fail step "image_build"', (done) => {
+      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.image_build, 'status', 'failure');
+        done();
+      });
+    });
+
+    it('should list other image_execute as queued', (done) => {
+      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.image_execute, 'status', 'queued');
+        done();
+      });
+    });
+
+    it('should complete step "cleanup"', (done) => {
+      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.cleanup, 'status', 'success');
         done();
       });
     });

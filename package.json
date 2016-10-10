@@ -15,6 +15,7 @@
     "url": "https://github.com/o2r-project/o2r-muncher.git"
   },
   "dependencies": {
+    "archiver": "^1.1.0",
     "bagit": "^0.0.2",
     "bluebird": "^3.3.4",
     "body-parser": "^1.15.1",
@@ -22,7 +23,7 @@
     "connect-mongodb-session": "^1.1.1",
     "debug": "^2.2.0",
     "directory-tree": "^1.0.0",
-    "dockerode": "^2.2.10",
+    "dockerode": "^2.3.1",
     "express": "^4.13.4",
     "express-session": "^1.14.0",
     "fs-extra": "^0.30.0",
