@@ -111,6 +111,14 @@ docker-compose -f docker-compose/docker-compose.yml down -v
   - `DEBUG=* MUNCHER_MONGODB=mongodb://172.19.0.2 MUNCHER_PORT=8079 npm start`
   - Note that this has considerable limitations, because the data is stored somewhere in the containers etc.
 
+### Removing all containers/images created by muncher
+
+```bash
+docker ps -a | grep bagtainer | awk '{print $1}' | xargs --no-run-if-empty docker rm
+
+docker images --no-trunc | grep bagtainer | awk '{print $3}' | xargs --no-run-if-empty docker rmi -f
+```
+
 ### Steps for starting a local development environment
 
 The following steps assume that you have all the required projects (`o2r-contentbutler`, `o2r-muncher`, `o2r-platform`) in one directory. Repository updates (`git pull`, `npm install`, `bower install` and the like) are not shown.

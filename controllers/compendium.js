@@ -69,8 +69,10 @@ exports.create = (req, res) => {
         var comp = new Compendium({ id: id, user: userid, metadata: {} });
         comp.save(err => {
           if (err) {
+            debug('ERROR saving new compendium ' + id);
             res.status(500).send(JSON.stringify({ error: 'internal error' }));
           } else {
+            debug('Saved new compendium ' + id);
             res.status(200).send(JSON.stringify({ id }));
           }
         });

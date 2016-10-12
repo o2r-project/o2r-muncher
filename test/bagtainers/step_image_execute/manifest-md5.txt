@@ -1,0 +1,3 @@
+4413ae6b79c0b60a8923b98d82235337  data/bagtainer.yml
+a48f626014a144f1cf4a9b3b8cac955e  data/Dockerfile
+eadd49d3a3facebd5baa60d519505662  data/test.txt

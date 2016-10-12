@@ -7,6 +7,7 @@ const AdmZip = require('adm-zip');
 const fs = require('fs');
 const tmp = require('tmp');
 const sleep = require('sleep');
+var unamecall = require('node-uname');
 
 require("./setup")
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
@@ -423,7 +424,7 @@ describe('API Job', () => {
         done();
       });
     });
-    it('should only list the number of jobs requested', (done) => {
+    it('should just list the number of jobs requested', (done) => {
       request(host + '/api/v1/job?limit=2', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
@@ -510,6 +511,228 @@ describe('API Job', () => {
         assert.propertyVal(response.steps.cleanup, 'status', 'success');
         done();
       });
+    });
+
+    it('should have deleted payload file during cleanup', (done) => {
+      let tarballFileName = config.payload.tarball.tmpdir + job_id + '.tar';
+      try {
+        fs.lstatSync(tarballFileName);
+        assert.fail();
+      } catch (error) {
+        assert.include(error.message, 'no such file or directory');
+        done();
+      }
+    });
+  });
+
+  describe('EXECUTION step_image_build', () => {
+    var compendium_id = '';
+    var job_id = '';
+
+    it('upload compendium should succeed and return an ID', (done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_build', cookie_o2r);
+      // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
+
+      request(req, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        assert.property(JSON.parse(body), 'id');
+        compendium_id = JSON.parse(body).id;
+        done();
+      });
+    });
+
+    it('should return job ID when starting job execution', (done) => {
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie_plain);
+      j.setCookie(ck, host);
+
+      request({
+        uri: host + '/api/v1/job',
+        method: 'POST',
+        jar: j,
+        formData: {
+          compendium_id: compendium_id
+        },
+        timeout: 1000
+      }, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.property(response, 'job_id');
+        job_id = response.job_id;
+        done();
+      });
+    });
+
+    it('should complete step all previous steps __after some waiting__', (done) => {
+      sleep.sleep(sleepSecs);
+
+      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.validate_bag, 'status', 'success');
+        assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
+        assert.propertyVal(response.steps.image_prepare, 'status', 'success');
+        done();
+      });
+    }).timeout(sleepSecs * 1000 * 2);
+
+    it('should complete step "image_build" __after some more waiting__', (done) => {
+      sleep.sleep(sleepSecs);
+
+      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.image_build, 'status', 'success');
+        done();
+      });
+    }).timeout(sleepSecs * 1000 * 2);
+
+    it('should fail step "image_execute" with a statuscode "1"', (done) => {
+      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.image_execute, 'status', 'failure');
+        assert.propertyVal(response.steps.image_execute, 'statuscode', 1);
+        done();
+      });
+    });
+
+    it('should complete step "cleanup"', (done) => {
+      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.cleanup, 'status', 'success');
+        done();
+      });
+    });
+  });
+
+  describe('EXECUTION step_image_execute', () => {
+    var compendium_id = '';
+    var job_id = '';
+
+    var Docker = require('dockerode');
+      var docker = new Docker();
+
+    it('upload compendium should succeed and return an ID', (done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
+
+      request(req, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        assert.property(JSON.parse(body), 'id');
+        compendium_id = JSON.parse(body).id;
+        done();
+      });
+    });
+
+    it('should return job ID when starting job execution', (done) => {
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie_plain);
+      j.setCookie(ck, host);
+
+      request({
+        uri: host + '/api/v1/job',
+        method: 'POST',
+        jar: j,
+        formData: {
+          compendium_id: compendium_id
+        },
+        timeout: 1000
+      }, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.property(response, 'job_id');
+        job_id = response.job_id;
+        done();
+      });
+    });
+
+    it('should complete step all previous steps __after some waiting__', (done) => {
+      sleep.sleep(sleepSecs);
+
+      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.validate_bag, 'status', 'success');
+        assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
+        assert.propertyVal(response.steps.image_prepare, 'status', 'success');
+        assert.propertyVal(response.steps.image_build, 'status', 'success');
+        done();
+      });
+    }).timeout(sleepSecs * 1000 * 2);
+
+    it('should complete step "image_execute"', (done) => {
+      sleep.sleep(sleepSecs);
+
+      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.image_execute, 'status', 'success');
+        done();
+      });
+    }).timeout(sleepSecs * 1000 * 2);
+
+    it('should complete step "cleanup"', (done) => {
+      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.cleanup, 'status', 'success');
+        done();
+      });
+    });
+
+    it('execution log should include uname output', (done) => {
+      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        let uname = unamecall();
+        assert.include(response.steps.image_execute.text, uname.machine);
+        assert.include(response.steps.image_execute.text, uname.release);
+        assert.include(response.steps.image_execute.text, uname.sysname);
+        assert.include(response.steps.image_execute.text, uname.version);
+        done();
+      });
+    });
+
+    it('should have deleted container during cleanup', (done) => {
+      docker.listContainers({ all: true }, function (err, containers) {
+        containers.forEach(function (containerInfo) {
+          assert.notEqual(containerInfo.Image, config.bagtainer.imageNamePrefix + job_id);
+        });
+
+        done();
+      });
+    });
+
+    it('should have deleted image during cleanup after some time', (done) => {
+      docker.listImages(function (err, images) {
+        assert.ifError(err);
+
+        images.forEach(function (image) {
+          let tags = image.RepoTags;
+          tags.forEach(function(tag) {
+            assert.notEqual(tag, config.bagtainer.imageNamePrefix + job_id);
+          });
+        });
+
+        done();
+      });
+    });
+
+    it('should have deleted payload file during cleanup', (done) => {
+      let tarballFileName = config.payload.tarball.tmpdir + job_id + '.tar';
+      try {
+        fs.lstatSync(tarballFileName);
+        assert.fail();
+      } catch (error) {
+        assert.include(error.message, 'no such file or directory');
+        done();
+      }
     });
   });
 

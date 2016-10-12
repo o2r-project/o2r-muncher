@@ -23,7 +23,7 @@
     "connect-mongodb-session": "^1.1.1",
     "debug": "^2.2.0",
     "directory-tree": "^1.0.0",
-    "dockerode": "^2.3.1",
+    "dockerode": "^2.3",
     "express": "^4.13.4",
     "express-session": "^1.14.0",
     "fs-extra": "^0.30.0",
@@ -44,6 +44,7 @@
     "eslint-config-google": "^0.6.0",
     "mocha": "^2.5.3",
     "mongojs": "^2.4.0",
+    "node-uname": "^1.0.1",
     "request": "^2.74.0",
     "sleep": "^4.0.0",
     "tmp": "0.0.29"

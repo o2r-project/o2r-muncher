@@ -64,6 +64,10 @@ c.bagtainer = {};
 c.bagtainer.supportedVersions = ['0.1'];
 c.bagtainer.configFile = '/data/bagtainer.yml';
 c.bagtainer.validateFast = false;
+c.bagtainer.keepContainers = false;
+c.bagtainer.keepImages = false;
+c.bagtainer.imageNamePrefix = 'bagtainer:';
+c.bagtainer.forceImageRemoval = true;
 
 c.payload = {};
 c.payload.tarball = {};
