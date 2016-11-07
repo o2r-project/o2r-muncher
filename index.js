@@ -111,11 +111,14 @@ function initApp(callback) {
     var mongoStore = new MongoDBStore({
       uri: dbURI,
       collection: 'sessions'
+    }, err => {
+      if(err) {
+        debug('Error starting MongoStore: %s', err);
+      }
     });
 
     mongoStore.on('error', err => {
-      debug('Error connecting with MongoStore: %s', err);
-      callback(err);
+      debug('Error with MongoStore: %s', err);
     });
 
     app.use(session({
