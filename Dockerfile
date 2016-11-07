@@ -22,14 +22,21 @@ RUN apk add --no-cache \
     python \
     py-pip \
     git \
+    ca-certificates \
+    wget \
   && pip install --upgrade pip \
   && pip install bagit \
   && git clone --depth 1 -b master https://github.com/o2r-project/o2r-muncher /muncher \
+  && wget -O /sbin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.1.3/dumb-init_1.1.3_amd64 \
+  && chmod +x /sbin/dumb-init \
   && apk del \
     py-pip \
     git \
+    wget \
+    ca-certificates \
   && rm -rf /var/cache
 
 WORKDIR /muncher
 RUN npm install --production
-CMD npm start
+ENTRYPOINT ["/sbin/dumb-init", "--"]
+CMD ["npm", "start" ]
