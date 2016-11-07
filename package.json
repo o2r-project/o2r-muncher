@@ -1,6 +1,6 @@
 {
   "name": "muncher",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "description": "Node.js implementation of parts of the [o2r web api](http://o2r.info/o2r-web-api).",
   "main": "index.js",
   "scripts": {
@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "archiver": "^1.1.0",
+    "backoff": "^2.5.0",
     "bagit": "^0.0.2",
     "bluebird": "^3.3.4",
     "body-parser": "^1.15.1",

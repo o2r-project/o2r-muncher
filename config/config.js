@@ -24,7 +24,7 @@ var env = process.env;
 
 // Information about muncher
 c.version.major = 0;
-c.version.minor = 2;
+c.version.minor = 3;
 c.version.bug = 0;
 c.version.api = 1;
 
@@ -32,6 +32,9 @@ c.version.api = 1;
 c.net.port = env.MUNCHER_PORT || 8080;
 c.mongo.location = env.MUNCHER_MONGODB || 'mongodb://localhost/';
 c.mongo.database = env.MUNCHER_MONGODB_DATABASE || 'muncher';
+c.mongo.inital_connection_attempts = 30;
+c.mongo.inital_connection_max_delay = 5000;
+c.mongo.inital_connection_initial_delay = 10;
 
 // fix mongo location if trailing slash was omitted
 if (c.mongo.location[c.mongo.location.length - 1] !== '/') {
