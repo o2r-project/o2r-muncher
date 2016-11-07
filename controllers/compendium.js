@@ -43,7 +43,8 @@ exports.create = (req, res) => {
   var userid = req.user.orcid;
 
   if (req.body.content_type === 'compendium_v1') {
-    debug('Creating new ' + req.body.content_type + ' for user ' + userid + ': ' + id + ' (original file name: ' + req.file.originalname + ')');
+    debug('Creating new %s for user %s:  %s (original file name: %s)',
+      req.body.content_type, userid, id, req.file.originalname);
 
     var cmd = '';
     switch (req.file.mimetype) {

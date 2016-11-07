@@ -46,3 +46,5 @@ COPY package.json package.json
 RUN npm install --production
 ENTRYPOINT ["/sbin/dumb-init", "--"]
 CMD ["npm", "start" ]
+
+# docker build --tag muncher -f Dockerfile.local --no-cache .

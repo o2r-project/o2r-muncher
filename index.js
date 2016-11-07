@@ -30,7 +30,7 @@ var dbOptions = {
   server: {
     auto_reconnect: true,
     reconnectTries: Number.MAX_VALUE,
-    socketOptions: { keepAlive: 30000, connectTimeoutMS: 30000, autoReconnect: true } 
+    socketOptions: { keepAlive: 30000, connectTimeoutMS: 30000, autoReconnect: true }
   }
 };
 mongoose.connection.on('error', (err) => {
@@ -102,134 +102,152 @@ passport.deserializeUser((user, cb) => {
   });
 });
 
-function initApp() {
-  // configure express-session, stores reference to authdetails in cookie.
-  // authdetails themselves are stored in MongoDBStore
-  var mongoStore = new MongoDBStore({
-    uri: dbURI,
-    collection: 'sessions'
-  });
+function initApp(callback) {
+  debug('Initialize application');
 
-  mongoStore.on('error', err => {
-    debug('MongoDBStore error: ', err);
-  });
+  try {
+    // configure express-session, stores reference to authdetails in cookie.
+    // authdetails themselves are stored in MongoDBStore
+    var mongoStore = new MongoDBStore({
+      uri: dbURI,
+      collection: 'sessions'
+    });
 
-  app.use(session({
-    secret: c.sessionsecret,
-    resave: true,
-    saveUninitialized: true,
-    maxAge: 60 * 60 * 24 * 7, // cookies become invalid after one week
-    store: mongoStore
-  }));
+    mongoStore.on('error', err => {
+      debug('Error connecting with MongoStore: %s', err);
+      callback(err);
+    });
 
-  app.use(passport.initialize());
-  app.use(passport.session());
+    app.use(session({
+      secret: c.sessionsecret,
+      resave: true,
+      saveUninitialized: true,
+      maxAge: 60 * 60 * 24 * 7, // cookies become invalid after one week
+      store: mongoStore
+    }));
 
-  /*
-   *  Routes & general Middleware
-   */
-  app.use('/', (req, res, next) => {
-    var orcid = '';
-    if (req.user && req.user.orcid) {
-      orcid = ' | orcid: ' + req.user.orcid;
-    }
-    debug('REQUEST %s %s authenticated user: %s | session: %s',
-      req.method, req.path, req.isAuthenticated(), req.session.id, orcid);
-    next();
-  });
+    app.use(passport.initialize());
+    app.use(passport.session());
 
-  const indexResponse = {};
-  indexResponse.about = 'http://o2r.info';
-  indexResponse.versions = {};
-  indexResponse.versions.current = '/api/v1';
-  indexResponse.versions.v1 = '/api/v1';
+    /*
+     *  Routes & general Middleware
+     */
+    app.use('/', (req, res, next) => {
+      var orcid = '';
+      if (req.user && req.user.orcid) {
+        orcid = ' | orcid: ' + req.user.orcid;
+      }
+      debug('REQUEST %s %s authenticated user: %s | session: %s',
+        req.method, req.path, req.isAuthenticated(), req.session.id, orcid);
+      next();
+    });
 
-  const indexResponseV1 = {};
-  indexResponseV1.auth = '/api/v1/auth';
-  indexResponseV1.compendia = '/api/v1/compendium';
-  indexResponseV1.jobs = '/api/v1/job';
-  indexResponseV1.users = '/api/v1/user';
+    const indexResponse = {};
+    indexResponse.about = 'http://o2r.info';
+    indexResponse.versions = {};
+    indexResponse.versions.current = '/api/v1';
+    indexResponse.versions.v1 = '/api/v1';
 
-  // set up routes
-  app.get('/status', function (req, res) {
-    res.setHeader('Content-Type', 'application/json');
-    if (!req.isAuthenticated() || req.user.level < c.user.level.view_status) {
-      res.status(401).send('{"error":"not authenticated or not allowed"}');
-      return;
-    }
+    const indexResponseV1 = {};
+    indexResponseV1.auth = '/api/v1/auth';
+    indexResponseV1.compendia = '/api/v1/compendium';
+    indexResponseV1.jobs = '/api/v1/job';
+    indexResponseV1.users = '/api/v1/user';
 
-    var response = {
-      name: "muncher",
-      version: c.version,
-      levels: c.user.level,
-      mongodb: c.mongo,
-      filesystem: c.fs
-    };
-    res.send(response);
-  });
+    // set up routes
+    app.get('/status', function (req, res) {
+      res.setHeader('Content-Type', 'application/json');
+      if (!req.isAuthenticated() || req.user.level < c.user.level.view_status) {
+        res.status(401).send('{"error":"not authenticated or not allowed"}');
+        return;
+      }
 
-  // set content type for all responses (muncher never serves content)
-  app.use('/api/', (req, res, next) => {
-    res.setHeader('Content-Type', 'application/json');
-    next();
-  });
+      var response = {
+        name: "muncher",
+        version: c.version,
+        levels: c.user.level,
+        mongodb: c.mongo,
+        filesystem: c.fs
+      };
+      res.send(response);
+    });
 
-  app.get('/api', function (req, res) {
-    indexResponse.quote = starwars();
-    res.send(indexResponse);
-  });
+    // set content type for all responses (muncher never serves content)
+    app.use('/api/', (req, res, next) => {
+      res.setHeader('Content-Type', 'application/json');
+      next();
+    });
 
-  app.get('/api/v1', function (req, res) {
-    res.send(indexResponseV1);
-  });
+    app.get('/api', function (req, res) {
+      indexResponse.quote = starwars();
+      res.send(indexResponse);
+    });
 
-  app.get('/api/v1/compendium', controllers.compendium.view);
-  app.post('/api/v1/compendium', upload.single('compendium'), controllers.compendium.create);
-  app.get('/api/v1/compendium/:id', controllers.compendium.viewSingle);
-  app.get('/api/v1/compendium/:id/jobs', controllers.compendium.viewSingleJobs);
+    app.get('/api/v1', function (req, res) {
+      res.send(indexResponseV1);
+    });
 
-  app.get('/api/v1/job', controllers.job.view);
-  app.post('/api/v1/job', upload.any(), controllers.job.create);
-  app.get('/api/v1/job/:id', controllers.job.viewSingle);
+    app.get('/api/v1/compendium', controllers.compendium.view);
+    app.post('/api/v1/compendium', upload.single('compendium'), controllers.compendium.create);
+    app.get('/api/v1/compendium/:id', controllers.compendium.viewSingle);
+    app.get('/api/v1/compendium/:id/jobs', controllers.compendium.viewSingleJobs);
 
-  app.listen(c.net.port, () => {
-    debug('muncher ' + c.version.major + '.' + c.version.minor + '.' +
-      c.version.bug + ' with api version ' + c.version.api +
-      ' waiting for requests on port ' + c.net.port);
-  });
+    app.get('/api/v1/job', controllers.job.view);
+    app.post('/api/v1/job', upload.any(), controllers.job.create);
+    app.get('/api/v1/job/:id', controllers.job.viewSingle);
+
+    app.listen(c.net.port, () => {
+      debug('muncher ' + c.version.major + '.' + c.version.minor + '.' +
+        c.version.bug + ' with API version ' + c.version.api +
+        ' waiting for requests on port ' + c.net.port);
+    });
+
+  } catch (err) {
+    callback(err);
+  }
+
+  callback(null);
 }
-
-// delay app startup to when MongoDB is available
-mongoose.connection.on('connected', function () {
-  debug('Mongoose connection open to %s: %s', dbURI, mongoose.connection.readyState); // http://mongoosejs.com/docs/api.html#connection_Connection-readyState
-
-  initApp();
-});
 
 // auto_reconnect is on by default and only for RE(!)connects, not for the initial attempt: http://bites.goodeggs.com/posts/reconnecting-to-mongodb-when-mongoose-connect-fails-at-startup/
 var dbBackoff = backoff.fibonacci({
-    randomisationFactor: 0,
-    initialDelay: c.mongo.inital_connection_initial_delay,
-    maxDelay: c.mongo.inital_connection_max_delay
+  randomisationFactor: 0,
+  initialDelay: c.mongo.inital_connection_initial_delay,
+  maxDelay: c.mongo.inital_connection_max_delay
 });
- 
+
 dbBackoff.failAfter(c.mongo.inital_connection_attempts);
-dbBackoff.on('backoff', function(number, delay) {
-    debug('Trying to connect to MongoDB (#%s) in %sms', number, delay);
+dbBackoff.on('backoff', function (number, delay) {
+  debug('Trying to connect to MongoDB (#%s) in %sms', number, delay);
 });
-dbBackoff.on('ready', function(number, delay) {
-    debug('Connect to MongoDB (#%s)', number, delay);
-    mongoose.connect(dbURI, dbOptions, (err) => {
-      if(err) {
-        dbBackoff.backoff();
-      } else {
-        debug('Initial connection open to %s: %s', dbURI, mongoose.connection.readyState);
-      }
-    });
+dbBackoff.on('ready', function (number, delay) {
+  debug('Connect to MongoDB (#%s)', number, delay);
+  mongoose.connect(dbURI, dbOptions, (err) => {
+    if (err) {
+      debug('Error during connect: %s', err);
+      mongoose.disconnect(() => {
+        debug('Mongoose: Disconnected all connections.');
+      });
+      dbBackoff.backoff();
+    } else {
+      // delay app startup to when MongoDB is available
+      debug('Initial connection open to %s: %s', dbURI, mongoose.connection.readyState);
+      initApp((err) => {
+        if (err) {
+          debug('Error during init!\n%s', err);
+          mongoose.disconnect(() => {
+            debug('Mongoose: Disconnected all connections.');
+          });
+          dbBackoff.backoff();
+        }
+        debug('Started application.');
+      });
+    }
+  });
 });
-dbBackoff.on('fail', function() {
-    debug('Eventually giving up to connect to MongoDB');
-    process.exit(1);
+dbBackoff.on('fail', function () {
+  debug('Eventually giving up to connect to MongoDB');
+  process.exit(1);
 });
 
 dbBackoff.backoff();
