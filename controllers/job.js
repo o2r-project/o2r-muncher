@@ -146,7 +146,8 @@ exports.create = (req, res) => {
         var execution = new Executor(job_id, c.fs.job);
         execution.execute();
         res.status(200).send(JSON.stringify({job_id}));
-        debug("Job %s started for compendium %s and saved to database; job files are at %s", job_id, compendium_id, job_path);
+        debug("Job %s started for compendium %s and saved to database; job files are at %s", 
+          job_id, compendium_id, job_path);
         //  throw new Error('compendium path does not exist for compendium id ' + compendium_id);
       }
     });

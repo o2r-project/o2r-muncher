@@ -103,7 +103,7 @@ passport.deserializeUser((user, cb) => {
 });
 
 function initApp(callback) {
-  debug('Initialize application');
+  debug('Initialize application...');
 
   try {
     // configure express-session, stores reference to authdetails in cookie.
