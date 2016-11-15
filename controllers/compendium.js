@@ -58,7 +58,7 @@ exports.create = (req, res) => {
         cmd = 'false';
     }
 
-    debug('Unzipping with command ' + cmd);
+    debug('Unzipping with command "%s"', cmd);
     exec(cmd, (error, stdout, stderr) => {
       if (error || stderr) {
         debug(error, stderr, stdout);
@@ -66,14 +66,14 @@ exports.create = (req, res) => {
         let message = errorMessageHelper(errors[errors.length - 1]);
         res.status(500).send(JSON.stringify({ error: 'extraction failed: ' + message }));
       } else {
-        debug('Unzip of ' + id + ' complete!');
+        debug('Unzip of %s complete!', id);
         var comp = new Compendium({ id: id, user: userid, metadata: {} });
         comp.save(err => {
           if (err) {
-            debug('ERROR saving new compendium ' + id);
+            debug('ERROR saving new compendium %s', id);
             res.status(500).send(JSON.stringify({ error: 'internal error' }));
           } else {
-            debug('Saved new compendium ' + id);
+            debug('Saved new compendium %s', id);
             res.status(200).send(JSON.stringify({ id }));
           }
         });
@@ -81,7 +81,7 @@ exports.create = (req, res) => {
     });
   } else {
     res.status(500).send('Provided content_type not yet implemented, only "compendium_v1" is supported.');
-    debug('Provided content_type not yet implemented:' + req.body.content_type);
+    debug('Provided content_type "%s" not implemented', req.body.content_type);
   }
 };
 
