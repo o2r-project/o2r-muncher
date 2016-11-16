@@ -66,11 +66,56 @@ c.user.level.view_status = 500;
 c.bagtainer = {};
 c.bagtainer.supportedVersions = ['0.1'];
 c.bagtainer.configFile = '/data/bagtainer.yml';
-c.bagtainer.validateFast = false;
-c.bagtainer.keepContainers = false;
+c.bagtainer.bagit = {};
+c.bagtainer.bagit.validateFast = false;
+c.bagtainer.keepContainers = true; // useful for debugging
 c.bagtainer.keepImages = true; // required for image download!
 c.bagtainer.imageNamePrefix = 'bagtainer:';
 c.bagtainer.forceImageRemoval = true;
+c.bagtainer.docker = {};
+// create_options is equivalent to Config element in https://github.com/apocas/dockerode/wiki/Example-JSON
+c.bagtainer.docker.create_options = {
+  //AttachStderr: true,
+  //AttachStdin: false,
+  //AttachStdout: true,
+  //Cmd: ['bash', '-c', 'cat /etc/resolv.conf'],
+  CpuShares: 256,
+  //Cpuset: '',
+  //Domainname: '',
+  //Entrypoint: null,
+  //Env: ['PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'],
+  //ExposedPorts: { '80/tcp': {} },
+  //Hostname: 'b9ea983254ef',
+  //Image: 'projects:latest',
+  Memory: 1073741824, // 1G
+  MemorySwap: 2147483648, // double of 1G
+  //NetworkDisabled: false,
+  //OnBuild: null,
+  //OpenStdin: false,
+  //PortSpecs: null,
+  //StdinOnce: false,
+  //Tty: false,
+  //User: '',
+  //Volumes: null,
+  //'Volumes': {
+  //  '/stuff': {}
+  //},
+  //WorkingDir: '/usr/local/src'
+}; // see https://github.com/apocas/dockerode/blob/master/lib/docker.js#L703 for existing options and https://github.com/apocas/dockerode/blob/master/examples/run.js#L8for example
+// start_options is equievalent to HostConfig in https://github.com/apocas/dockerode/wiki/Example-JSON
+c.bagtainer.docker.start_options = {
+  //Binds: [],
+  //ContainerIDFile: '',
+  //Dns: null,
+  //DnsSearch: null,
+  //Links: null,
+  //LxcConf: null,
+  //NetworkMode: 'none',
+  //PortBindings: null,
+  //Privileged: false,
+  //PublishAllPorts: false,
+  //VolumesFrom: null
+}; // see defaults at https://github.com/apocas/dockerode/blob/master/lib/container.js#L16
 
 c.payload = {};
 c.payload.tarball = {};
