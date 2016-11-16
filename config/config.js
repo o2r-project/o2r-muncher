@@ -73,7 +73,7 @@ c.bagtainer.keepImages = true; // required for image download!
 c.bagtainer.imageNamePrefix = 'bagtainer:';
 c.bagtainer.forceImageRemoval = true;
 c.bagtainer.docker = {};
-// create_options is equivalent to Config element in https://github.com/apocas/dockerode/wiki/Example-JSON
+// See https://docs.docker.com/engine/reference/commandline/create/ and https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#create-a-container
 c.bagtainer.docker.create_options = {
   //AttachStderr: true,
   //AttachStdin: false,
@@ -83,39 +83,15 @@ c.bagtainer.docker.create_options = {
   //Cpuset: '',
   //Domainname: '',
   //Entrypoint: null,
-  //Env: ['PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'],
-  //ExposedPorts: { '80/tcp': {} },
+  Env: ['O2RPLATFORM=true'],
   //Hostname: 'b9ea983254ef',
-  //Image: 'projects:latest',
   Memory: 1073741824, // 1G
   MemorySwap: 2147483648, // double of 1G
-  //NetworkDisabled: false,
-  //OnBuild: null,
-  //OpenStdin: false,
-  //PortSpecs: null,
-  //StdinOnce: false,
-  //Tty: false,
-  //User: '',
-  //Volumes: null,
-  //'Volumes': {
-  //  '/stuff': {}
-  //},
-  //WorkingDir: '/usr/local/src'
-}; // see https://github.com/apocas/dockerode/blob/master/lib/docker.js#L703 for existing options and https://github.com/apocas/dockerode/blob/master/examples/run.js#L8for example
-// start_options is equievalent to HostConfig in https://github.com/apocas/dockerode/wiki/Example-JSON
+  NetworkMode: 'none'
+};
+// https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#start-a-container
 c.bagtainer.docker.start_options = {
-  //Binds: [],
-  //ContainerIDFile: '',
-  //Dns: null,
-  //DnsSearch: null,
-  //Links: null,
-  //LxcConf: null,
-  //NetworkMode: 'none',
-  //PortBindings: null,
-  //Privileged: false,
-  //PublishAllPorts: false,
-  //VolumesFrom: null
-}; // see defaults at https://github.com/apocas/dockerode/blob/master/lib/container.js#L16
+};
 
 c.payload = {};
 c.payload.tarball = {};
