@@ -66,23 +66,9 @@ To inspect the database, run `docker network inspect dockercompose_default` (or 
 
 ## Job execution steps
 
-The following steps are part of a job execution.
+The job's execution steps are documented in the [o2r web-api documentation](http://o2r.info/o2r-web-api/job/).
+
 (Note to developers: function names for these steps may differ!)
-
-All of these steps can be in one of three status: running, failure, success.
-
-- **validate_bag**
-  Validate the BagIt bag based on npm's [bagit](https://www.npmjs.com/package/bagit)
-- **validate_compendium**
-  Currently only parses the bagtainer configuration file. _extend this_
-- **image_prepare**
-  Create an archive of the payload of the BagIt bag, which allows to build and run the image also on remote Docker hosts.
-- **image_build**
-  Send the bag's payload as a tarballed archive to Docker to build an image, which is tagged `bagtainer:<jobid>`.
-- **image_execute**
-  Run the container and return based on status code of program that ran inside the container.
-- **cleanup**
-  Currently does nothing, could remove image or job files.
 
 ## Docker connection
 
