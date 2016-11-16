@@ -1,3 +1,4 @@
 ---
 id: 4d81756
 version: "0.1"
+command: "ls()"

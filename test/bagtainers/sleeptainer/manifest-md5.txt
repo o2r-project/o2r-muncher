@@ -1,0 +1,3 @@
+fc59eff8cbbae26c5703a12c265db9f1  data/bagtainer.yml
+c7df39e9bc32c910b45abdcce0bd8f7c  data/Dockerfile
+0a19112d42357048cb5b0f0a07025873  data/gotosleep.sh
