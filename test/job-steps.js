@@ -614,7 +614,7 @@ describe('API Job', () => {
     var job_id = '';
 
     var Docker = require('dockerode');
-      var docker = new Docker();
+    var docker = new Docker();
 
     it('upload compendium should succeed and return an ID', (done) => {
       let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
@@ -699,30 +699,34 @@ describe('API Job', () => {
       });
     });
 
-    it('should have deleted container during cleanup', (done) => {
-      docker.listContainers({ all: true }, function (err, containers) {
-        containers.forEach(function (containerInfo) {
-          assert.notEqual(containerInfo.Image, config.bagtainer.imageNamePrefix + job_id);
-        });
-
-        done();
-      });
-    });
-
-    it('should have deleted image during cleanup after some time', (done) => {
-      docker.listImages(function (err, images) {
-        assert.ifError(err);
-
-        images.forEach(function (image) {
-          let tags = image.RepoTags;
-          tags.forEach(function(tag) {
-            assert.notEqual(tag, config.bagtainer.imageNamePrefix + job_id);
+    if (!config.bagtainer.keepContainers) {
+      it('should have deleted container during cleanup', (done) => {
+        docker.listContainers({ all: true }, function (err, containers) {
+          containers.forEach(function (containerInfo) {
+            assert.notEqual(containerInfo.Image, config.bagtainer.imageNamePrefix + job_id);
           });
-        });
 
-        done();
+          done();
+        });
       });
-    });
+    }
+
+    if (!config.bagtainer.keepImages) {
+      it('should have deleted image during cleanup after some time', (done) => {
+        docker.listImages(function (err, images) {
+          assert.ifError(err);
+
+          images.forEach(function (image) {
+            let tags = image.RepoTags;
+            tags.forEach(function (tag) {
+              assert.notEqual(tag, config.bagtainer.imageNamePrefix + job_id);
+            });
+          });
+
+          done();
+        });
+      });
+    }
 
     it('should have deleted payload file during cleanup', (done) => {
       let tarballFileName = config.payload.tarball.tmpdir + job_id + '.tar';
