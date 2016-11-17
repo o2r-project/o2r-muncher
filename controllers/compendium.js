@@ -18,8 +18,6 @@
 // General modules
 var c = require('../config/config');
 var debug = require('debug')('compendium');
-var debugUpload = require('debug')('uploader');
-var exec = require('child_process').exec;
 var fs = require('fs');
 
 var dirTree = require('directory-tree');
@@ -27,103 +25,7 @@ var rewriteTree = require('../lib/rewrite-tree');
 
 var Compendium = require('../lib/model/compendium');
 var Job = require('../lib/model/job');
-var errorMessageHelper = require('../lib/error-message');
-
-
-function Uploader(req, res) {
-
-  this.id = req.file.filename;
-  this.userid = req.user.orcid;
-
-  this.upload = (res) => {
-    debugUpload('Handling upload for %s', this.id);
-
-    return this.unzip({ id: this.id, user: this.userid, res: res })
-      .then(this.extractMetadata)
-      //.then(this.updateMetadataWithCleverBrokerAndSchema)
-      .then(this.save)
-      .then(this.respond)
-      .catch(err => {
-        debug("[%s] Unhandled failure (or rejection) during execute: \n\t%s", this.jobId, err);
-        res.status(500).send(JSON.stringify({ error: 'internal error' }));
-      });
-  }
-
-  this.unzip = (passon) => {
-    return new Promise((fulfill, reject) => {
-      debugUpload('Unzipping %s', passon.id);
-
-      var path = c.fs.compendium + passon.id;
-      var cmd = '';
-      switch (req.file.mimetype) {
-        case 'application/zip':
-          cmd = 'unzip -uq ' + req.file.path + ' -d ' + path;
-          if (c.fs.delete_inc) { // should incoming files be deleted after extraction?
-            cmd += ' && rm ' + req.file.path;
-          }
-          break;
-        default:
-          cmd = 'false';
-      }
-
-      debugUpload('Unzipping command "%s"', cmd);
-      exec(cmd, (error, stdout, stderr) => {
-        if (error || stderr) {
-          debugUpload(error, stderr, stdout);
-          let errors = error.message.split(':');
-          let message = errorMessageHelper(errors[errors.length - 1]);
-          passon.res.status(500).send(JSON.stringify({ error: 'extraction failed: ' + message }));
-          reject(error);
-        } else {
-          passon.path = path;
-          debugUpload('Unzip of %s complete!', passon.id);
-          fulfill(passon);
-        }
-      });
-    });
-  };
-
-  this.extractMetadata = (passon) => {
-    return new Promise((fulfill, reject) => {
-      debugUpload('Extracting metadata from %s', passon.id);
-
-      // ...
-      passon.metadata = { only: 'a test' };
-
-      fulfill(passon);
-    });
-  }
-
-  this.save = (passon) => {
-    return new Promise((fulfill, reject) => {
-      debugUpload('Saving %s', passon.id);
-      passon.compendium = new Compendium({
-        id: passon.id,
-        user: passon.user,
-        metadata: passon.metadata
-      });
-
-      passon.compendium.save(err => {
-        if (err) {
-          debugUpload('ERROR saving new compendium %s', passon.id);
-          passon.res.status(500).send(JSON.stringify({ error: 'internal error' }));
-          reject(err);
-        } else {
-          debugUpload('Saved new compendium %s', passon.id);
-          fulfill(passon);
-        }
-      });
-    });
-  }
-
-  this.respond = (passon) => {
-    return new Promise((fulfill) => {
-      passon.res.status(200).send({ id: this.id });
-      debug('New compendium %s', passon.id);
-      fulfill(passon);
-    });
-  }
-}
+var Uploader = require('../lib/uploader').Uploader;
 
 exports.create = (req, res) => {
   // check user level
@@ -140,9 +42,10 @@ exports.create = (req, res) => {
     debug('Creating new %s for user %s (original file name: %s)',
       req.body.content_type, req.user.id, req.file.originalname);
 
-    var uploader = new Uploader(req, res, c);
-    uploader.upload(res);
-
+    var uploader = new Uploader(req, res);
+    uploader.upload((id) => {
+      debug('New compendium %s successfully uploaded', id);
+    });
   } else {
     res.status(500).send('Provided content_type not yet implemented, only "compendium_v1" is supported.');
     debug('Provided content_type "%s" not implemented', req.body.content_type);
