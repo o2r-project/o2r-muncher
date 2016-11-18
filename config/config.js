@@ -101,7 +101,6 @@ c.bagtainer.metaextract.create_options = {
   CpuShares: 512,
   NetworkMode: 'none'
 };
-c.bagtainer.metaextract.mountpoint = '/compendium';
 c.bagtainer.metaextract.outputDir = '.o2r';
 
 c.payload = {};
