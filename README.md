@@ -8,7 +8,7 @@ Requirements:
 
 - Node.js `>= 6.2`
 - npm
-- bagit-python
+- bagit-python (`bagit.py`)
 - unzip
 - tar
 - mongodb

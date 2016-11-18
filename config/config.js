@@ -65,6 +65,7 @@ c.user.level.view_status = 500;
 // bagtainer configuration
 c.bagtainer = {};
 c.bagtainer.supportedVersions = ['0.1'];
+c.bagtainer.payloadDirectory = '/data';
 c.bagtainer.configFile = '/data/bagtainer.yml';
 c.bagtainer.bagit = {};
 c.bagtainer.bagit.validateFast = false;
@@ -92,6 +93,16 @@ c.bagtainer.docker.create_options = {
 // https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#start-a-container
 c.bagtainer.docker.start_options = {
 };
+
+c.bagtainer.metaextract = {};
+c.bagtainer.metaextract.image = 'o2rproject/o2r-meta-extract:latest';
+c.bagtainer.metaextract.start_options = {};
+c.bagtainer.metaextract.create_options = {
+  CpuShares: 512,
+  NetworkMode: 'none'
+};
+c.bagtainer.metaextract.mountpoint = '/compendium';
+c.bagtainer.metaextract.outputDir = '.o2r';
 
 c.payload = {};
 c.payload.tarball = {};
