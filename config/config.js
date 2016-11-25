@@ -67,6 +67,12 @@ c.bagtainer = {};
 c.bagtainer.supportedVersions = ['0.1'];
 c.bagtainer.payloadDirectory = '/data';
 c.bagtainer.configFile = '/data/bagtainer.yml';
+c.bagtainer.scan = {};
+c.bagtainer.scan.enable = true;
+c.bagtainer.scan.settings = { // see https://www.npmjs.com/package/clamscan
+  remove_infected: true,
+  preference: 'clamscan'
+};
 c.bagtainer.bagit = {};
 c.bagtainer.bagit.validateFast = false;
 c.bagtainer.keepContainers = false; // set to true for debugging runtime options
