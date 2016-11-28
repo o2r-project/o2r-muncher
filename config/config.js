@@ -24,7 +24,7 @@ var env = process.env;
 
 // Information about muncher
 c.version.major = 0;
-c.version.minor = 3;
+c.version.minor = 4;
 c.version.bug = 0;
 c.version.api = 1;
 
@@ -71,7 +71,7 @@ c.bagtainer.scan = {};
 c.bagtainer.scan.enable = true;
 c.bagtainer.scan.settings = { // see https://www.npmjs.com/package/clamscan
   remove_infected: true,
-  debug_mode: false,
+  debug_mode: true,
   list_recursively: true,
   //scan_log: '/var/log/clamscan.log', // file must exist!
   clamdscan: {
@@ -112,6 +112,7 @@ c.bagtainer.docker.start_options = {
 };
 
 c.bagtainer.metaextract = {};
+c.bagtainer.metaextract.failOnNoRawMetadata = false;
 c.bagtainer.metaextract.image = 'o2rproject/o2r-meta-extract:latest';
 c.bagtainer.metaextract.start_options = {};
 c.bagtainer.metaextract.create_options = {

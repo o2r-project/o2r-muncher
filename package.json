@@ -1,6 +1,6 @@
 {
   "name": "muncher",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Node.js implementation of parts of the [o2r web api](http://o2r.info/o2r-web-api).",
   "main": "index.js",
   "scripts": {
