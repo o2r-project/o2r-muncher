@@ -1,1 +1,1 @@
-step 01 - BagIt validati
+step 01 - BagIt INvalidati

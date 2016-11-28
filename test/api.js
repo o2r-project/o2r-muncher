@@ -27,6 +27,8 @@ chai.use(require('chai-datetime'));
 require("./setup")
 const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 
+const requestTimeout = 10000;
+
 describe('API Compendium', () => {
   /*
    *  After starting a fresh Muncher instance, no compendia should be available
@@ -80,7 +82,7 @@ describe('API Compendium', () => {
         method: 'POST',
         jar: j,
         formData: formData,
-        timeout: 1000
+        timeout: requestTimeout
       }, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
@@ -176,7 +178,7 @@ describe('API Compendium', () => {
         method: 'POST',
         jar: j,
         formData: formData,
-        timeout: 1000
+        timeout: requestTimeout
       }, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 500);
@@ -207,7 +209,7 @@ describe('API Compendium', () => {
         method: 'POST',
         jar: j,
         formData: formData,
-        timeout: 1000
+        timeout: requestTimeout
       }, (err, res, body) => {
         assert.ifError(err);
         assert.notInclude(JSON.parse(body).error, config.fs.base);
@@ -264,7 +266,7 @@ describe('API Compendium', () => {
         method: 'POST',
         jar: j,
         formData: formData,
-        timeout: 1000
+        timeout: requestTimeout
       }, (err, res, body) => {
          assert.ifError(err);
          assert.include(JSON.parse(body).error, 'zipfile is empty');

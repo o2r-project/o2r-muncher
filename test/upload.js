@@ -32,7 +32,6 @@ describe('Compendium upload', () => {
 
     it('upload compendium should fail and return an error message about infected files', (done) => {
       let req = createCompendiumPostRequest(host, './test/bagtainers/virustainer', cookie);
-      req.timeout = 10000;
       request(req, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 422);

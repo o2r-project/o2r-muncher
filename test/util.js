@@ -46,7 +46,7 @@ function createCompendiumPostRequest(host, path, cookie) {
     method: 'POST',
     jar: j,
     formData: formData,
-    timeout: 1000
+    timeout: 10000
   };
 
   return (reqParams);

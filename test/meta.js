@@ -31,7 +31,6 @@ describe('Compendium metadata', () => {
   let compendium_id = '';
 
   describe('POST /api/v1/compendium ./test/bagtainers/metatainer', () => {
-
     it('upload compendium should succeed and return an ID', (done) => {
       let req = createCompendiumPostRequest(host, './test/bagtainers/metatainer', cookie);
 
@@ -42,8 +41,8 @@ describe('Compendium metadata', () => {
         compendium_id = JSON.parse(body).id;
         done();
       });
-    });
-  }).timeout(10000);
+    }).timeout(10000);
+  });
 
   describe('GET /api/v1/compendium/<id of loaded compendium>', () => {
     it('should respond with HTTP 200 OK', (done) => {

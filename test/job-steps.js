@@ -57,120 +57,25 @@ describe('API Job', () => {
   });
 
   describe('EXECUTION step_zero', () => {
-    let compendium_id = '';
-    let job_id = '';
-
-    it('upload compendium should succeed and return an ID', (done) => {
+    it('should fail the upload because bag is invalid', (done) => {
       let req = createCompendiumPostRequest(host, './test/bagtainers/step_zero', cookie_o2r);
 
       request(req, (err, res, body) => {
         assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
-        compendium_id = JSON.parse(body).id;
+        assert.equal(res.statusCode, 400);
+        assert.include(body, 'invalid bag');
         done();
       });
-    });
+    }).timeout(10000);
+    it('should not tell about internal serve configuration in the error message', (done) => {
+      let req = createCompendiumPostRequest(host, './test/bagtainers/step_zero', cookie_o2r);
 
-    it('should return job ID when starting job execution', (done) => {
-      let j = request.jar();
-      let ck = request.cookie('connect.sid=' + cookie_plain);
-      j.setCookie(ck, host);
-
-      request({
-        uri: host + '/api/v1/job',
-        method: 'POST',
-        jar: j,
-        formData: {
-          compendium_id: compendium_id
-        },
-        timeout: 1000
-      }, (err, res, body) => {
+      request(req, (err, res, body) => {
         assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        let response = JSON.parse(body);
-        assert.property(response, 'job_id');
-        job_id = response.job_id;
+        assert.notInclude(body, config.fs.base);
         done();
       });
-    });
-
-    it('should return document with required fields (including steps)', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        let response = JSON.parse(body);
-        assert.propertyVal(response, 'id', job_id);
-        assert.propertyVal(response, 'compendium_id', compendium_id);
-        assert.property(response, 'steps');
-        assert.property(response, 'files');
-        assert.property(response.steps, 'validate_bag');
-        assert.property(response.steps, 'validate_compendium');
-        assert.property(response.steps, 'image_prepare');
-        assert.property(response.steps, 'image_build');
-        assert.property(response.steps, 'image_execute');
-        assert.property(response.steps, 'cleanup');
-        done();
-      });
-    });
-
-    it('should fail step "validate_bag" __after some waiting__', (done) => {
-      sleep.sleep(sleepSecs);
-
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.propertyVal(response.steps.validate_bag, 'status', 'failure');
-        done();
-      });
-    }).timeout(sleepSecs * 1000 * 3);
-
-    it('should list remaining steps as queued', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.propertyVal(response.steps.validate_compendium, 'status', 'queued');
-        assert.propertyVal(response.steps.image_prepare, 'status', 'queued');
-        assert.propertyVal(response.steps.image_build, 'status', 'queued');
-        assert.propertyVal(response.steps.image_execute, 'status', 'queued');
-        done();
-      });
-    });
-
-    it('should complete step "cleanup"', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.propertyVal(response.steps.cleanup, 'status', 'success');
-        done();
-      });
-    });
-  });
-
-  describe('GET /api/v1/job with one job', () => {
-    it('should respond with HTTP 200 OK', (done) => {
-      request(host + '/api/v1/job', (err, res) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        done();
-      });
-    });
-    it('should respond with a JSON object', (done) => {
-      request(host + '/api/v1/job', (err, res, body) => {
-        assert.ifError(err);
-        assert.isObject(JSON.parse(body), 'returned JSON');
-        done();
-      });
-    });
-    it('should contain array of job ids', (done) => {
-      request(host + '/api/v1/job', (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.property(response, 'results');
-        assert.isArray(response.results);
-        done();
-      });
-    });
+    }).timeout(10000);
   });
 
   describe('EXECUTION step_validate_bag', () => {
@@ -188,7 +93,7 @@ describe('API Job', () => {
         compendium_id = JSON.parse(body).id;
         done();
       });
-    });
+    }).timeout(10000);
 
     it('should return job ID when starting job execution', (done) => {
       let j = request.jar();
@@ -202,13 +107,32 @@ describe('API Job', () => {
         formData: {
           compendium_id: compendium_id
         },
-        timeout: 1000
+        timeout: 5000
       }, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         let response = JSON.parse(body);
         assert.property(response, 'job_id');
         job_id = response.job_id;
+        done();
+      });
+    }).timeout(10000);
+
+    it('should return document with required fields (including steps)', (done) => {
+      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.propertyVal(response, 'id', job_id);
+        assert.propertyVal(response, 'compendium_id', compendium_id);
+        assert.property(response, 'steps');
+        assert.property(response, 'files');
+        assert.property(response.steps, 'validate_bag');
+        assert.property(response.steps, 'validate_compendium');
+        assert.property(response.steps, 'image_prepare');
+        assert.property(response.steps, 'image_build');
+        assert.property(response.steps, 'image_execute');
+        assert.property(response.steps, 'cleanup');
         done();
       });
     });
@@ -312,8 +236,31 @@ describe('API Job', () => {
       });
     });
 
-
     it('should return job ID when starting _another_ job execution (different from the previous id)', (done) => {
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie_plain);
+      j.setCookie(ck, host);
+
+      request({
+        uri: host + '/api/v1/job',
+        method: 'POST',
+        jar: j,
+        formData: {
+          compendium_id: compendium_id
+        },
+        timeout: 1000
+      }, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.property(response, 'job_id');
+        assert.notEqual(response.job_id, job_id);
+        job_id = response.job_id;
+        done();
+      });
+    });
+
+    it('should return job ID when starting _yet another_ job execution (different from the previous id)', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_plain);
       j.setCookie(ck, host);
@@ -377,7 +324,7 @@ describe('API Job', () => {
     });
   });
 
-  describe('GET /api/v1/job with multiple jobs', () => {
+  describe('GET /api/v1/job with multiple jobs overall', () => {
     it('should contain next link if limit provided', (done) => {
       request(host + '/api/v1/job?limit=3', (err, res, body) => {
         assert.ifError(err);
