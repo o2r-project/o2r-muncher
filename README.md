@@ -40,7 +40,7 @@ You can override these environment variables (configured in `config/config.js`) 
 - `MUNCHER_DOCKER_HOST`
   Define a different Docker Remote API location to connect to. If omitted, muncher will try to connect to the local unix socket.
 - `MUNCHER_DOCKER_PORT`
-  Port for Docker Remote API
+  Port for Docker Remote API.
 - `MUNCHER_PORT`
   Define on which Port muncher should listen. Defaults to `8080`.
 - `MUNCHER_MONGODB` __Required__
@@ -49,6 +49,8 @@ You can override these environment variables (configured in `config/config.js`) 
   Which database inside the mongo db should be used. Defaults to `muncher`.
 - `MUNCHER_BASEPATH`
   Base path for the compendia storage. Defaults to `/tmp/muncher`. If you want persistent compendia storage, you should point this to a separate volume.
+- `MUNCHER_EMAIL_TRANSPORT`, `MUNCHER_EMAIL_RECEIVERS`, `MUNCHER_EMAIL_SENDER`
+  Email configuration settings for sending emails when a virus is detected in a compendium, based on [nodemailer](https://www.npmjs.com/package/nodemailer). `_TRANSPORT` ist the mail transport string, see nodemailer documented, `_RECEIVERS` is a comma-seperated list, and `_SENDER` is the mails sender. All three must be set. Mail notification can also be disabled completely via `config.js`.
 
 ### Full API service with docker-compose
 

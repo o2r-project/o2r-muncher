@@ -1,4 +1,6 @@
 I'm not bad!
 But to use this test you might have to configure your virus scanner to ignore this file, both here and where o2r will store it.
 
-For Sophos on Linux: sudo /opt/sophos-av/bin/savconfig add ExcludeFileOnGlob '/**/o2r_test_bad_file.txt'
+For Sophos on Linux:
+sudo /opt/sophos-av/bin/savconfig add ExcludeFileOnGlob '/**/o2r_test_bad_file.txt'
+sudo /opt/sophos-av/bin/savconfig add ExcludeFileOnGlob '/**/o2r_test_bad_file_too.txt'
