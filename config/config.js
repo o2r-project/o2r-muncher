@@ -71,10 +71,13 @@ c.bagtainer.scan = {};
 c.bagtainer.scan.enable = true;
 c.bagtainer.scan.settings = { // see https://www.npmjs.com/package/clamscan
   remove_infected: true,
-  debug_mode: true,
+  debug_mode: false,
   list_recursively: true,
   //scan_log: '/var/log/clamscan.log', // file must exist!
-  preference: 'clamscan'
+  clamdscan: {
+    config_file: '/etc/clamav/clamd.conf'
+  },
+  preference: 'clamdscan'
 };
 c.bagtainer.scan.email = {};
 c.bagtainer.scan.email.enable = true;
