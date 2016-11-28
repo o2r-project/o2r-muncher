@@ -68,16 +68,17 @@ c.bagtainer.supportedVersions = ['0.1'];
 c.bagtainer.payloadDirectory = '/data';
 c.bagtainer.configFile = '/data/bagtainer.yml';
 c.bagtainer.scan = {};
-c.bagtainer.scan.enable = true;
+c.bagtainer.scan.enable = false; // not feasible without daemon virus scanner in container
 c.bagtainer.scan.settings = { // see https://www.npmjs.com/package/clamscan
   remove_infected: true,
   debug_mode: true,
   list_recursively: true,
   //scan_log: '/var/log/clamscan.log', // file must exist!
-  clamdscan: {
+  /*clamdscan: {
     config_file: '/etc/clamav/clamd.conf'
-  },
+  },*/
   preference: 'clamdscan'
+  // clamdscan does not work in container but is _way_ faster
 };
 c.bagtainer.scan.email = {};
 c.bagtainer.scan.email.enable = true;

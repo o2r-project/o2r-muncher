@@ -107,7 +107,7 @@ docker ps -a | grep bagtainer | awk '{print $1}' | xargs --no-run-if-empty docke
 docker images --no-trunc | grep bagtainer | awk '{print $3}' | xargs --no-run-if-empty docker rmi -f
 ```
 
-### Steps for starting a local development environment
+### Steps for starting a local development environment _manually_
 
 The following steps assume that you have all the required projects (`o2r-contentbutler`, `o2r-muncher`, `o2r-platform`) in one directory. Repository updates (`git pull`, `npm install`, `bower install` and the like) are not shown.
 
