@@ -87,8 +87,9 @@ c.bagtainer.scan.email.receivers = env.MUNCHER_EMAIL_RECEIVERS;
 c.bagtainer.scan.email.sender = env.MUNCHER_EMAIL_SENDER;
 c.bagtainer.bagit = {};
 c.bagtainer.bagit.validateFast = false;
-c.bagtainer.keepContainers = false; // set to true for debugging runtime options
+c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
 c.bagtainer.keepImages = true; // required for image download!
+c.bagtainer.validateBeforeExecute = false; // cannot validate before execute when saving image tarball but not updating the bag
 c.bagtainer.imageNamePrefix = 'bagtainer:';
 c.bagtainer.forceImageRemoval = true;
 c.bagtainer.docker = {};
@@ -106,7 +107,8 @@ c.bagtainer.docker.create_options = {
   //Hostname: 'b9ea983254ef',
   Memory: 1073741824, // 1G
   MemorySwap: 2147483648, // double of 1G
-  NetworkMode: 'none'
+  NetworkMode: 'none',
+  Rm: true
 };
 // https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#start-a-container
 c.bagtainer.docker.start_options = {
