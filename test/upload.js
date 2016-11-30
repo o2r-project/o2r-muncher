@@ -27,7 +27,7 @@ const createCompendiumPostRequest = require('./util').createCompendiumPostReques
 require("./setup")
 const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 
-describe('Compendium upload', () => {
+describe.skip('Compendium upload with virus', () => {
   describe('POST virustainer', () => {
 
     it('upload compendium should fail and return an error message about infected files', (done) => {
