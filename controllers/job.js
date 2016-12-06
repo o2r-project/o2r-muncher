@@ -82,17 +82,10 @@ exports.viewSingle = (req, res) => {
       debug(job);
       answer.compendium_id = job.compendium_id;
       answer.steps = job.steps;
+      answer.status = job.status;
       try {
         fs.accessSync(c.fs.job + id); // throws if directory does not exist
-        /*
-         *  Rewrite file URLs with api path. directory-tree creates path like
-         *  c.fs.job + id + filepath
-         *
-         *  We are only interested in the filepath itself and want to create a
-         *  url like
-         *  host/api/v1/job/id/data/filepath
-         *
-         */
+
         answer.files = rewriteTree(dirTree(c.fs.job + id),
           c.fs.job.length + c.id_length, // remove local fs path and id
           '/api/v1/job/' + id + '/data' // prepend proper location
