@@ -105,7 +105,18 @@ exports.viewSingleJobs = (req, res) => {
     } else {
       var count = jobs.length;
       if (count <= 0) {
-        res.status(404).send(JSON.stringify({ error: 'no job found' }));
+        Compendium.find({ id }).limit(1).exec((err, compendium) => { // https://blog.serverdensity.com/checking-if-a-document-exists-mongodb-slow-findone-vs-find/
+          if (err) {
+            res.status(404).send(JSON.stringify({ error: 'no compendium found: ' + err.message }));
+          }
+          else {
+            if (compendium.length <= 0) {
+              res.status(404).send(JSON.stringify({ error: 'no compendium with this id' }));
+            } else {
+              res.status(404).send(JSON.stringify({ error: 'no job found for compendium ' + id }));
+            }
+          }
+        });
       } else {
         if (count >= limit) {
           answer.next = req.route.path + '?limit=' + limit + '&start=' +

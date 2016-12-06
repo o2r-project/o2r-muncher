@@ -16,11 +16,12 @@
  */
 
 /* eslint-env mocha */
-const assert    = require('chai').assert;
-const request   = require('request');
-const config    = require('../config/config');
-const fs        = require('fs');
-const host      = 'http://localhost:' + config.net.port;
+const assert = require('chai').assert;
+const request = require('request');
+const config = require('../config/config');
+const fs = require('fs');
+const host = 'http://localhost:' + config.net.port;
+const mongojs = require('mongojs');
 const chai = require('chai');
 chai.use(require('chai-datetime'));
 
@@ -30,6 +31,13 @@ const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2
 const requestTimeout = 10000;
 
 describe('API Compendium', () => {
+  before((done) => {
+    var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
+    db.compendia.drop(function (err, doc) {
+      db.jobs.drop(function (err, doc) { done(); });
+    });
+  });
+
   /*
    *  After starting a fresh Muncher instance, no compendia should be available
    *  The listing thus should return a 404 error.
@@ -56,12 +64,21 @@ describe('API Compendium', () => {
         done();
       });
     });
+    it('should return an error message when asking for a non-existing compendium', (done) => {
+      request(host + '/api/v1/compendium/1234', (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 404);
+        assert.isUndefined(JSON.parse(body).result, 'returned no results');
+        assert.propertyVal(JSON.parse(body), 'error', 'no compendium with this id');
+        done();
+      });
+    });
   });
 
   /*
    *  POST a valid trivial BagIt archive to create a new compendium.
    */
-  let compendium_id = '';
+  var compendium_id = '';
   describe('POST /api/v1/compendium success-load.zip', () => {
     it('should respond with HTTP 200 OK and new ID', (done) => {
       let formData = {
@@ -91,7 +108,7 @@ describe('API Compendium', () => {
         compendium_id = JSON.parse(body).id;
         done();
       });
-    });
+    }).timeout(10000);
   });
 
   describe('GET /api/v1/compendium (after compendium loaded)', () => {
@@ -240,11 +257,11 @@ describe('API Compendium', () => {
         formData: formData,
         timeout: 1000 * 60
       }, (err, res, body) => {
-         assert.ifError(err);
-         assert.equal(res.statusCode, 500);
-         assert.isObject(JSON.parse(body), 'returned JSON');
-         done();
-        });
+        assert.ifError(err);
+        assert.equal(res.statusCode, 500);
+        assert.isObject(JSON.parse(body), 'returned JSON');
+        done();
+      });
     }).timeout(1000 * 60);
 
     it('should respond provide a helpful error message', (done) => {
@@ -268,10 +285,10 @@ describe('API Compendium', () => {
         formData: formData,
         timeout: requestTimeout
       }, (err, res, body) => {
-         assert.ifError(err);
-         assert.include(JSON.parse(body).error, 'zipfile is empty');
-         done();
-        });
+        assert.ifError(err);
+        assert.include(JSON.parse(body).error, 'zipfile is empty');
+        done();
+      });
     });
 
   });

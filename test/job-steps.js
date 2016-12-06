@@ -21,16 +21,24 @@ const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const host = 'http://localhost:' + config.net.port;
+const mongojs = require('mongojs');
 const fs = require('fs');
 const sleep = require('sleep');
-var unamecall = require('node-uname');
+const unamecall = require('node-uname');
 
 require("./setup")
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 const sleepSecs = 1;
 
-describe('API Job', () => {
+describe('API job', () => {
+  before((done) => {
+    var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
+    db.compendia.drop(function (err, doc) {
+      db.jobs.drop(function (err, doc) { done(); });
+    });
+  });
+
   describe('GET /api/v1/job (with no job started)', () => {
     it('should respond with HTTP 404 Not Found', (done) => {
       request(host + '/api/v1/job', (err, res) => {
@@ -49,6 +57,18 @@ describe('API Job', () => {
     it('should not yet contain array of job ids, but an error', (done) => {
       request(host + '/api/v1/job', (err, res, body) => {
         assert.ifError(err);
+        assert.notProperty(JSON.parse(body), 'results');
+        assert.propertyVal(JSON.parse(body), 'error', 'no jobs found');
+        done();
+      });
+    });
+  });
+
+  describe('GET /api/v1/job?compendium_id for non-existing compendium', () => {
+    it('should respond with HTTP 404 and an error message', (done) => {
+      request(host + '/api/v1/job?compendium_id=1234', (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 404);
         assert.notProperty(JSON.parse(body), 'results');
         assert.propertyVal(JSON.parse(body), 'error', 'no jobs found');
         done();

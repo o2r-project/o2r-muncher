@@ -47,7 +47,6 @@ before(function() {
         }
     }
     db.sessions.save(session_o2r, function (err, doc) {
-        //console.log(doc);
         if (err) throw err;
     });
     var session_plain = {
@@ -67,7 +66,6 @@ before(function() {
         }
     }
     db.sessions.save(session_plain, function (err, doc) {
-        //console.log(doc);
         if (err) throw err;
     });
 
@@ -89,14 +87,4 @@ before(function() {
     db.users.save(plainuser, function (err, doc) {
         if (err) throw err;
     });
-
-    db.compendia.drop(function (err, doc) {
-        //if (err) throw err;
-    });
-
-    db.jobs.drop(function (err, doc) {
-        //if (err) throw err;
-    });
-
-    console.log('  Global test setup completed\n');
 });
