@@ -1,4 +1,5 @@
-FROM rocker/r-base:latest
+FROM rocker/tidyverse:3.3.2
+# user tidyverse so have littler install scripts and use MRAN
 MAINTAINER Daniel Nüst <daniel.nuest@uni-muenster.de>
 
 RUN apt-get update -qq \
@@ -16,7 +17,8 @@ RUN apt-get update -qq \
 	libudunits2-dev \
 	# required when knitting the document
 	pandoc-citeproc \
-	&& apt-get clean \
+	&& apt-get autoremove -y \
+	&& apt-get autoclean -y \
 	&& rm -rf /var/lib/apt/lists/*
 
 # install R extension packages
