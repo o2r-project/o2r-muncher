@@ -1,0 +1,3 @@
+d9e94b795c0df6b4382abaca9a14b165  data/2016-07-17-sf2.Rmd
+63c86435bc3f603ccf6d2d2c11e24517  data/bagtainer.yml
+3798bbbee1048eb41a14ad9b63760805  data/Dockerfile
