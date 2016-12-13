@@ -21,6 +21,8 @@ const c = require('./config/config');
 const randomstring = require('randomstring');
 const fse = require('fs-extra');
 const backoff = require('backoff');
+const debugPuller = require('debug')('muncher:puller');
+const child_process = require('child_process');
 
 // mongo connection
 const mongoose = require('mongoose');
@@ -112,7 +114,7 @@ function initApp(callback) {
       uri: dbURI,
       collection: 'sessions'
     }, err => {
-      if(err) {
+      if (err) {
         debug('Error starting MongoStore: %s', err);
       }
     });
@@ -205,6 +207,25 @@ function initApp(callback) {
         ' waiting for requests on port ' + c.net.port);
     });
 
+    // pull the required images for upload steps
+    let images = [c.bagtainer.metaextract.image];
+    images.forEach(image => {
+      debugPuller('pulling %s ...', image);
+
+      let puller = child_process.exec('docker pull ' + image, (error, stdout, stderr) => {
+        if (error | stderr) {
+          debugPuller(error, stderr, stdout);
+          debugPuller('[%s] error pulling image: %s', image, JSON.stringify(error));
+        }
+        else {
+          debugPuller('\n%s', stdout);
+          debugPuller('[%s] pull complete', image);
+        }
+      });
+      puller.on('exit', (code) => {
+        debugPuller('[%s] finished with code %s', image, code);
+      });
+    });
   } catch (err) {
     callback(err);
   }
