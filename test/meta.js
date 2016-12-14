@@ -85,14 +85,35 @@ describe('Compendium metadata', () => {
       assert.propertyNotVal(metadata, 'title', '');
       done();
     });
+    it('should contain correct title', (done) => {
+      assert.property(metadata, 'title');
+      assert.include(metadata.title, 'This is the title');
+      done();
+    });
+    it('should contain correct abstract', (done) => {
+      assert.property(metadata, 'abstract');
+      assert.include(metadata.abstract, 'Suspendisse ac ornare ligula.');
+      done();
+    });
     it('should contain non-empty paperSource', (done) => {
       assert.property(metadata, 'paperSource');
       assert.propertyNotVal(metadata, 'paperSource', '');
       done();
     });
+    let main_file = 'document.Rmd';
+    it('should contain correct filepath', (done) => {
+      assert.property(metadata, 'filepath');
+      assert.propertyVal(metadata, 'filepath', '/' + compendium_id + '/data/' + main_file);
+      done();
+    });
     it('should contain correct file', (done) => {
       assert.property(metadata, 'file');
-      assert.propertyVal(metadata, 'file', '/' + compendium_id + '/data/document.Rmd');
+      assert.propertyVal(metadata, 'file', main_file);
+      done();
+    });
+    it('should contain the correct erc identifier', (done) => {
+      assert.property(metadata, 'ercIdentifier');
+      assert.propertyVal(metadata, 'ercIdentifier', compendium_id);
       done();
     });
     it('should contain author array with all author names', (done) => {
