@@ -115,14 +115,15 @@ c.bagtainer.docker.start_options = {
 };
 
 c.bagtainer.metaextract = {};
-c.bagtainer.metaextract.failOnNoRawMetadata = false;
+c.bagtainer.metaextract.outputDir = '.o2r';
+c.bagtainer.metaextract.bestCandidateFile = 'metadata.json';
+c.bagtainer.metaextract.failOnNoMetadata = false;
 c.bagtainer.metaextract.image = 'o2rproject/o2r-meta-extract:latest';
 c.bagtainer.metaextract.start_options = {};
 c.bagtainer.metaextract.create_options = {
   CpuShares: 512,
   NetworkMode: 'none'
 };
-c.bagtainer.metaextract.outputDir = '.o2r';
 
 c.payload = {};
 c.payload.tarball = {};
