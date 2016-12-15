@@ -120,6 +120,7 @@ c.bagtainer.docker.start_options = {
 
 c.bagtainer.metaextract = {};
 c.bagtainer.metaextract.outputDir = '.o2r';
+c.bagtainer.metaextract.targetElement = 'o2r';
 c.bagtainer.metaextract.bestCandidateFile = 'metadata.json';
 c.bagtainer.metaextract.failOnNoMetadata = false;
 c.bagtainer.metaextract.image = 'o2rproject/o2r-meta-extract:latest';
