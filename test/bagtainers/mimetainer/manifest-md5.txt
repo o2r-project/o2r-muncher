@@ -1,0 +1,2 @@
+782d8e93abab9a1c84b869b03a49c6b9  data/drawing.pdf
+436d9349e0ceebb2bb0e2a84cb31514f  data/drawing.odg
