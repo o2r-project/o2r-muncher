@@ -24,11 +24,8 @@ RUN apk add --no-cache \
     git \
     ca-certificates \
     wget \
-    #clamav \
-    #clamav-libunrar \
   && pip install --upgrade pip \
   && pip install bagit \
-  #&& git clone --depth 1 -b master https://github.com/o2r-project/o2r-muncher /muncher \
   && wget -O /sbin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.0/dumb-init_1.2.0_amd64 \
   && chmod +x /sbin/dumb-init \
   && apk del \
@@ -49,6 +46,5 @@ RUN npm install --production
 ENTRYPOINT ["/sbin/dumb-init", "--"]
 CMD ["npm", "start" ]
 
-#RUN freshclam update
-
 # docker build --tag muncher -f Dockerfile.local --no-cache .
+# DEBUG=muncher:* docker run -it -e 8080:8080 muncher

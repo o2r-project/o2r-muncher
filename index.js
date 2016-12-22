@@ -23,6 +23,7 @@ const fse = require('fs-extra');
 const backoff = require('backoff');
 const debugPuller = require('debug')('muncher:puller');
 const child_process = require('child_process');
+const Docker = require('dockerode');
 
 // mongo connection
 const mongoose = require('mongoose');
@@ -209,21 +210,19 @@ function initApp(callback) {
 
     // pull the required images for upload steps
     let images = [c.bagtainer.metaextract.image];
+    var docker = new Docker();
+    debug('[%s] Docker client set up for pulling images: %s', this.jobId, JSON.stringify(docker));
     images.forEach(image => {
-      debugPuller('pulling %s ...', image);
+      docker.pull(image, (err, stream) => {
+        debugPuller('pulling %s ...', image);
+        docker.modem.followProgress(stream, onFinished, onProgress);
 
-      let puller = child_process.exec('docker pull ' + image, (error, stdout, stderr) => {
-        if (error | stderr) {
-          debugPuller(error, stderr, stdout);
-          debugPuller('[%s] error pulling image: %s', image, JSON.stringify(error));
+        function onFinished(err, output) {
+          debug('Pulled image %s with final status: "%s"', image, output[output.length - 1].status);
         }
-        else {
-          debugPuller('\n%s', stdout);
-          debugPuller('[%s] pull complete', image);
+        function onProgress(event) {
+          debugPuller('[%s] "%s"', image, event.status);
         }
-      });
-      puller.on('exit', (code) => {
-        debugPuller('[%s] finished with code %s', image, code);
       });
     });
   } catch (err) {
