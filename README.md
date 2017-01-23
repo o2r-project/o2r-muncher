@@ -8,7 +8,9 @@ Requirements:
 
 - Node.js `>= 6.2`
 - npm
+- Python `>= 3.x`
 - bagit-python (`bagit.py`)
+- o2r-meta (`o2rmeta.py`)
 - unzip
 - tar
 - mongodb
@@ -45,6 +47,8 @@ You can override these environment variables (configured in `config/config.js`) 
   Define on which Port muncher should listen. Defaults to `8080`.
 - `MUNCHER_MONGODB` __Required__
   Location for the mongo db. Defaults to `mongodb://localhost/`. You will very likely need to change this.
+- `MUNCHER_META_TOOL_EXE` __Required__
+  Executable for metadata tools, defaults to `python3 ../o2r-meta/o2rmeta.py`. You will very likely need to change this.
 - `MUNCHER_MONGODB_DATABASE`
   Which database inside the mongo db should be used. Defaults to `muncher`.
 - `MUNCHER_BASEPATH`

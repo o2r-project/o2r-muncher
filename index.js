@@ -21,7 +21,6 @@ const c = require('./config/config');
 const randomstring = require('randomstring');
 const fse = require('fs-extra');
 const backoff = require('backoff');
-const debugPuller = require('debug')('muncher:puller');
 const child_process = require('child_process');
 const Docker = require('dockerode');
 
@@ -206,24 +205,6 @@ function initApp(callback) {
       debug('muncher ' + c.version.major + '.' + c.version.minor + '.' +
         c.version.bug + ' with API version ' + c.version.api +
         ' waiting for requests on port ' + c.net.port);
-    });
-
-    // pull the required images for upload steps
-    let images = [c.bagtainer.metaextract.image];
-    var docker = new Docker();
-    debug('[%s] Docker client set up for pulling images: %s', this.jobId, JSON.stringify(docker));
-    images.forEach(image => {
-      docker.pull(image, (err, stream) => {
-        debugPuller('pulling %s ...', image);
-        docker.modem.followProgress(stream, onFinished, onProgress);
-
-        function onFinished(err, output) {
-          debug('Pulled image %s with final status: "%s"', image, output[output.length - 1].status);
-        }
-        function onProgress(event) {
-          debugPuller('[%s] "%s"', image, event.status);
-        }
-      });
     });
   } catch (err) {
     callback(err);

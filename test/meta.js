@@ -75,7 +75,7 @@ describe('Compendium metadata', () => {
       request(host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        metadata = response.metadata;
+        metadata = response.metadata[config.bagtainer.metaextract.targetElement];
         done();
       });
     });
