@@ -35,7 +35,7 @@ RUN apk add --no-cache \
     libxml2-dev \
     libxslt-dev \
   && apk add gdal gdal-dev py-gdal --no-cache --repository http://nl.alpinelinux.org/alpine/edge/testing \
-  && git clone --depth 1 -b master https://github.com/o2r-project/o2r-meta.git
+  && git clone --depth 1 -b master https://github.com/o2r-project/o2r-meta.git /meta
 WORKDIR /meta
 RUN pip install -r requirements.txt
 ENV MUNCHER_META_TOOL_EXE="python3 /meta/o2rmeta.py"
