@@ -24,8 +24,8 @@ var env = process.env;
 
 // Information about muncher
 c.version.major = 0;
-c.version.minor = 4;
-c.version.bug = 2;
+c.version.minor = 5;
+c.version.bug = 0;
 c.version.api = 1;
 
 // network & database
@@ -118,17 +118,14 @@ c.bagtainer.docker.create_options = {
 c.bagtainer.docker.start_options = {
 };
 
+// metadata extraction and brokering options
 c.bagtainer.metaextract = {};
-c.bagtainer.metaextract.outputDir = '.o2r';
+c.bagtainer.metaextract.cliPath = env.MUNCHER_META_TOOL_EXE | 'python3 ../o2r-meta/o2rmeta.py';
+c.bagtainer.metaextract.module = 'extract';
+c.bagtainer.metaextract.outputDir = '.erc';
 c.bagtainer.metaextract.targetElement = 'o2r';
-c.bagtainer.metaextract.bestCandidateFile = 'metadata.json';
+c.bagtainer.metaextract.bestCandidateFile = 'metadata_raw.json';
 c.bagtainer.metaextract.failOnNoMetadata = false;
-c.bagtainer.metaextract.image = 'o2rproject/o2r-meta-extract:latest';
-c.bagtainer.metaextract.start_options = {};
-c.bagtainer.metaextract.create_options = {
-  CpuShares: 512,
-  NetworkMode: 'none'
-};
 
 c.payload = {};
 c.payload.tarball = {};

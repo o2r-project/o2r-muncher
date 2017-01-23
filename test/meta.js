@@ -27,7 +27,7 @@ const createCompendiumPostRequest = require('./util').createCompendiumPostReques
 require("./setup")
 const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 
-describe('Compendium metadata', () => {
+describe.only('Compendium metadata', () => {
   let compendium_id = '';
 
   describe('POST /api/v1/compendium ./test/bagtainers/metatainer', () => {
@@ -75,7 +75,7 @@ describe('Compendium metadata', () => {
       request(host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        metadata = response.metadata;
+        metadata = response.metadata[config.bagtainer.metaextract.targetElement];
         done();
       });
     });
