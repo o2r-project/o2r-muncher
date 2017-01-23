@@ -120,7 +120,7 @@ c.bagtainer.docker.start_options = {
 
 // metadata extraction and brokering options
 c.bagtainer.metaextract = {};
-c.bagtainer.metaextract.cliPath = env.MUNCHER_META_TOOL_EXE | 'python3 ../o2r-meta/o2rmeta.py';
+c.bagtainer.metaextract.cliPath = env.MUNCHER_META_TOOL_EXE || 'python3 ../o2r-meta/o2rmeta.py';
 c.bagtainer.metaextract.module = 'extract';
 c.bagtainer.metaextract.outputDir = '.erc';
 c.bagtainer.metaextract.targetElement = 'o2r';
