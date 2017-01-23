@@ -12,24 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM alpine:3.4
-MAINTAINER o2r-project, https://o2r.info
+FROM frolvlad/alpine-python3
+MAINTAINER o2r-project <https://o2r.info>
 
 RUN apk add --no-cache \
-    nodejs \
-    tar \
-    unzip \
-    python \
-    py-pip \
     git \
-    ca-certificates \
     wget \
+    unzip \
+    nodejs \
+    ca-certificates \
   && pip install --upgrade pip \
   && pip install bagit \
   && wget -O /sbin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.0/dumb-init_1.2.0_amd64 \
-  && chmod +x /sbin/dumb-init \
-  && apk del \
-    py-pip \
+  && chmod +x /sbin/dumb-init
+
+# o2r-meta
+RUN apk add --no-cache \
+    gcc \
+    g++ \
+    python3-dev \
+    libxml2-dev \
+    libxslt-dev \
+  && apk add  --no-cache gdal gdal-dev py-gdal --repository http://nl.alpinelinux.org/alpine/edge/testing \
+  && git clone --depth 1 -b master https://github.com/o2r-project/o2r-meta.git /meta
+WORKDIR /meta
+RUN pip install -r requirements.txt
+ENV MUNCHER_META_TOOL_EXE="python3 /meta/o2rmeta.py"
+
+RUN apk del \
     git \
     wget \
     ca-certificates \
@@ -47,4 +57,5 @@ ENTRYPOINT ["/sbin/dumb-init", "--"]
 CMD ["npm", "start" ]
 
 # docker build --tag muncher -f Dockerfile.local --no-cache .
+# docker build --tag muncher -f Dockerfile.local .
 # DEBUG=muncher:* docker run -it -e 8080:8080 muncher

@@ -12,25 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM alpine:3.4
-MAINTAINER o2r-project, https://o2r.info
+FROM frolvlad/alpine-python3
+MAINTAINER o2r-project <https://o2r.info>
 
 RUN apk add --no-cache \
-    nodejs \
-    tar \
-    unzip \
-    python \
-    py-pip \
     git \
-    ca-certificates \
     wget \
+    unzip \
+    nodejs \
+    ca-certificates \
   && pip install --upgrade pip \
   && pip install bagit \
   && git clone --depth 1 -b master https://github.com/o2r-project/o2r-muncher /muncher \
   && wget -O /sbin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.0/dumb-init_1.2.0_amd64 \
-  && chmod +x /sbin/dumb-init \
-  && apk del \
-    py-pip \
+  && chmod +x /sbin/dumb-init
+
+# o2r-meta
+RUN apk add --no-cache \
+    gcc \
+    g++ \
+    python3-dev \
+    libxml2-dev \
+    libxslt-dev \
+  && apk add gdal gdal-dev py-gdal --no-cache --repository http://nl.alpinelinux.org/alpine/edge/testing \
+  && git clone --depth 1 -b master https://github.com/o2r-project/o2r-meta.git
+WORKDIR /meta
+RUN pip install -r requirements.txt
+ENV MUNCHER_META_TOOL_EXE="python3 /meta/o2rmeta.py"
+
+RUN apk del \
     git \
     wget \
     ca-certificates \
