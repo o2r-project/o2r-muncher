@@ -41,7 +41,7 @@ describe('Compendium metadata', () => {
         compendium_id = JSON.parse(body).id;
         done();
       });
-    }).timeout(10000);
+    }).timeout(20000);
   });
 
   describe('GET /api/v1/compendium/<id of loaded compendium>', () => {

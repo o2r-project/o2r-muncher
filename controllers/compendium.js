@@ -43,8 +43,13 @@ exports.create = (req, res) => {
       req.body.content_type, req.user.id, req.file.originalname);
 
     var uploader = new Uploader(req, res);
-    uploader.upload((id) => {
-      debug('New compendium %s successfully uploaded', id);
+    uploader.upload((id, err) => {
+      if(err) {
+        debug('Error during upload: %s', JSON.stringify(err));
+      }
+      else {
+        debug('New compendium %s successfully uploaded', id);
+      }
     });
   } else {
     res.status(500).send('Provided content_type not yet implemented, only "compendium_v1" is supported.');
