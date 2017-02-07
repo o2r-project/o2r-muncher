@@ -46,6 +46,13 @@ exports.view = (req, res) => {
     filter.user = req.query.user;
     filter_query = filter_query + '&user=' + req.query.user;
   }
+
+  //filtering for status
+  if (req.query.status != null) {
+    filter.status = req.query.status;
+    filter_query = filter_query + '&status=' + req.query.status;
+  }
+
   if (start >= 1) {
     answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
   }
