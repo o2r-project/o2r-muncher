@@ -46,11 +46,11 @@ exports.view = (req, res) => {
     filter.user = req.query.user;
     filter_query = filter_query + '&user=' + req.query.user;
   }
-  if (start >= 1) {
-    answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
-  }
+  //if (start >= 1) {
+  //  answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
+  //}
 
-  Job.find(filter).select('id').skip(start * limit).limit(limit).exec((err, jobs) => {
+  Job.find(filter).select('id').skip(start).limit(limit).exec((err, jobs) => {
     if (err) {
       res.status(500).send(JSON.stringify({ error: 'query failed' }));
     } else {
@@ -58,10 +58,10 @@ exports.view = (req, res) => {
       if (count <= 0) {
         res.status(404).send(JSON.stringify({ error: 'no jobs found' }));
       } else {
-        if (count >= limit) {
-          answer.next = req.route.path + '?limit=' + limit + '&start=' +
-            (start + 2) + filter_query;
-        }
+        //if (count >= limit) {
+        //  answer.next = req.route.path + '?limit=' + limit + '&start=' +
+        //    (start + 2) + filter_query;
+        //}
 
         answer.results = jobs.map((job) => { return job.id; });
         res.status(200).send(JSON.stringify(answer));

@@ -24,8 +24,8 @@ var env = process.env;
 
 // Information about muncher
 c.version.major = 0;
-c.version.minor = 5;
-c.version.bug = 1;
+c.version.minor = 6;
+c.version.bug = 0;
 c.version.api = 1;
 
 // network & database

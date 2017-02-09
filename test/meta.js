@@ -25,14 +25,15 @@ chai.use(require('chai-datetime'));
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 
 require("./setup")
-const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
+const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
+const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 
 describe('Compendium metadata', () => {
   let compendium_id = '';
 
   describe('POST /api/v1/compendium ./test/bagtainers/metatainer', () => {
     it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/metatainer', cookie);
+      let req = createCompendiumPostRequest(host, './test/bagtainers/metatainer', cookie_o2r);
 
       request(req, (err, res, body) => {
         assert.ifError(err);
@@ -125,4 +126,215 @@ describe('Compendium metadata', () => {
       done();
     });
   });
+});
+
+describe('Updating compendium metadata', () => {
+  let compendium_id = '';
+
+  describe('POST /api/v1/compendium ./test/bagtainers/metatainer', () => {
+    it('upload compendium should succeed and return an ID', (done) => {
+      let req = createCompendiumPostRequest(host, './test/bagtainers/metatainer', cookie_o2r);
+
+      request(req, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        assert.property(JSON.parse(body), 'id');
+        compendium_id = JSON.parse(body).id;
+        done();
+      });
+    }).timeout(30000);
+  });
+
+  describe('GET /api/v1/compendium/<id of loaded compendium>/metadata', () => {
+    it('should respond with HTTP 200 OK', (done) => {
+      request(host + '/api/v1/compendium/' + compendium_id + '/metadata', (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        done();
+      });
+    });
+    it('should respond with a valid JSON document', (done) => {
+      request(host + '/api/v1/compendium/' + compendium_id + '/metadata', (err, res, body) => {
+        assert.ifError(err);
+        assert.isObject(JSON.parse(body));
+        done();
+      });
+    });
+    it('should respond with document containing _only_ the o2r metadata properties', (done) => {
+      request(host + '/api/v1/compendium/' + compendium_id + '/metadata', (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.property(response, 'metadata');
+        assert.property(response, 'id');
+        assert.notProperty(response, 'raw');
+        assert.property(response.metadata, 'o2r');
+        assert.notProperty(response.metadata, 'raw');
+        assert.notProperty(response.metadata, 'zenodo');
+        assert.notProperty(response.metadata, 'orcid');
+        assert.notProperty(response.metadata, 'cris');
+
+        assert.propertyVal(response.metadata.o2r, 'title', 'This is the title: it contains a colon');
+        done();
+      });
+    });
+  });
+
+  let data = {
+    'o2r': {
+      'title': 'New title on the block',
+      'author': 'npm test!'
+    }
+  };
+  let j = request.jar();
+  let ck = request.cookie('connect.sid=' + cookie_plain);
+  j.setCookie(ck, host);
+
+  let req_doc_plain = {
+    method: 'PUT',
+    jar: j,
+    json: data,
+    timeout: 10000
+  };
+
+  let j2 = request.jar();
+  let ck2 = request.cookie('connect.sid=' + cookie_o2r);
+  j2.setCookie(ck2, host);
+
+  let req_doc_o2r = {
+    method: 'PUT',
+    jar: j2,
+    json: data,
+    timeout: 10000
+  };
+
+  describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with wrong user', () => {
+    it('should respond with HTTP 401', (done) => {
+      req_doc_plain.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      request(req_doc_plain, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 401);
+        done();
+      });
+    }).timeout(20000);
+
+    it('should respond with a valid JSON document with error message', (done) => {
+      req_doc_plain.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      request(req_doc_plain, (err, res, body) => {
+        assert.ifError(err);
+        assert.isObject(body);
+        assert.propertyVal(body, 'error', 'not authorized');
+        done();
+      });
+    }).timeout(20000);
+  });
+
+  describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with author user', () => {
+    it('should respond with HTTP 200', (done) => {
+      req_doc_o2r.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      request(req_doc_o2r, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        done();
+      });
+    }).timeout(20000);
+    it('should respond with a valid JSON document with the updated metadata', (done) => {
+      req_doc_o2r.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      request(req_doc_o2r, (err, res, body) => {
+        assert.ifError(err);
+        assert.isObject(body);
+        assert.include(body.metadata.o2r.title, 'New title on the block');
+        done();
+      });
+    }).timeout(20000);
+    it('should have the updated metadata in the metadata section', (done) => {
+      request(host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.property(response, 'metadata');
+        assert.property(response.metadata, 'o2r');
+        assert.property(response.metadata, 'raw');
+        assert.property(response.metadata.o2r, 'title');
+        assert.property(response.metadata.o2r, 'author');
+        assert.propertyVal(response.metadata.o2r, 'title', 'New title on the block');
+        assert.propertyVal(response.metadata.o2r, 'author', 'npm test!');
+        assert.notProperty(response.metadata.o2r, 'abstract');
+        assert.notProperty(response.metadata.o2r, 'file');
+        done();
+      });
+    }).timeout(20000);
+  });
+
+  describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with invalid payload', () => {
+    let data = "{ \
+      'o2r': { \
+        [] \
+        'title': // yes this is invalid by purpose \
+      } \
+    }";
+    let j = request.jar();
+    let ck = request.cookie('connect.sid=' + cookie_o2r);
+    j.setCookie(ck, host);
+
+    let req = {
+      method: 'PUT',
+      jar: j,
+      json: data,
+      timeout: 10000
+    };
+
+    it('should respond with HTTP 400', (done) => {
+      req.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      request(req, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 400);
+        done();
+      });
+    }).timeout(20000);
+    it('should respond with a valid JSON document and error message', (done) => {
+      req.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      request(req, (err, res, body) => {
+        assert.ifError(err);
+        assert.include(body, 'SyntaxError');
+        done();
+      });
+    }).timeout(20000);
+  });
+
+  describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with invalid payload structure', () => {
+    let data = {
+      'not_o2r': {
+        'title': 'New title on the block (NTOTB)'
+      }
+    };
+    let j = request.jar();
+    let ck = request.cookie('connect.sid=' + cookie_o2r);
+    j.setCookie(ck, host);
+
+    let req = {
+      method: 'PUT',
+      jar: j,
+      json: data,
+      timeout: 10000
+    };
+
+    it('should respond with HTTP 422', (done) => {
+      req.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      request(req, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 422);
+        done();
+      });
+    });
+    it('should respond with a valid JSON document and error message', (done) => {
+      req.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      request(req, (err, res, body) => {
+        assert.ifError(err);
+        assert.isObject(body);
+        assert.property(body, 'error');
+        assert.propertyVal(body, 'error', "JSON with root element 'o2r' required");
+        done();
+      });
+    });
+  });
+
 });
