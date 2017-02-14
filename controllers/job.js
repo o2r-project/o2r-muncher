@@ -47,16 +47,11 @@ exports.view = (req, res) => {
     filter.user = req.query.user;
     filter_query = filter_query + '&user=' + req.query.user;
   }
-<<<<<<< HEAD
 
   //filtering for status
   if (req.query.status != null) {
     filter.status = req.query.status;
     filter_query = filter_query + '&status=' + req.query.status;
-  }
-
-  if (start >= 1) {
-    answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
   }
 
   switch (req.query.fields) { //add requested fields (status, ...) to db query
@@ -65,15 +60,11 @@ exports.view = (req, res) => {
     case 'status': // select id and status in query
       fields+= ' status';
   }
-
-  Job.find(filter).select(fields).skip(start * limit).limit(limit).exec((err, jobs) => {
-=======
   //if (start >= 1) {
   //  answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
   //}
 
-  Job.find(filter).select('id').skip(start).limit(limit).exec((err, jobs) => {
->>>>>>> 63ec7f50f25c2b3a3a3e133f7f84a5879a415859
+  Job.find(filter).select(fields).skip(start).limit(limit).exec((err, jobs) => {
     if (err) {
       res.status(500).send(JSON.stringify({ error: 'query failed' }));
     } else {
@@ -85,19 +76,14 @@ exports.view = (req, res) => {
         //  answer.next = req.route.path + '?limit=' + limit + '&start=' +
         //    (start + 2) + filter_query;
         //}
-
-        // put all requested fields in an array
-        answer.results = jobs.map((job) => {
-          let tempResult = {};
-          tempResult.id = job.id;
-          switch (req.query.fields) {
-            case null:
-              break;
-            case 'status':
-              tempResult.status = job.status;
-          }     
-          return tempResult; 
-        });
+        
+        switch (req.query.fields) { //return requested fields
+          case 'status':
+            answer.results = jobs.map((job) => { return {id: job.id, status: job.status}; });
+            break;
+          default:
+            answer.results = jobs.map((job) => { return job.id; });            
+        }
         res.status(200).send(JSON.stringify(answer));
       }
     }
