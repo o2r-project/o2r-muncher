@@ -43,8 +43,13 @@ exports.create = (req, res) => {
       req.body.content_type, req.user.id, req.file.originalname);
 
     var uploader = new Uploader(req, res);
-    uploader.upload((id) => {
-      debug('New compendium %s successfully uploaded', id);
+    uploader.upload((id, err) => {
+      if (err) {
+        debug('Error during upload: %s', JSON.stringify(err));
+      }
+      else {
+        debug('New compendium %s successfully uploaded', id);
+      }
     });
   } else {
     res.status(500).send('Provided content_type not yet implemented, only "compendium_v1" is supported.');
@@ -177,3 +182,64 @@ exports.view = (req, res) => {
   });
 };
 
+exports.viewSingleMetadata = (req, res) => {
+  let id = req.params.id;
+  let answer = { id: id };
+
+  Compendium.findOne({ id }).select('id metadata').exec((err, compendium) => {
+    // eslint-disable-next-line no-eq-null, eqeqeq
+    if (err || compendium == null) {
+      res.status(404).send(JSON.stringify({ error: 'no compendium with this id' }));
+    } else {
+      answer.metadata = {};
+      answer.metadata.o2r = compendium.metadata.o2r;
+      res.status(200).send(answer);
+    }
+  });
+};
+
+exports.updateMetadata = (req, res) => {
+  let id = req.params.id;
+  let answer = { id: id };
+
+  // check user
+  if (!req.isAuthenticated()) {
+    res.status(401).send('{"error":"user is not authenticated"}');
+    return;
+  }
+  let user_id = req.user.orcid;
+
+  Compendium.findOne({ id }).select('id metadata user').exec((err, compendium) => {
+    // eslint-disable-next-line no-eq-null, eqeqeq
+    if (err || compendium == null) {
+      res.status(404).send(JSON.stringify({ error: 'no compendium with this id' }));
+    } else {
+      if (user_id != compendium.user) {
+        debug('User %s trying to edit metadata of compendium %s by user %s', user_id, id, compendium.user.id);
+        res.status(401).send(JSON.stringify({ error: 'not authorized' }));
+      }
+      else {
+        if (!req.body.hasOwnProperty('o2r')) {
+          debug('[%s] invalid metadata provided: no o2r root element', id);
+          res.status(422).send(JSON.stringify({ error: "JSON with root element 'o2r' required" }));
+          return;
+        }
+
+        compendium.metadata.o2r = req.body.o2r;
+        answer.metadata = {};
+        answer.metadata.o2r = compendium.metadata.o2r;
+
+        compendium.markModified('metadata');
+        compendium.save((err, doc) => {
+          if (err) {
+            debug('[%s] ERROR saving new compendium: %s', id, err);
+            res.status(500).send(JSON.stringify({ error: 'internal error' }));
+          } else {
+            debug('[%s] Updated compendium, now is:\n%s', id, JSON.stringify(doc));
+            res.status(200).send(answer);
+          }
+        });
+      }
+    }
+  });
+};
