@@ -21,8 +21,10 @@ var mongojs = require('mongojs');
 // test parameters for local session authentication directly via fixed database entries
 var orcid_o2r = '0000-0001-6021-1617';
 var orcid_plain = '0000-0000-0000-0001';
+var orcid_uploader = '2000-0000-0000-0002';
 var sessionId_o2r = 'C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo';
 var sessionId_plain = 'yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq';
+var sessionId_uploader = 'lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO';
 
 before(function() {
     var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
@@ -68,6 +70,25 @@ before(function() {
     db.sessions.save(session_plain, function (err, doc) {
         if (err) throw err;
     });
+    var session_uploader = {
+        '_id': sessionId_uploader,
+        'session': {
+            'cookie': {
+                'originalMaxAge': null,
+                'expires': null,
+                'secure': null,
+                'httpOnly': true,
+                'domain': null,
+                'path': '/'
+            },
+            'passport': {
+                'user': orcid_uploader
+            }
+        }
+    }
+    db.sessions.save(session_uploader, function (err, doc) {
+        if (err) throw err;
+    });
 
     var o2ruser = {
         '_id': '57dc171b8760d15dc1864044',
@@ -85,6 +106,15 @@ before(function() {
         'name': 'plain-testuser'
     };
     db.users.save(plainuser, function (err, doc) {
+        if (err) throw err;
+    });
+    var uploaderuser = {
+        '_id': '58a2e0ea1d68491233b925e8',
+        'orcid': orcid_uploader,
+        'level': 100,
+        'name': 'plain-testuser'
+    };
+    db.users.save(uploaderuser, function (err, doc) {
         if (err) throw err;
     });
 });

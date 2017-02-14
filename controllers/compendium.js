@@ -96,15 +96,11 @@ exports.viewSingle = (req, res) => {
 exports.viewSingleJobs = (req, res) => {
   var id = req.params.id;
   var answer = {};
-  var filter_query = '';
   var filter = { compendium_id: id };
   var limit = parseInt(req.query.limit || c.list_limit, 10);
   var start = parseInt(req.query.start || 1, 10) - 1;
-  if (start > 1) {
-    answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
-  }
 
-  Job.find(filter).select('id').skip(start * limit).limit(limit).exec((err, jobs) => {
+  Job.find(filter).select('id').skip(start).limit(limit).exec((err, jobs) => {
     if (err) {
       res.status(500).send(JSON.stringify({ error: 'query failed' }));
     } else {
@@ -123,10 +119,6 @@ exports.viewSingleJobs = (req, res) => {
           }
         });
       } else {
-        if (count >= limit) {
-          answer.next = req.route.path + '?limit=' + limit + '&start=' +
-            (start + 2) + filter_query;
-        }
 
         answer.results = jobs.map(job => {
           return job.id;
@@ -139,7 +131,6 @@ exports.viewSingleJobs = (req, res) => {
 
 exports.view = (req, res) => {
   var answer = {};
-  var filter_query = '';
   var filter = {};
   var limit = parseInt(req.query.limit || c.list_limit, 10);
   var start = parseInt(req.query.start || 1, 10) - 1;
@@ -148,19 +139,13 @@ exports.view = (req, res) => {
   // eslint-disable-next-line no-eq-null, eqeqeq
   if (req.query.job_id != null) {
     filter.job_id = req.query.job_id;
-    filter_query = '&job_id=' + req.query.job_id;
   }
   // eslint-disable-next-line no-eq-null, eqeqeq
   if (req.query.user != null) {
     filter.user = req.query.user;
-    filter_query = filter_query + '&user=' + req.query.user;
   }
 
-  if (start > 1) {
-    answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
-  }
-
-  Compendium.find(filter).select('id').skip(start * limit).limit(limit).exec((err, comps) => {
+  Compendium.find(filter).select('id').skip(start).limit(limit).exec((err, comps) => {
     if (err) {
       res.status(500).send(JSON.stringify({ error: 'query failed' }));
     } else {
@@ -168,10 +153,6 @@ exports.view = (req, res) => {
       if (count <= 0) {
         res.status(404).send(JSON.stringify({ error: 'no compendium found' }));
       } else {
-        if (count >= limit) {
-          answer.next = req.route.path + '?limit=' + limit + '&start=' +
-            (start + 2) + filter_query;
-        }
 
         answer.results = comps.map(comp => {
           return comp.id;
