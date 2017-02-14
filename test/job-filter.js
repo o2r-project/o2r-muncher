@@ -195,6 +195,11 @@ describe('API job filtering', () => {
       });
     }).timeout(10000);
 
+    it('should take a break', (done) => {
+      sleep.sleep(waitSecs);
+    done();
+    }).timeout(waitSecs * 1000 * 2);
+
     it('should list 3 jobs with compendium_id', (done) => {
       request(host + '/api/v1/job/?compendium_id=' + compendium_id, (err, res, body) => {
         assert.ifError(err);
@@ -229,7 +234,7 @@ describe('API job filtering', () => {
     });
 
     it('should list 2 jobs with the status "success"', (done) => {
-      request(host + '/api/v1/job/?status=success', (err, res, body) => {
+      request(host + '/api/v1/job?status=success', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         let response = JSON.parse(body);
@@ -240,7 +245,7 @@ describe('API job filtering', () => {
     });
 
     it('should list 3 jobs with the status "failure"', (done) => {
-      request(host + '/api/v1/job/?status=failure', (err, res, body) => {
+      request(host + '/api/v1/job?status=failure', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         let response = JSON.parse(body);

@@ -109,7 +109,7 @@ before(function() {
         if (err) throw err;
     });
     var uploaderuser = {
-        '_id': '',
+        '_id': '58a2e0ea1d68491233b925e8',
         'orcid': orcid_uploader,
         'level': 100,
         'name': 'plain-testuser'
