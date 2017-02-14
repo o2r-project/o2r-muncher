@@ -31,7 +31,6 @@ var Job = require('../lib/model/job');
 
 exports.view = (req, res) => {
   var answer = {};
-  var filter_query = '';
   var filter = {};
   var limit = parseInt(req.query.limit || c.list_limit, 10);
   var start = parseInt(req.query.start || 1, 10) - 1;
@@ -40,29 +39,23 @@ exports.view = (req, res) => {
   // eslint-disable-next-line no-eq-null, eqeqeq
   if (req.query.compendium_id != null) {
     filter.compendium_id = req.query.compendium_id;
-    filter_query = '&compendium_id=' + req.query.compendium_id;
   }
   // eslint-disable-next-line no-eq-null, eqeqeq
   if (req.query.user != null) {
     filter.user = req.query.user;
-    filter_query = filter_query + '&user=' + req.query.user;
   }
 
   //filtering for status
   if (req.query.status != null) {
     filter.status = req.query.status;
-    filter_query = filter_query + '&status=' + req.query.status;
   }
 
   switch (req.query.fields) { //add requested fields (status, ...) to db query
     case null:
       break;
     case 'status': // select id and status in query
-      fields+= ' status';
+      fields += ' status';
   }
-  //if (start >= 1) {
-  //  answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
-  //}
 
   Job.find(filter).select(fields).skip(start).limit(limit).exec((err, jobs) => {
     if (err) {
@@ -72,10 +65,6 @@ exports.view = (req, res) => {
       if (count <= 0) {
         res.status(404).send(JSON.stringify({ error: 'no jobs found' }));
       } else {
-        //if (count >= limit) {
-        //  answer.next = req.route.path + '?limit=' + limit + '&start=' +
-        //    (start + 2) + filter_query;
-        //}
         
         switch (req.query.fields) { //return requested fields
           case 'status':
