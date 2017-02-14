@@ -35,6 +35,7 @@ exports.view = (req, res) => {
   var filter = {};
   var limit = parseInt(req.query.limit || c.list_limit, 10);
   var start = parseInt(req.query.start || 1, 10) - 1;
+  var fields = 'id';
 
   // eslint-disable-next-line no-eq-null, eqeqeq
   if (req.query.compendium_id != null) {
@@ -57,7 +58,14 @@ exports.view = (req, res) => {
     answer.previous = req.route.path + '?limit=' + limit + '&start=' + start + filter_query;
   }
 
-  Job.find(filter).select('id').skip(start * limit).limit(limit).exec((err, jobs) => {
+  switch (req.query.fields) { //add requested fields (status, ...) to db query
+    case null:
+      break;
+    case 'status': // select id and status in query
+      fields+= ' status';
+  }
+
+  Job.find(filter).select(fields).skip(start * limit).limit(limit).exec((err, jobs) => {
     if (err) {
       res.status(500).send(JSON.stringify({ error: 'query failed' }));
     } else {
@@ -70,7 +78,18 @@ exports.view = (req, res) => {
             (start + 2) + filter_query;
         }
 
-        answer.results = jobs.map((job) => { return job.id; });
+        // put all requested fields in an array
+        answer.results = jobs.map((job) => {
+          let tempResult = {};
+          tempResult.id = job.id;
+          switch (req.query.fields) {
+            case null:
+              break;
+            case 'status':
+              tempResult.status = job.status;
+          }     
+          return tempResult; 
+        });
         res.status(200).send(JSON.stringify(answer));
       }
     }
