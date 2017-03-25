@@ -1,6 +1,7 @@
 # o2r muncher
 
 ![Travis CI](https://api.travis-ci.org/o2r-project/o2r-muncher.svg)
+[![FOSSA License Compliance](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fo2r-project%2Fo2r-muncher.svg)](http://fossa.io)
 
 Node.js implementation of the endpoints `/api/v1/compendium` and `/api/v1/jobs` of the [o2r-web-api](http://o2r.info/o2r-web-api/).
 
