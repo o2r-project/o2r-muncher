@@ -1,7 +1,10 @@
 #!/bin/bash
+set -e
 
 # https://gist.github.com/DarrenN/8c6a5b969481725a4413
 PACKAGE_VERSION=$(sed -nE 's/^\s*"version": "(.*?)",$/\1/p' package.json)
 echo Add version tag using $PACKAGE_VERSION
 
-docker tag $IMAGE_NAME $IMAGE_NAME:$PACKAGE_VERSION
+# https://docs.docker.com/docker-cloud/builds/advanced/#build-hook-examples
+docker tag $IMAGE_NAME $DOCKER_REPO:$PACKAGE_VERSION
+docker push $DOCKER_REPO:$PACKAGE_VERSION
