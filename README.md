@@ -1,6 +1,7 @@
 # o2r muncher
 
 ![Travis CI](https://api.travis-ci.org/o2r-project/o2r-muncher.svg)
+[![](https://images.microbadger.com/badges/image/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own image badge on microbadger.com")
 
 Node.js implementation of the endpoints `/api/v1/compendium` and `/api/v1/jobs` of the [o2r-web-api](http://o2r.info/o2r-web-api/).
 
