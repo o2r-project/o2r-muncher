@@ -15,6 +15,7 @@
 FROM frolvlad/alpine-python3
 MAINTAINER o2r-project <https://o2r.info>
 
+# Installation time and run-time dependencies
 RUN apk add --no-cache \
     git \
     wget \
@@ -27,7 +28,7 @@ RUN apk add --no-cache \
   && wget -O /sbin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.0/dumb-init_1.2.0_amd64 \
   && chmod +x /sbin/dumb-init
 
-# o2r-meta
+# o2r-meta dependencies and installation
 RUN apk add --no-cache \
     gcc \
     g++ \
@@ -46,7 +47,26 @@ RUN apk del \
     ca-certificates \
   && rm -rf /var/cache
 
+# App installation
 WORKDIR /muncher
 RUN npm install --production
+
+# Metadata params provided with docker build command
+ARG VERSION=dev
+ARG VCS_URL
+ARG VCS_REF
+ARG BUILD_DATE
+
+# Metadata http://label-schema.org/rc1/
+LABEL org.label-schema.vendor="o2r project" \
+      org.label-schema.url="http://o2r.info" \
+      org.label-schema.name="o2r muncher" \
+      org.label-schema.description="ERC execution and CRUD" \    
+      org.label-schema.version=$VERSION \
+      org.label-schema.vcs-url=$VCS_URL \
+      org.label-schema.vcs-ref=$VCS_REF \
+      org.label-schema.build-date=$BUILD_DATE \
+      org.label-schema.docker.schema-version="rc1"
+
 ENTRYPOINT ["/sbin/dumb-init", "--"]
 CMD ["npm", "start" ]
