@@ -20,7 +20,6 @@
     "bagit": "^0.0.2",
     "bluebird": "^3.5.0",
     "body-parser": "^1.17.1",
-    "clamscan": "https://github.com/nuest/clamscan/archive/v0.8.4-1.tar.gz",
     "clone": "^2.1.1",
     "compression": "^1.6.2",
     "connect-mongodb-session": "^1.1.1",
