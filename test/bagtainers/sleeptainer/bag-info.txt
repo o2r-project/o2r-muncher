@@ -1,3 +1,3 @@
-Payload-Oxum: 374.3
-Bagging-Date: 2016-11-16
+Payload-Oxum: 360.3
+Bagging-Date: 2017-04-03
 Bag-Size: 0.8 KB

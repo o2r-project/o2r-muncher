@@ -76,18 +76,18 @@ describe('API job', () => {
     });
   });
 
-  describe('EXECUTION step_zero', () => {
+  describe('EXECUTION step_zero bag is invalid', () => {
     it('should fail the upload because bag is invalid', (done) => {
       let req = createCompendiumPostRequest(host, './test/bagtainers/step_zero', cookie_o2r);
 
       request(req, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 400);
-        assert.include(body, 'invalid bag');
+        assert.include(body, 'bag ist invalid');
         done();
       });
     }).timeout(10000);
-    it('should not tell about internal serve configuration in the error message', (done) => {
+    it('should not tell about internal server configuration in the error message', (done) => {
       let req = createCompendiumPostRequest(host, './test/bagtainers/step_zero', cookie_o2r);
 
       request(req, (err, res, body) => {
@@ -345,36 +345,23 @@ describe('API job', () => {
   });
 
   describe('GET /api/v1/job with multiple jobs overall', () => {
-    it('should contain next link if limit provided', (done) => {
-      request(host + '/api/v1/job?limit=3', (err, res, body) => {
+    it('should contain fewer results if start is provided', (done) => {
+      request(host + '/api/v1/job?start=3', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.property(response, 'next');
+        assert.equal(response.results.length, 2); // there are 4, starting with no. 3 leaves 2
+        done();
+      });
+    });
+    it('should contain no results but an error if too large start parameter is provided', (done) => {
+      request(host + '/api/v1/job?start=999', (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response, 'error', 'no jobs found');
         done();
       });
     });
 
-    it('should contain next and previous link if limit and start provided', (done) => {
-      request(host + '/api/v1/job?limit=1&start=2', (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.property(response, 'next');
-        assert.property(response, 'previous');
-        done();
-      });
-    });
-
-    it('should use pagination settings from request for pagination links', (done) => {
-      request(host + '/api/v1/job?limit=2&start=2', (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.property(response, 'next');
-        assert.property(response, 'previous');
-        assert.propertyVal(response, 'previous', '/api/v1/job?limit=2&start=1');
-        assert.propertyVal(response, 'next', '/api/v1/job?limit=2&start=3');
-        done();
-      });
-    });
     it('should just list the number of jobs requested', (done) => {
       request(host + '/api/v1/job?limit=2', (err, res, body) => {
         assert.ifError(err);

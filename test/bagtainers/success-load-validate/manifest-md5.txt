@@ -1,4 +1,4 @@
-a7f1e8b44eaf1d5be53602c13f374784  data/Bagtainer.R
-06780d6a374d1955b591e8b78a12d5b7  data/Bagtainer.yml
+6d909e01d18d607fafff30e0b3cd2e43  data/Bagtainer.yml
 4a480c300bab776bc516f33eca2ba036  data/analysis.R
+a7f1e8b44eaf1d5be53602c13f374784  data/Bagtainer.R
 7d5ad5192667c09d2b5331004c254f27  data/data.txt

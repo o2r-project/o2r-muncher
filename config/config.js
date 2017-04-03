@@ -64,7 +64,7 @@ c.user.level.view_status = 500;
 
 // bagtainer configuration
 c.bagtainer = {};
-c.bagtainer.supportedVersions = ['0.1'];
+c.bagtainer.supportedVersions = ['0.1', '1'];
 c.bagtainer.payloadDirectory = '/data';
 c.bagtainer.configFile = '/data/bagtainer.yml';
 c.bagtainer.scan = {};

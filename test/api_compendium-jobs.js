@@ -19,6 +19,7 @@
 const assert = require('chai').assert;
 const request = require('request');
 const config = require('../config/config');
+const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const fs = require('fs');
 const host = 'http://localhost:' + config.net.port;
 const mongojs = require('mongojs');
@@ -40,28 +41,15 @@ describe('API compendium / jobs', () => {
     });
 
     var compendium_id = '';
-    describe('POST /api/v1/compendium success-load.zip', () => {
+    describe('POST /api/v1/compendium that loads and can be executed', () => {
         it('should respond with HTTP 200 OK and new ID', (done) => {
-            let formData = {
-                'content_type': 'compendium_v1',
-                'compendium': {
-                    value: fs.createReadStream('./test/bagtainers/success-load.zip'),
-                    options: {
-                        contentType: 'application/zip'
-                    }
-                }
-            };
-            let j = request.jar();
-            let ck = request.cookie('connect.sid=' + cookie_o2r);
-            j.setCookie(ck, host);
+            let req = createCompendiumPostRequest(host, './test/bagtainers/step_image_execute', cookie_o2r);
 
-            request({
-                uri: host + '/api/v1/compendium',
-                method: 'POST',
-                jar: j,
-                formData: formData,
-                timeout: requestTimeout
-            }, (err, res, body) => {
+            request(req, (err, res, body) => {
+                assert.ifError(err);
+                assert.equal(res.statusCode, 200);
+                assert.property(JSON.parse(body), 'id');
+                compendium_id = JSON.parse(body).id;
                 assert.ifError(err);
                 assert.equal(res.statusCode, 200);
                 assert.isObject(JSON.parse(body), 'returned JSON');

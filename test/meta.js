@@ -96,13 +96,13 @@ describe('Compendium metadata', () => {
       assert.include(metadata.abstract, 'Suspendisse ac ornare ligula.');
       done();
     });
-    it('should contain non-empty paperSource', (done) => {
+    it.skip('should contain non-empty paperSource', (done) => {
       assert.property(metadata, 'paperSource');
       assert.propertyNotVal(metadata, 'paperSource', '');
       done();
     });
     let main_file = 'document.Rmd';
-    it('should contain correct filepath', (done) => {
+    it.skip('should contain correct filepath', (done) => {
       assert.property(metadata, 'filepath');
       assert.propertyVal(metadata, 'filepath', '/' + compendium_id + '/data/' + main_file);
       done();
