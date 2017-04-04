@@ -15,7 +15,6 @@
  *
  */
 var c = {};
-c.version = {};
 c.net = {};
 c.mongo = {};
 c.fs = {};
@@ -23,10 +22,7 @@ c.oauth = {};
 var env = process.env;
 
 // Information about muncher
-c.version.major = 0;
-c.version.minor = 6;
-c.version.bug = 0;
-c.version.api = 1;
+c.api_version = 1;
 
 // network & database
 c.net.port = env.MUNCHER_PORT || 8080;

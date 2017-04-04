@@ -24,6 +24,8 @@ const backoff = require('backoff');
 const child_process = require('child_process');
 const Docker = require('dockerode');
 
+c.version = require('./package.json').version;
+
 // mongo connection
 const mongoose = require('mongoose');
 const dbURI = c.mongo.location + c.mongo.database;
@@ -206,8 +208,7 @@ function initApp(callback) {
     app.get('/api/v1/job/:id', controllers.job.viewSingle);
 
     app.listen(c.net.port, () => {
-      debug('muncher ' + c.version.major + '.' + c.version.minor + '.' +
-        c.version.bug + ' with API version ' + c.version.api +
+      debug('muncher ' + c.version + ' with API version ' + c.api_version +
         ' waiting for requests on port ' + c.net.port);
     });
   } catch (err) {
