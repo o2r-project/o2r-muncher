@@ -39,10 +39,6 @@ describe('API Compendium', () => {
     });
   });
 
-  /*
-   *  After starting a fresh Muncher instance, no compendia should be available
-   *  The listing thus should return a 404 error.
-   */
   describe('GET /api/v1/compendium (no compendium loaded)', () => {
     it('should respond with HTTP 404 Not Found', (done) => {
       request(host + '/api/v1/compendium', (err, res) => {
@@ -76,31 +72,22 @@ describe('API Compendium', () => {
     });
   });
 
-  /*
-   *  POST a valid trivial BagIt archive to create a new compendium.
-   */
-  var compendium_id = '';
-  describe('POST /api/v1/compendium with bagtainer that executes', () => {
-    it('should respond with HTTP 200 OK and new ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_image_execute', cookie);
+  describe('GET /api/v1/compendium with executing compendium loaded', () => {
+    var compendium_id = '';
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie);
 
       request(req, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
-        compendium_id = JSON.parse(body).id;
-        
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
         assert.isObject(JSON.parse(body), 'returned JSON');
         assert.isDefined(JSON.parse(body).id, 'returned id');
+        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });
-    }).timeout(10000);
-  });
+    });
 
-  describe('GET /api/v1/compendium (after compendium loaded)', () => {
     it('should respond with HTTP 200 OK and \'results\' array', (done) => {
       request(host + '/api/v1/compendium', (err, res, body) => {
         assert.ifError(err);
@@ -113,6 +100,16 @@ describe('API Compendium', () => {
   });
 
   describe('GET /api/v1/compendium/<id of loaded compendium>', () => {
+    var compendium_id = '';
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie);
+
+      request(req, (err, res, body) => {
+        compendium_id = JSON.parse(body).id;
+        done();
+      });
+    });
+
     it('should respond with HTTP 200 OK', (done) => {
       request(host + '/api/v1/compendium', (err, res) => {
         assert.ifError(err);
@@ -162,123 +159,5 @@ describe('API Compendium', () => {
         done();
       });
     });
-  });
-
-  describe('POST /api/v1/compendium invalid.zip (not a zip file)', () => {
-    it('should respond with HTTP 500 error', (done) => {
-      let formData = {
-        'content_type': 'compendium_v1',
-        'compendium': {
-          value: fs.createReadStream('./test/bagtainers/invalid.zip'),
-          options: {
-            contentType: 'application/zip'
-          }
-        }
-      };
-      let j = request.jar();
-      let ck = request.cookie('connect.sid=' + cookie);
-      j.setCookie(ck, host);
-
-      request({
-        uri: host + '/api/v1/compendium',
-        method: 'POST',
-        jar: j,
-        formData: formData,
-        timeout: requestTimeout
-      }, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 500);
-        assert.isObject(JSON.parse(body), 'returned JSON');
-        assert.isDefined(JSON.parse(body).error, 'returned error');
-        assert.include(JSON.parse(body).error, 'extraction failed: ');
-        done();
-      });
-    });
-
-
-    it('should NOT respond with internal configuration of the server', (done) => {
-      let formData = {
-        'content_type': 'compendium_v1',
-        'compendium': {
-          value: fs.createReadStream('./test/bagtainers/invalid.zip'),
-          options: {
-            contentType: 'application/zip'
-          }
-        }
-      };
-      let j = request.jar();
-      let ck = request.cookie('connect.sid=' + cookie);
-      j.setCookie(ck, host);
-
-      request({
-        uri: host + '/api/v1/compendium',
-        method: 'POST',
-        jar: j,
-        formData: formData,
-        timeout: requestTimeout
-      }, (err, res, body) => {
-        assert.ifError(err);
-        assert.notInclude(JSON.parse(body).error, config.fs.base);
-        done();
-      });
-    });
-  });
-
-  describe('POST /api/v1/compendium empty.zip (empty zip file)', () => {
-    it('should respond with ERROR 500 and valid JSON document', (done) => {
-      let formData = {
-        'content_type': 'compendium_v1',
-        'compendium': {
-          value: fs.createReadStream('./test/bagtainers/empty.zip'),
-          options: {
-            contentType: 'application/zip'
-          }
-        }
-      };
-      let j = request.jar();
-      let ck = request.cookie('connect.sid=' + cookie);
-      j.setCookie(ck, host);
-
-      request({
-        uri: host + '/api/v1/compendium',
-        method: 'POST',
-        jar: j,
-        formData: formData,
-        timeout: 1000 * 60
-      }, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 500);
-        assert.isObject(JSON.parse(body), 'returned JSON');
-        done();
-      });
-    }).timeout(1000 * 60);
-
-    it('should respond provide a helpful error message', (done) => {
-      let formData = {
-        'content_type': 'compendium_v1',
-        'compendium': {
-          value: fs.createReadStream('./test/bagtainers/empty.zip'),
-          options: {
-            contentType: 'application/zip'
-          }
-        }
-      };
-      let j = request.jar();
-      let ck = request.cookie('connect.sid=' + cookie);
-      j.setCookie(ck, host);
-
-      request({
-        uri: host + '/api/v1/compendium',
-        method: 'POST',
-        jar: j,
-        formData: formData,
-        timeout: requestTimeout
-      }, (err, res, body) => {
-        assert.ifError(err);
-        assert.include(JSON.parse(body).error, 'zipfile is empty');
-        done();
-      });
-    });
-
   });
 });

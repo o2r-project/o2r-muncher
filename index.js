@@ -18,7 +18,6 @@
 // General modules
 const debug = require('debug')('muncher');
 const c = require('./config/config');
-const randomstring = require('randomstring');
 const fse = require('fs-extra');
 const backoff = require('backoff');
 const child_process = require('child_process');
@@ -75,21 +74,13 @@ const starwars = require('starwars');
  *  File Upload
  */
 // check fs & create dirs if necessary
-fse.mkdirsSync(c.fs.incoming);
-fse.mkdirsSync(c.fs.compendium);
+
 fse.mkdirsSync(c.fs.job);
 fse.mkdirsSync(c.payload.tarball.tmpdir);
 
 var multer = require('multer');
-var storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, c.fs.incoming);
-  },
-  filename: (req, file, cb) => {
-    cb(null, randomstring.generate(c.id_length));
-  }
-});
-var upload = multer({ storage: storage });
+
+var upload = multer();
 
 /*
  *  Authentication & Authorization
@@ -196,21 +187,31 @@ function initApp(callback) {
     });
 
     app.get('/api/v1/compendium', controllers.compendium.view);
-    app.post('/api/v1/compendium', upload.single('compendium'), controllers.compendium.create);
     app.get('/api/v1/compendium/:id', controllers.compendium.viewSingle);
     app.get('/api/v1/compendium/:id/jobs', controllers.compendium.viewSingleJobs);
 
     app.get('/api/v1/compendium/:id/metadata', controllers.compendium.viewSingleMetadata);
     app.put('/api/v1/compendium/:id/metadata', upload.any(), controllers.compendium.updateMetadata);
-    
+
     app.get('/api/v1/job', controllers.job.view);
     app.post('/api/v1/job', upload.any(), controllers.job.create);
     app.get('/api/v1/job/:id', controllers.job.viewSingle);
 
     app.listen(c.net.port, () => {
-      debug('muncher ' + c.version + ' with API version ' + c.api_version +
-        ' waiting for requests on port ' + c.net.port);
+      debug('muncher %s with API version %s waiting for requests on port %s', c.version, c.api_version, c.net.port);
     });
+
+    // create reusable transporter object using the default SMTP transport
+    if (c.email.enable
+      && c.email.transport
+      && c.email.sender
+      && c.email.receivers) {
+
+      emailTransporter = nodemailer.createTransport(c.email.transport);
+      debug('Sending emails on critical events to %s', c.email.receivers);
+    } else {
+      debug('Email notification for critical events _not_ active: %s', JSON.stringify(c.email));
+    }
   } catch (err) {
     callback(err);
   }

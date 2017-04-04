@@ -15,7 +15,6 @@
  *
  */
 
-// General modules
 var c = require('../config/config');
 var debug = require('debug')('compendium');
 var randomstring = require('randomstring');

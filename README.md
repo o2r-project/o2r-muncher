@@ -3,7 +3,7 @@
 ![Travis CI](https://api.travis-ci.org/o2r-project/o2r-muncher.svg)
 [![](https://images.microbadger.com/badges/image/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own image badge on microbadger.com")
 
-Node.js implementation of the endpoints `/api/v1/compendium` and `/api/v1/jobs` of the [o2r-web-api](http://o2r.info/o2r-web-api/).
+Node.js implementation of the endpoints `/api/v1/compendium` (reading and metadata update) and `/api/v1/jobs` of the [o2r-web-api](http://o2r.info/o2r-web-api/).
 
 Requirements:
 
@@ -48,8 +48,6 @@ You can override these environment variables (configured in `config/config.js`) 
   Define on which Port muncher should listen. Defaults to `8080`.
 - `MUNCHER_MONGODB` __Required__
   Location for the mongo db. Defaults to `mongodb://localhost/`. You will very likely need to change this.
-- `MUNCHER_META_TOOL_EXE` __Required__
-  Executable for metadata tools, defaults to `python3 ../o2r-meta/o2rmeta.py`. You will very likely need to change this.
 - `MUNCHER_MONGODB_DATABASE`
   Which database inside the mongo db should be used. Defaults to `muncher`.
 - `MUNCHER_BASEPATH`

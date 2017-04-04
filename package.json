@@ -1,11 +1,11 @@
 {
   "name": "muncher",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Node.js implementation of parts of the [o2r web api](http://o2r.info/o2r-web-api).",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "mocha",
+    "test": "DEBUG=*,-modem,-mocha:* mocha",
     "debug": "DEBUG=muncher,executor node index.js"
   },
   "author": "o2r-project (http://o2r.info)",
@@ -17,7 +17,7 @@
   "dependencies": {
     "archiver": "^1.3.0",
     "backoff": "^2.5.0",
-    "bagit": "^0.0.2",
+    "bagit": "^0.0.3",
     "bluebird": "^3.5.0",
     "body-parser": "^1.17.1",
     "clone": "^2.1.1",
@@ -32,7 +32,6 @@
     "mimos": "^3.0.3",
     "mongoose": "^4.9.3",
     "mongoose-timestamp": "^0.6.0",
-    "multer": "^1.3.0",
     "nodemailer": "^2.7.2",
     "passport": "^0.3.2",
     "randomstring": "^1.1.4",

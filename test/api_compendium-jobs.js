@@ -29,8 +29,6 @@ chai.use(require('chai-datetime'));
 require("./setup")
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 
-const requestTimeout = 10000;
-
 
 describe('API compendium / jobs', () => {
     before((done) => {
@@ -40,27 +38,17 @@ describe('API compendium / jobs', () => {
         });
     });
 
-    var compendium_id = '';
-    describe('POST /api/v1/compendium that loads and can be executed', () => {
-        it('should respond with HTTP 200 OK and new ID', (done) => {
-            let req = createCompendiumPostRequest(host, './test/bagtainers/step_image_execute', cookie_o2r);
+    describe('GET /api/v1/compendium/ sub-endpoint /jobs', () => {
+        var compendium_id = '';
+        before((done) => {
+            let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
 
             request(req, (err, res, body) => {
-                assert.ifError(err);
-                assert.equal(res.statusCode, 200);
-                assert.property(JSON.parse(body), 'id');
-                compendium_id = JSON.parse(body).id;
-                assert.ifError(err);
-                assert.equal(res.statusCode, 200);
-                assert.isObject(JSON.parse(body), 'returned JSON');
-                assert.isDefined(JSON.parse(body).id, 'returned id');
                 compendium_id = JSON.parse(body).id;
                 done();
             });
-        }).timeout(10000);
-    });
+        });
 
-    describe('GET /api/v1/compendium/ sub-endpoint /jobs', () => {
         var job_id;
         it('should respond with HTTP 404 and an error message when there is no job for an existing compendium', (done) => {
             request(host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {

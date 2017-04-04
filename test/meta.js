@@ -28,21 +28,16 @@ require("./setup")
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 
-describe('Compendium metadata', () => {
+describe('Reading compendium metadata', () => {
   let compendium_id = '';
+  before(function (done) {
+    let req = createCompendiumPostRequest('./test/bagtainers/metatainer', cookie_o2r);
+    this.timeout(10000);
 
-  describe('POST /api/v1/compendium ./test/bagtainers/metatainer', () => {
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/metatainer', cookie_o2r);
-
-      request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
-        compendium_id = JSON.parse(body).id;
-        done();
-      });
-    }).timeout(20000);
+    request(req, (err, res, body) => {
+      compendium_id = JSON.parse(body).id;
+      done();
+    });
   });
 
   describe('GET /api/v1/compendium/<id of loaded compendium>', () => {
@@ -78,6 +73,7 @@ describe('Compendium metadata', () => {
         let response = JSON.parse(body);
         metadata = response.metadata[config.bagtainer.metaextract.targetElement];
         done();
+        //console.log(JSON.stringify(metadata));
       });
     });
 
@@ -96,20 +92,24 @@ describe('Compendium metadata', () => {
       assert.include(metadata.abstract, 'Suspendisse ac ornare ligula.');
       done();
     });
-    it.skip('should contain non-empty paperSource', (done) => {
+    let main_file = 'document.Rmd';
+    it('should contain non-empty paperSource', (done) => {
       assert.property(metadata, 'paperSource');
-      assert.propertyNotVal(metadata, 'paperSource', '');
+      assert.propertyVal(metadata, 'paperSource', main_file);
       done();
     });
-    let main_file = 'document.Rmd';
-    it.skip('should contain correct filepath', (done) => {
-      assert.property(metadata, 'filepath');
-      assert.propertyVal(metadata, 'filepath', '/' + compendium_id + '/data/' + main_file);
+    it('should contain filepath information', (done) => {
+      assert.property(metadata, 'file');
+      done();
+    });
+    it('should contain correct filepath', (done) => {
+      assert.property(metadata.file, 'filepath');
+      assert.propertyVal(metadata.file, 'filepath', compendium_id + '/data/' + main_file);
       done();
     });
     it('should contain correct file', (done) => {
-      assert.property(metadata, 'file');
-      assert.propertyVal(metadata, 'file', main_file);
+      assert.property(metadata.file, 'filename');
+      assert.propertyVal(metadata.file, 'filename', main_file);
       done();
     });
     it('should contain the correct erc identifier', (done) => {
@@ -130,19 +130,14 @@ describe('Compendium metadata', () => {
 
 describe('Updating compendium metadata', () => {
   let compendium_id = '';
+  before(function (done) {
+    let req = createCompendiumPostRequest('./test/bagtainers/metatainer', cookie_o2r);
+    this.timeout(10000);
 
-  describe('POST /api/v1/compendium ./test/bagtainers/metatainer', () => {
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/metatainer', cookie_o2r);
-
-      request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
-        compendium_id = JSON.parse(body).id;
-        done();
-      });
-    }).timeout(30000);
+    request(req, (err, res, body) => {
+      compendium_id = JSON.parse(body).id;
+      done();
+    });
   });
 
   describe('GET /api/v1/compendium/<id of loaded compendium>/metadata', () => {

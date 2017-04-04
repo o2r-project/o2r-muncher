@@ -31,7 +31,7 @@ const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 const sleepSecs = 1;
 
-describe('API job', () => {
+describe('API job steps', () => {
   before((done) => {
     var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
@@ -76,44 +76,18 @@ describe('API job', () => {
     });
   });
 
-  describe('EXECUTION step_zero bag is invalid', () => {
-    it('should fail the upload because bag is invalid', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_zero', cookie_o2r);
-
-      request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 400);
-        assert.include(body, 'bag ist invalid');
-        done();
-      });
-    }).timeout(10000);
-    it('should not tell about internal server configuration in the error message', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_zero', cookie_o2r);
-
-      request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.notInclude(body, config.fs.base);
-        done();
-      });
-    }).timeout(10000);
-  });
-
   describe('EXECUTION step_validate_bag', () => {
     let compendium_id = '';
     let job_id = '';
 
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_validate_bag', cookie_o2r);
-      // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_validate_bag', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });
-    }).timeout(10000);
+    });
 
     it('should return job ID when starting job execution', (done) => {
       let j = request.jar();
@@ -220,14 +194,10 @@ describe('API job', () => {
     let compendium_id = '';
     let job_id = '';
 
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_validate_compendium', cookie_o2r);
-      // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_validate_compendium', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });
@@ -353,6 +323,7 @@ describe('API job', () => {
         done();
       });
     });
+
     it('should contain no results but an error if too large start parameter is provided', (done) => {
       request(host + '/api/v1/job?start=999', (err, res, body) => {
         assert.ifError(err);
@@ -377,14 +348,11 @@ describe('API job', () => {
     let compendium_id = '';
     let job_id = '';
 
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_image_prepare', cookie_o2r);
-      // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
+    // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_prepare', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });
@@ -467,14 +435,10 @@ describe('API job', () => {
     var compendium_id = '';
     var job_id = '';
 
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_image_build', cookie_o2r);
-      // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_build', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });
@@ -554,13 +518,10 @@ describe('API job', () => {
     var Docker = require('dockerode');
     var docker = new Docker();
 
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_image_execute', cookie_o2r);
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });
