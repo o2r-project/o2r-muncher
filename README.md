@@ -81,15 +81,20 @@ The connection to the Docker API is build on [dockerode](https://www.npmjs.com/p
 
 ## Testing
 
-Testing needs a completely new environment (empty database), which is preferably started with the docker-compose files.
+Testing is based on mocha integration tests. A MongoDB database must be running at the default port for the tests to work and must be started manually.
+
+**Attention:** The database is cleared automatically before the test from all existing compendia and jobs!
+
+To be able to test job execution and compendia metadata update, the tests automatically start a Docker container of o2r-loader.
 
 ```bash
-npm install
-npm install -g mocha
-docker-compose -f docker-compose/docker-compose.yml up -d
-sleep 10
-mocha
-docker-compose -f docker-compose/docker-compose.yml down -v
+# must start with replica set for oplog (finder) to work, see https://docs.mongodb.com/manual/tutorial/convert-standalone-to-replica-set/ and https://docs.mongodb.com/manual/tutorial/deploy-replica-set-for-testing/
+mongod --dbpath ./db --replSet rso2r --smallfiles;
+
+npm test
+
+# you can also run the tests towards a manually specified host
+# TEST_HOST=http://localhost:80 npm test
 ```
 
 ## Development

@@ -20,7 +20,8 @@ const tmp = require('tmp');
 const AdmZip = require('adm-zip');
 const fs = require('fs');
 
-const host_loader = 'http://localhost:8088'; // see also setup.js
+require("./setup")
+console.log('Using loader at ' + global.test_host_loader);
 
 function createCompendiumPostRequest(path, cookie) {
   var zip = new AdmZip();
@@ -41,10 +42,10 @@ function createCompendiumPostRequest(path, cookie) {
   };
   let j = request.jar();
   let ck = request.cookie('connect.sid=' + cookie);
-  j.setCookie(ck, host_loader);
+  j.setCookie(ck, global.test_host_loader);
 
   let reqParams = {
-    uri: host_loader + '/api/v1/compendium',
+    uri: global.test_host_loader + '/api/v1/compendium',
     method: 'POST',
     jar: j,
     formData: formData,

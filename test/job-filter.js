@@ -20,7 +20,6 @@ const assert = require('chai').assert;
 const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
-const host = 'http://localhost:' + config.net.port;
 const mongojs = require('mongojs');
 const sleep = require('sleep');
 
@@ -59,10 +58,10 @@ describe('API job filtering', () => {
     it('1st job (success, orcid_o2r user): should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_o2r);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -84,10 +83,10 @@ describe('API job filtering', () => {
     it('2nd job (success, orcid_o2r user): should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_o2r);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -121,10 +120,10 @@ describe('API job filtering', () => {
     it('3rd job (failure, orcid_o2r user): should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_o2r);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -146,10 +145,10 @@ describe('API job filtering', () => {
     it('4th job (failure, orcid_uploader user): should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_uploader);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -171,10 +170,10 @@ describe('API job filtering', () => {
     it('5th job (failure, orcid_uploader user): should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_uploader);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -199,7 +198,7 @@ describe('API job filtering', () => {
     }).timeout(waitSecs * 1000 * 2);
 
     it('should list 3 jobs with compendium_id', (done) => {
-      request(host + '/api/v1/job/?compendium_id=' + compendium_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/?compendium_id=' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         let response = JSON.parse(body);
@@ -210,7 +209,7 @@ describe('API job filtering', () => {
     });
 
     it('should list 3 jobs of the test user "orcid_o2r"', (done) => {
-      request(host + '/api/v1/job/?user=0000-0001-6021-1617', (err, res, body) => {
+      request(global.test_host + '/api/v1/job/?user=0000-0001-6021-1617', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         let response = JSON.parse(body);
@@ -221,7 +220,7 @@ describe('API job filtering', () => {
     });
 
     it('should list 2 jobs of the user "orcid_uploader"', (done) => {
-      request(host + '/api/v1/job/?user=2000-0000-0000-0002', (err, res, body) => {
+      request(global.test_host + '/api/v1/job/?user=2000-0000-0000-0002', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         let response = JSON.parse(body);
@@ -232,7 +231,7 @@ describe('API job filtering', () => {
     });
 
     it('should list 2 jobs with the status "success"', (done) => {
-      request(host + '/api/v1/job?status=success', (err, res, body) => {
+      request(global.test_host + '/api/v1/job?status=success', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         let response = JSON.parse(body);
@@ -243,7 +242,7 @@ describe('API job filtering', () => {
     });
 
     it('should list 3 jobs with the status "failure"', (done) => {
-      request(host + '/api/v1/job?status=failure', (err, res, body) => {
+      request(global.test_host + '/api/v1/job?status=failure', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         let response = JSON.parse(body);
@@ -254,7 +253,7 @@ describe('API job filtering', () => {
     });
 
     it('should find no jobs with the undefined status "foo"', (done) => {
-      request(host + '/api/v1/job/?status=foo', (err, res, body) => {
+      request(global.test_host + '/api/v1/job/?status=foo', (err, res, body) => {
         assert.ifError(err);
         assert.notProperty(JSON.parse(body), 'results');
         assert.propertyVal(JSON.parse(body), 'error', 'no jobs found');
@@ -263,7 +262,7 @@ describe('API job filtering', () => {
     });
 
     it('should find no jobs of user 9999-9999-9999-9999', (done) => {
-      request(host + '/api/v1/job/?user=9999-9999-9999-9999', (err, res, body) => {
+      request(global.test_host + '/api/v1/job/?user=9999-9999-9999-9999', (err, res, body) => {
         assert.ifError(err);
         assert.notProperty(JSON.parse(body), 'results');
         assert.propertyVal(JSON.parse(body), 'error', 'no jobs found');

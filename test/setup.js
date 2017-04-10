@@ -33,6 +33,12 @@ var sessionId_uploader = 'lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO';
 
 var loader_container = null;
 
+var env = process.env;
+const config = require('../config/config');
+global.test_host = env.TEST_HOST ||  'http://localhost:' + config.net.port;
+global.test_host_loader = 'http://localhost:8088';
+console.log('Testing endpoint at ' + global.test_host);
+
 before(function (done) {
     this.timeout(20000);
 
@@ -165,7 +171,7 @@ before(function (done) {
         return container.start({}, (err, data) => {
             if (err) debugContainer('ERROR %s', JSON.stringify(err));
             else {
-                debugContainer('Started loader container with id %s', container.id)
+                debugContainer('Started loader container with id %s at port 8088', container.id)
                 sleep.sleep(3);
                 done();
             }

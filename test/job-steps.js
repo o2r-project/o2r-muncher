@@ -20,7 +20,6 @@ const assert = require('chai').assert;
 const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
-const host = 'http://localhost:' + config.net.port;
 const mongojs = require('mongojs');
 const fs = require('fs');
 const sleep = require('sleep');
@@ -41,21 +40,21 @@ describe('API job steps', () => {
 
   describe('GET /api/v1/job (with no job started)', () => {
     it('should respond with HTTP 404 Not Found', (done) => {
-      request(host + '/api/v1/job', (err, res) => {
+      request(global.test_host + '/api/v1/job', (err, res) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 404);
         done();
       });
     });
     it('should respond with a JSON object', (done) => {
-      request(host + '/api/v1/job', (err, res, body) => {
+      request(global.test_host + '/api/v1/job', (err, res, body) => {
         assert.ifError(err);
         assert.isObject(JSON.parse(body), 'returned JSON');
         done();
       });
     });
     it('should not yet contain array of job ids, but an error', (done) => {
-      request(host + '/api/v1/job', (err, res, body) => {
+      request(global.test_host + '/api/v1/job', (err, res, body) => {
         assert.ifError(err);
         assert.notProperty(JSON.parse(body), 'results');
         assert.propertyVal(JSON.parse(body), 'error', 'no jobs found');
@@ -66,7 +65,7 @@ describe('API job steps', () => {
 
   describe('GET /api/v1/job?compendium_id for non-existing compendium', () => {
     it('should respond with HTTP 404 and an error message', (done) => {
-      request(host + '/api/v1/job?compendium_id=1234', (err, res, body) => {
+      request(global.test_host + '/api/v1/job?compendium_id=1234', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 404);
         assert.notProperty(JSON.parse(body), 'results');
@@ -92,10 +91,10 @@ describe('API job steps', () => {
     it('should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_plain);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -113,7 +112,7 @@ describe('API job steps', () => {
     }).timeout(10000);
 
     it('should return document with required fields (including steps)', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         let response = JSON.parse(body);
@@ -132,7 +131,7 @@ describe('API job steps', () => {
     });
 
     it('should have step "validate_bag" running rightaway', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.validate_bag, 'status', 'running');
@@ -141,7 +140,7 @@ describe('API job steps', () => {
     });
 
     it('should have step "validate_compendium" queued', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.validate_compendium, 'status', 'queued');
@@ -152,7 +151,7 @@ describe('API job steps', () => {
     it('should complete step "validate_bag" __after some waiting__', (done) => {
       sleep.sleep(sleepSecs);
 
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.validate_bag, 'status', 'success');
@@ -161,7 +160,7 @@ describe('API job steps', () => {
     }).timeout(sleepSecs * 1000 * 3);
 
     it('should fail step "validate_compendium"', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.validate_compendium, 'status', 'failure');
@@ -170,7 +169,7 @@ describe('API job steps', () => {
     });
 
     it('should list image steps as queued', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.image_prepare, 'status', 'queued');
@@ -181,7 +180,7 @@ describe('API job steps', () => {
     });
 
     it('should complete step "cleanup"', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.cleanup, 'status', 'success');
@@ -206,10 +205,10 @@ describe('API job steps', () => {
     it('should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_plain);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -229,10 +228,10 @@ describe('API job steps', () => {
     it('should return job ID when starting _another_ job execution (different from the previous id)', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_plain);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -253,10 +252,10 @@ describe('API job steps', () => {
     it('should return job ID when starting _yet another_ job execution (different from the previous id)', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_plain);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -277,7 +276,7 @@ describe('API job steps', () => {
     it('should complete step "validate_compendium" __after some waiting__', (done) => {
       sleep.sleep(sleepSecs);
 
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
@@ -286,7 +285,7 @@ describe('API job steps', () => {
     }).timeout(sleepSecs * 1000 * 2);
 
     it('should fail step "image_prepare"', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.image_prepare, 'status', 'failure');
@@ -295,7 +294,7 @@ describe('API job steps', () => {
     });
 
     it('should list other image steps as queued', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.image_build, 'status', 'queued');
@@ -305,7 +304,7 @@ describe('API job steps', () => {
     });
 
     it('should complete step "cleanup"', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.cleanup, 'status', 'success');
@@ -316,7 +315,7 @@ describe('API job steps', () => {
 
   describe('GET /api/v1/job with multiple jobs overall', () => {
     it('should contain fewer results if start is provided', (done) => {
-      request(host + '/api/v1/job?start=3', (err, res, body) => {
+      request(global.test_host + '/api/v1/job?start=3', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.equal(response.results.length, 2); // there are 4, starting with no. 3 leaves 2
@@ -325,7 +324,7 @@ describe('API job steps', () => {
     });
 
     it('should contain no results but an error if too large start parameter is provided', (done) => {
-      request(host + '/api/v1/job?start=999', (err, res, body) => {
+      request(global.test_host + '/api/v1/job?start=999', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response, 'error', 'no jobs found');
@@ -334,7 +333,7 @@ describe('API job steps', () => {
     });
 
     it('should just list the number of jobs requested', (done) => {
-      request(host + '/api/v1/job?limit=2', (err, res, body) => {
+      request(global.test_host + '/api/v1/job?limit=2', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.isArray(response.results);
@@ -361,10 +360,10 @@ describe('API job steps', () => {
     it('should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_plain);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -384,7 +383,7 @@ describe('API job steps', () => {
     it('should complete step "image_prepare" __after some waiting__', (done) => {
       sleep.sleep(sleepSecs);
 
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.image_prepare, 'status', 'success');
@@ -393,7 +392,7 @@ describe('API job steps', () => {
     }).timeout(sleepSecs * 1000 * 2);
 
     it('should fail step "image_build"', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.image_build, 'status', 'failure');
@@ -402,7 +401,7 @@ describe('API job steps', () => {
     });
 
     it('should list other image_execute as queued', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.image_execute, 'status', 'queued');
@@ -411,7 +410,7 @@ describe('API job steps', () => {
     });
 
     it('should complete step "cleanup"', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.cleanup, 'status', 'success');
@@ -447,10 +446,10 @@ describe('API job steps', () => {
     it('should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_plain);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -470,7 +469,7 @@ describe('API job steps', () => {
     it('should complete step all previous steps __after some waiting__', (done) => {
       sleep.sleep(sleepSecs);
 
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.validate_bag, 'status', 'success');
@@ -483,7 +482,7 @@ describe('API job steps', () => {
     it('should complete step "image_build" __after some more waiting__', (done) => {
       sleep.sleep(sleepSecs);
 
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.image_build, 'status', 'success');
@@ -492,7 +491,7 @@ describe('API job steps', () => {
     }).timeout(sleepSecs * 1000 * 2);
 
     it('should fail step "image_execute" with a statuscode "1"', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.image_execute, 'status', 'failure');
@@ -502,7 +501,7 @@ describe('API job steps', () => {
     });
 
     it('should complete step "cleanup"', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.cleanup, 'status', 'success');
@@ -530,10 +529,10 @@ describe('API job steps', () => {
     it('should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_plain);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -553,7 +552,7 @@ describe('API job steps', () => {
     it('should complete step all previous steps __after some waiting__', (done) => {
       sleep.sleep(sleepSecs);
 
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.validate_bag, 'status', 'success');
@@ -567,7 +566,7 @@ describe('API job steps', () => {
     it('should complete step "image_execute"', (done) => {
       sleep.sleep(sleepSecs);
 
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.image_execute, 'status', 'success');
@@ -576,7 +575,7 @@ describe('API job steps', () => {
     }).timeout(sleepSecs * 1000 * 2);
 
     it('should complete step "cleanup"', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.cleanup, 'status', 'success');
@@ -585,7 +584,7 @@ describe('API job steps', () => {
     });
 
     it('execution log should include uname output', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 

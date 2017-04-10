@@ -16,27 +16,31 @@
  */
 
 /* eslint-env mocha */
-const assert    = require('chai').assert;
-const request   = require('request');
-const config    = require('../config/config');
-
-const host      = 'http://localhost:' + config.net.port;
+const assert = require('chai').assert;
+const request = require('request');
+const config = require('../config/config');
+const url = require('url');
 
 require("./setup")
 
 describe('API', () => {
-  describe('GET /', () => {
-    it('should respond with 404 Not Found', (done) => {
-      request(host, (err, res) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 404);
-        done();
-      });
+  describe('GET /', function() {
+    it('should respond with 404 Not Found (if endpoint of tested host is the configured port only)', function(done) {
+      let u = url.parse(global.test_host);
+      if (u.port == config.net.port) {
+        request(global.test_host, (err, res) => {
+          assert.ifError(err);
+          assert.equal(res.statusCode, 404);
+          done();
+        });
+      } else {
+        this.skip();
+      }
     });
   });
 
   describe('GET /api', () => {
-    let path = host + '/api';
+    let path = global.test_host + '/api';
     let current = null;
 
     it('should respond with 200', (done) => {
@@ -65,7 +69,7 @@ describe('API', () => {
       });
     });
     it('should at "current" endpoint return a document with valid subpaths', (done) => {
-      request(host + current, (err, res, body) => {
+      request(global.test_host + current, (err, res, body) => {
         let response = JSON.parse(body);
         assert.ifError(err);
         assert.isOk(response.auth);

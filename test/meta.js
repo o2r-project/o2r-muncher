@@ -19,7 +19,6 @@
 const assert = require('chai').assert;
 const request = require('request');
 const config = require('../config/config');
-const host = 'http://localhost:' + config.net.port;
 const chai = require('chai');
 chai.use(require('chai-datetime'));
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
@@ -42,21 +41,21 @@ describe('Reading compendium metadata', () => {
 
   describe('GET /api/v1/compendium/<id of loaded compendium>', () => {
     it('should respond with HTTP 200 OK', (done) => {
-      request(host + '/api/v1/compendium', (err, res) => {
+      request(global.test_host + '/api/v1/compendium', (err, res) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         done();
       });
     });
     it('should respond with a valid JSON document', (done) => {
-      request(host + '/api/v1/compendium', (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium', (err, res, body) => {
         assert.ifError(err);
         assert.isObject(JSON.parse(body));
         done();
       });
     });
     it('should respond with document containing metadata properties', (done) => {
-      request(host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.property(response, 'metadata');
@@ -68,7 +67,7 @@ describe('Reading compendium metadata', () => {
   describe('Metadata objects contents for compendium', () => {
     var metadata = {};
     it('should response with document', (done) => {
-      request(host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         metadata = response.metadata[config.bagtainer.metaextract.targetElement];
@@ -142,21 +141,21 @@ describe('Updating compendium metadata', () => {
 
   describe('GET /api/v1/compendium/<id of loaded compendium>/metadata', () => {
     it('should respond with HTTP 200 OK', (done) => {
-      request(host + '/api/v1/compendium/' + compendium_id + '/metadata', (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         done();
       });
     });
     it('should respond with a valid JSON document', (done) => {
-      request(host + '/api/v1/compendium/' + compendium_id + '/metadata', (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata', (err, res, body) => {
         assert.ifError(err);
         assert.isObject(JSON.parse(body));
         done();
       });
     });
     it('should respond with document containing _only_ the o2r metadata properties', (done) => {
-      request(host + '/api/v1/compendium/' + compendium_id + '/metadata', (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.property(response, 'metadata');
@@ -182,7 +181,7 @@ describe('Updating compendium metadata', () => {
   };
   let j = request.jar();
   let ck = request.cookie('connect.sid=' + cookie_plain);
-  j.setCookie(ck, host);
+  j.setCookie(ck, global.test_host);
 
   let req_doc_plain = {
     method: 'PUT',
@@ -193,7 +192,7 @@ describe('Updating compendium metadata', () => {
 
   let j2 = request.jar();
   let ck2 = request.cookie('connect.sid=' + cookie_o2r);
-  j2.setCookie(ck2, host);
+  j2.setCookie(ck2, global.test_host);
 
   let req_doc_o2r = {
     method: 'PUT',
@@ -204,7 +203,7 @@ describe('Updating compendium metadata', () => {
 
   describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with wrong user', () => {
     it('should respond with HTTP 401', (done) => {
-      req_doc_plain.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      req_doc_plain.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req_doc_plain, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 401);
@@ -213,7 +212,7 @@ describe('Updating compendium metadata', () => {
     }).timeout(20000);
 
     it('should respond with a valid JSON document with error message', (done) => {
-      req_doc_plain.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      req_doc_plain.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req_doc_plain, (err, res, body) => {
         assert.ifError(err);
         assert.isObject(body);
@@ -225,7 +224,7 @@ describe('Updating compendium metadata', () => {
 
   describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with author user', () => {
     it('should respond with HTTP 200', (done) => {
-      req_doc_o2r.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req_doc_o2r, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
@@ -233,7 +232,7 @@ describe('Updating compendium metadata', () => {
       });
     }).timeout(20000);
     it('should respond with a valid JSON document with the updated metadata', (done) => {
-      req_doc_o2r.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req_doc_o2r, (err, res, body) => {
         assert.ifError(err);
         assert.isObject(body);
@@ -242,7 +241,7 @@ describe('Updating compendium metadata', () => {
       });
     }).timeout(20000);
     it('should have the updated metadata in the metadata section', (done) => {
-      request(host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.property(response, 'metadata');
@@ -268,7 +267,7 @@ describe('Updating compendium metadata', () => {
     }";
     let j = request.jar();
     let ck = request.cookie('connect.sid=' + cookie_o2r);
-    j.setCookie(ck, host);
+    j.setCookie(ck, global.test_host);
 
     let req = {
       method: 'PUT',
@@ -278,7 +277,7 @@ describe('Updating compendium metadata', () => {
     };
 
     it('should respond with HTTP 400', (done) => {
-      req.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      req.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 400);
@@ -286,7 +285,7 @@ describe('Updating compendium metadata', () => {
       });
     }).timeout(20000);
     it('should respond with a valid JSON document and error message', (done) => {
-      req.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      req.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req, (err, res, body) => {
         assert.ifError(err);
         assert.include(body, 'SyntaxError');
@@ -303,7 +302,7 @@ describe('Updating compendium metadata', () => {
     };
     let j = request.jar();
     let ck = request.cookie('connect.sid=' + cookie_o2r);
-    j.setCookie(ck, host);
+    j.setCookie(ck, global.test_host);
 
     let req = {
       method: 'PUT',
@@ -313,7 +312,7 @@ describe('Updating compendium metadata', () => {
     };
 
     it('should respond with HTTP 422', (done) => {
-      req.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      req.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 422);
@@ -321,7 +320,7 @@ describe('Updating compendium metadata', () => {
       });
     });
     it('should respond with a valid JSON document and error message', (done) => {
-      req.uri = host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      req.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req, (err, res, body) => {
         assert.ifError(err);
         assert.isObject(body);

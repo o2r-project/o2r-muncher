@@ -18,10 +18,8 @@
 /* eslint-env mocha */
 const assert = require('chai').assert;
 const request = require('request');
-const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const fs = require('fs');
-const host = 'http://localhost:' + config.net.port;
 const mongojs = require('mongojs');
 const chai = require('chai');
 chai.use(require('chai-datetime'));
@@ -51,7 +49,7 @@ describe('API compendium / jobs', () => {
 
         var job_id;
         it('should respond with HTTP 404 and an error message when there is no job for an existing compendium', (done) => {
-            request(host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
+            request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
                 assert.ifError(err);
                 assert.equal(res.statusCode, 404);
                 let response = JSON.parse(body);
@@ -64,10 +62,10 @@ describe('API compendium / jobs', () => {
         it('should return job ID when starting job', (done) => {
             let j = request.jar();
             let ck = request.cookie('connect.sid=' + cookie_o2r);
-            j.setCookie(ck, host);
+            j.setCookie(ck, global.test_host);
 
             request({
-                uri: host + '/api/v1/job',
+                uri: global.test_host + '/api/v1/job',
                 method: 'POST',
                 jar: j,
                 formData: {
@@ -84,7 +82,7 @@ describe('API compendium / jobs', () => {
             });
         }).timeout(10000);
         it('should respond with HTTP 200 and one job when one is started', (done) => {
-            request(host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
+            request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
                 assert.ifError(err);
                 assert.equal(res.statusCode, 200);
                 assert.isDefined(JSON.parse(body).results, 'results returned');
@@ -93,7 +91,7 @@ describe('API compendium / jobs', () => {
             });
         });
         it('should respond with HTTP 404 and error message when that compendium does not exist', (done) => {
-            request(host + '/api/v1/compendium/1234/jobs', (err, res, body) => {
+            request(global.test_host + '/api/v1/compendium/1234/jobs', (err, res, body) => {
                 assert.ifError(err);
                 assert.equal(res.statusCode, 404);
                 assert.isUndefined(JSON.parse(body).result, 'returned no results');

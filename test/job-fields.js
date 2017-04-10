@@ -20,7 +20,6 @@ const assert = require('chai').assert;
 const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
-const host = 'http://localhost:' + config.net.port;
 const mongojs = require('mongojs');
 const sleep = require('sleep');
 
@@ -55,10 +54,10 @@ describe('API job fields', () => {
     it('should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_o2r);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -76,7 +75,7 @@ describe('API job fields', () => {
     }).timeout(10000);
 
     it('should list the status of a job', (done) => {
-      request(host + '/api/v1/job/?fields=status', (err, res, body) => {
+      request(global.test_host + '/api/v1/job/?fields=status', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         let response = JSON.parse(body);
@@ -88,7 +87,7 @@ describe('API job fields', () => {
     });
 
     it('should return no field "foo"', (done) => {
-      request(host + '/api/v1/job/?fields=foo', (err, res, body) => {
+      request(global.test_host + '/api/v1/job/?fields=foo', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         let response = JSON.parse(body);

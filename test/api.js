@@ -21,7 +21,6 @@ const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const fs = require('fs');
-const host = 'http://localhost:' + config.net.port;
 const mongojs = require('mongojs');
 const chai = require('chai');
 chai.use(require('chai-datetime'));
@@ -41,28 +40,28 @@ describe('API Compendium', () => {
 
   describe('GET /api/v1/compendium (no compendium loaded)', () => {
     it('should respond with HTTP 404 Not Found', (done) => {
-      request(host + '/api/v1/compendium', (err, res) => {
+      request(global.test_host + '/api/v1/compendium', (err, res) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 404);
         done();
       });
     });
     it('should respond with a JSON object', (done) => {
-      request(host + '/api/v1/compendium', (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium', (err, res, body) => {
         assert.ifError(err);
         assert.isObject(JSON.parse(body), 'returned JSON');
         done();
       });
     });
     it('should not yet contain array of compendium ids', (done) => {
-      request(host + '/api/v1/compendium', (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium', (err, res, body) => {
         assert.ifError(err);
         assert.isUndefined(JSON.parse(body).result, 'returned no results');
         done();
       });
     });
     it('should return an error message when asking for a non-existing compendium', (done) => {
-      request(host + '/api/v1/compendium/1234', (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/1234', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 404);
         assert.isUndefined(JSON.parse(body).result, 'returned no results');
@@ -89,7 +88,7 @@ describe('API Compendium', () => {
     });
 
     it('should respond with HTTP 200 OK and \'results\' array', (done) => {
-      request(host + '/api/v1/compendium', (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         assert.isDefined(JSON.parse(body).results, 'results returned');
@@ -111,21 +110,21 @@ describe('API Compendium', () => {
     });
 
     it('should respond with HTTP 200 OK', (done) => {
-      request(host + '/api/v1/compendium', (err, res) => {
+      request(global.test_host + '/api/v1/compendium', (err, res) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         done();
       });
     });
     it('should respond with a valid JSON document', (done) => {
-      request(host + '/api/v1/compendium', (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium', (err, res, body) => {
         assert.ifError(err);
         assert.isObject(JSON.parse(body));
         done();
       });
     });
     it('should respond with document containing correct properties, including compendium id and user id', (done) => {
-      request(host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.property(response, 'id');
@@ -138,7 +137,7 @@ describe('API Compendium', () => {
       });
     });
     it('should respond with files listing including children', (done) => {
-      request(host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.isObject(response.files);
@@ -147,7 +146,7 @@ describe('API Compendium', () => {
       });
     });
     it('should respond with a creation date just a few seconds ago', (done) => {
-      request(host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         let created = new Date(response.created);

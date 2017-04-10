@@ -20,7 +20,6 @@ const assert = require('chai').assert;
 const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
-const host = 'http://localhost:' + config.net.port;
 const mongojs = require('mongojs');
 const sleep = require('sleep');
 
@@ -53,10 +52,10 @@ describe('API job overall status', () => {
     it('should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_plain);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -74,7 +73,7 @@ describe('API job overall status', () => {
     });
 
     it('should have overall status "running" rightaway', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response, 'status', 'running');
@@ -85,7 +84,7 @@ describe('API job overall status', () => {
     it('should end with overall status "failure"', (done) => {
       sleep.sleep(waitSecs);
 
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response, 'status', 'failure');
@@ -110,10 +109,10 @@ describe('API job overall status', () => {
     it('should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_plain);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -131,7 +130,7 @@ describe('API job overall status', () => {
     });
 
     it('should have overall status "running" rightaway', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response, 'status', 'running');
@@ -142,7 +141,7 @@ describe('API job overall status', () => {
     it('should end with overall status "failure"', (done) => {
       sleep.sleep(waitSecs);
 
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response, 'status', 'failure');
@@ -167,10 +166,10 @@ describe('API job overall status', () => {
     it('should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_plain);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -188,7 +187,7 @@ describe('API job overall status', () => {
     });
 
     it('should have overall status "running" rightaway', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response, 'status', 'running');
@@ -199,7 +198,7 @@ describe('API job overall status', () => {
     it('should end with overall status "failure"', (done) => {
       sleep.sleep(waitSecs);
 
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response, 'status', 'failure');
@@ -224,10 +223,10 @@ describe('API job overall status', () => {
     it('should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_plain);
-      j.setCookie(ck, host);
+      j.setCookie(ck, global.test_host);
 
       request({
-        uri: host + '/api/v1/job',
+        uri: global.test_host + '/api/v1/job',
         method: 'POST',
         jar: j,
         formData: {
@@ -245,7 +244,7 @@ describe('API job overall status', () => {
     });
 
     it('should have overall status "running" rightaway', (done) => {
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response, 'status', 'running');
@@ -256,7 +255,7 @@ describe('API job overall status', () => {
     it('should end with overall status "success"', (done) => {
       sleep.sleep(waitSecs);
 
-      request(host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response, 'status', 'success');
