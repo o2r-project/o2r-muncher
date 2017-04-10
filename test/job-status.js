@@ -41,14 +41,10 @@ describe('API job overall status', () => {
     let compendium_id = '';
     let job_id = '';
 
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_validate_compendium', cookie_o2r);
-      // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_validate_compendium', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });
@@ -102,14 +98,10 @@ describe('API job overall status', () => {
     let compendium_id = '';
     let job_id = '';
 
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_image_prepare', cookie_o2r);
-      // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_prepare', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });
@@ -163,14 +155,10 @@ describe('API job overall status', () => {
     var compendium_id = '';
     var job_id = '';
 
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_image_build', cookie_o2r);
-      // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_build', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });
@@ -224,13 +212,10 @@ describe('API job overall status', () => {
     var compendium_id = '';
     var job_id = '';
 
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_image_execute', cookie_o2r);
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });

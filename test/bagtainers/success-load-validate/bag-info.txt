@@ -1,3 +1,4 @@
 Bag-Software-Agent: bagit.py <http://github.com/libraryofcongress/bagit-python>
-Bagging-Date: 2016-08-02
-Payload-Oxum: 9568.4
+Bagging-Date: 2017-04-03
+Payload-Oxum: 9523.4
+Bag-Size: 9.8 KB

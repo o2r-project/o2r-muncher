@@ -31,7 +31,7 @@ const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 const sleepSecs = 1;
 
-describe('API job', () => {
+describe('API job steps', () => {
   before((done) => {
     var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
@@ -76,44 +76,18 @@ describe('API job', () => {
     });
   });
 
-  describe('EXECUTION step_zero', () => {
-    it('should fail the upload because bag is invalid', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_zero', cookie_o2r);
-
-      request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 400);
-        assert.include(body, 'invalid bag');
-        done();
-      });
-    }).timeout(10000);
-    it('should not tell about internal serve configuration in the error message', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_zero', cookie_o2r);
-
-      request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.notInclude(body, config.fs.base);
-        done();
-      });
-    }).timeout(10000);
-  });
-
   describe('EXECUTION step_validate_bag', () => {
     let compendium_id = '';
     let job_id = '';
 
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_validate_bag', cookie_o2r);
-      // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_validate_bag', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });
-    }).timeout(10000);
+    });
 
     it('should return job ID when starting job execution', (done) => {
       let j = request.jar();
@@ -220,14 +194,10 @@ describe('API job', () => {
     let compendium_id = '';
     let job_id = '';
 
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_validate_compendium', cookie_o2r);
-      // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_validate_compendium', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });
@@ -345,36 +315,24 @@ describe('API job', () => {
   });
 
   describe('GET /api/v1/job with multiple jobs overall', () => {
-    it('should contain next link if limit provided', (done) => {
-      request(host + '/api/v1/job?limit=3', (err, res, body) => {
+    it('should contain fewer results if start is provided', (done) => {
+      request(host + '/api/v1/job?start=3', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.property(response, 'next');
+        assert.equal(response.results.length, 2); // there are 4, starting with no. 3 leaves 2
         done();
       });
     });
 
-    it('should contain next and previous link if limit and start provided', (done) => {
-      request(host + '/api/v1/job?limit=1&start=2', (err, res, body) => {
+    it('should contain no results but an error if too large start parameter is provided', (done) => {
+      request(host + '/api/v1/job?start=999', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.property(response, 'next');
-        assert.property(response, 'previous');
+        assert.propertyVal(response, 'error', 'no jobs found');
         done();
       });
     });
 
-    it('should use pagination settings from request for pagination links', (done) => {
-      request(host + '/api/v1/job?limit=2&start=2', (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.property(response, 'next');
-        assert.property(response, 'previous');
-        assert.propertyVal(response, 'previous', '/api/v1/job?limit=2&start=1');
-        assert.propertyVal(response, 'next', '/api/v1/job?limit=2&start=3');
-        done();
-      });
-    });
     it('should just list the number of jobs requested', (done) => {
       request(host + '/api/v1/job?limit=2', (err, res, body) => {
         assert.ifError(err);
@@ -390,14 +348,11 @@ describe('API job', () => {
     let compendium_id = '';
     let job_id = '';
 
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_image_prepare', cookie_o2r);
-      // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
+    // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_prepare', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });
@@ -480,14 +435,10 @@ describe('API job', () => {
     var compendium_id = '';
     var job_id = '';
 
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_image_build', cookie_o2r);
-      // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_build', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });
@@ -567,13 +518,10 @@ describe('API job', () => {
     var Docker = require('dockerode');
     var docker = new Docker();
 
-    it('upload compendium should succeed and return an ID', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_image_execute', cookie_o2r);
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });

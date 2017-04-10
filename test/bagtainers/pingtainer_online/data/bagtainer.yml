@@ -1,4 +1,3 @@
 ---
 id: 6afbdbc29965
-version: "0.1"
-command: "sessionInfo();"
+spec_version: 1

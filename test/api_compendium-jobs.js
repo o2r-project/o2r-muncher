@@ -19,6 +19,7 @@
 const assert = require('chai').assert;
 const request = require('request');
 const config = require('../config/config');
+const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const fs = require('fs');
 const host = 'http://localhost:' + config.net.port;
 const mongojs = require('mongojs');
@@ -27,8 +28,6 @@ chai.use(require('chai-datetime'));
 
 require("./setup")
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
-
-const requestTimeout = 10000;
 
 
 describe('API compendium / jobs', () => {
@@ -39,40 +38,17 @@ describe('API compendium / jobs', () => {
         });
     });
 
-    var compendium_id = '';
-    describe('POST /api/v1/compendium success-load.zip', () => {
-        it('should respond with HTTP 200 OK and new ID', (done) => {
-            let formData = {
-                'content_type': 'compendium_v1',
-                'compendium': {
-                    value: fs.createReadStream('./test/bagtainers/success-load.zip'),
-                    options: {
-                        contentType: 'application/zip'
-                    }
-                }
-            };
-            let j = request.jar();
-            let ck = request.cookie('connect.sid=' + cookie_o2r);
-            j.setCookie(ck, host);
+    describe('GET /api/v1/compendium/ sub-endpoint /jobs', () => {
+        var compendium_id = '';
+        before((done) => {
+            let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
 
-            request({
-                uri: host + '/api/v1/compendium',
-                method: 'POST',
-                jar: j,
-                formData: formData,
-                timeout: requestTimeout
-            }, (err, res, body) => {
-                assert.ifError(err);
-                assert.equal(res.statusCode, 200);
-                assert.isObject(JSON.parse(body), 'returned JSON');
-                assert.isDefined(JSON.parse(body).id, 'returned id');
+            request(req, (err, res, body) => {
                 compendium_id = JSON.parse(body).id;
                 done();
             });
-        }).timeout(10000);
-    });
+        });
 
-    describe('GET /api/v1/compendium/ sub-endpoint /jobs', () => {
         var job_id;
         it('should respond with HTTP 404 and an error message when there is no job for an existing compendium', (done) => {
             request(host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {

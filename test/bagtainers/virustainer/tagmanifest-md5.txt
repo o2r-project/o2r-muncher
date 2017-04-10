@@ -1,0 +1,5 @@
+44d88612fea8a8f36de82e1278abb02f  o2r_test_bad_file_too.txt
+1016692cb396c3bbc52e38a21ad91400  bag-info.txt
+9e5ad981e0d29adc278f6a294b8c2aca  bagit.txt
+44d88612fea8a8f36de82e1278abb02f  o2r_test_bad_file.txt
+776306e3fb39fd1cba845c8138ba627b  good_file.txt

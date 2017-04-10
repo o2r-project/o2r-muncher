@@ -3,7 +3,7 @@
 ![Travis CI](https://api.travis-ci.org/o2r-project/o2r-muncher.svg)
 [![](https://images.microbadger.com/badges/image/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own image badge on microbadger.com")
 
-Node.js implementation of the endpoints `/api/v1/compendium` and `/api/v1/jobs` of the [o2r-web-api](http://o2r.info/o2r-web-api/).
+Node.js implementation of the endpoints `/api/v1/compendium` (reading and metadata update) and `/api/v1/jobs` of the [o2r-web-api](http://o2r.info/o2r-web-api/).
 
 Requirements:
 
@@ -48,14 +48,12 @@ You can override these environment variables (configured in `config/config.js`) 
   Define on which Port muncher should listen. Defaults to `8080`.
 - `MUNCHER_MONGODB` __Required__
   Location for the mongo db. Defaults to `mongodb://localhost/`. You will very likely need to change this.
-- `MUNCHER_META_TOOL_EXE` __Required__
-  Executable for metadata tools, defaults to `python3 ../o2r-meta/o2rmeta.py`. You will very likely need to change this.
 - `MUNCHER_MONGODB_DATABASE`
   Which database inside the mongo db should be used. Defaults to `muncher`.
 - `MUNCHER_BASEPATH`
   Base path for the compendia storage. Defaults to `/tmp/muncher`. If you want persistent compendia storage, you should point this to a separate volume.
 - `MUNCHER_EMAIL_TRANSPORT`, `MUNCHER_EMAIL_RECEIVERS`, `MUNCHER_EMAIL_SENDER`
-  Email configuration settings for sending emails when a virus is detected in a compendium, based on [nodemailer](https://www.npmjs.com/package/nodemailer). `_TRANSPORT` ist the mail transport string, see nodemailer documented, `_RECEIVERS` is a comma-seperated list, and `_SENDER` is the mails sender. All three must be set. Mail notification can also be disabled completely via `config.js`.
+  Email configuration settings for sending emails when critical events in the server occure, based on [nodemailer](https://www.npmjs.com/package/nodemailer). `_TRANSPORT` ist the mail transport string, see nodemailer documented, `_RECEIVERS` is a comma-seperated list, and `_SENDER` is the mails sender. All three must be set. Mail notification can also be disabled completely via `config.js`.
 
 ### Full API service with docker-compose
 

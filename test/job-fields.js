@@ -30,6 +30,7 @@ const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9y
 const cookie_uploader = 's:lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO.0iapdV1c85wc5NO3d3h+svorp3Tm56cfqRhhpFJZBnk';
 const waitSecs = 5;
 
+
 describe('API job fields', () => {
   before((done) => {
     var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
@@ -39,21 +40,18 @@ describe('API job fields', () => {
   });
 
   describe('job filtering with compendium_id, status and user', () => {
-    let job_id                  = '';
-    let compendium_id           = '';
-
-    it('upload 1st compendium with final job status "success"', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_image_execute', cookie_o2r);
+    let compendium_id = '';
+    // upload 1st compendium with final job status "success"
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });
-    }).timeout(10000);
+    });
 
+    let job_id = '';
     it('should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_o2r);

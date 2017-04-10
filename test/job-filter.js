@@ -39,24 +39,22 @@ describe('API job filtering', () => {
   });
 
   describe('job filtering with compendium_id, status and user', () => {
-    let job_id                  = '';
-    let compendium_id           = '';
-    let job_count_success       = 0;
-    let job_count_failure       = 0;
-    let job_count_user_o2r      = 0;
+    let job_id = '';
+    let compendium_id = '';
+    let job_count_success = 0;
+    let job_count_failure = 0;
+    let job_count_user_o2r = 0;
     let job_count_user_uploader = 0;
 
-    it('upload 1st compendium with final job status "success"', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_image_execute', cookie_o2r);
+    // upload 1st compendium with final job status "success"
+    before((done) => {
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
 
       request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
         done();
       });
-    }).timeout(10000);
+    });
 
     it('1st job (success, orcid_o2r user): should return job ID when starting job execution', (done) => {
       let j = request.jar();
@@ -109,7 +107,7 @@ describe('API job filtering', () => {
     }).timeout(10000);
 
     it('upload 2nd compendium with final job status "failure"', (done) => {
-      let req = createCompendiumPostRequest(host, './test/bagtainers/step_image_build', cookie_o2r);
+      let req = createCompendiumPostRequest('./test/bagtainers/step_image_build', cookie_o2r);
 
       request(req, (err, res, body) => {
         assert.ifError(err);
@@ -197,7 +195,7 @@ describe('API job filtering', () => {
 
     it('should take a break', (done) => {
       sleep.sleep(waitSecs);
-    done();
+      done();
     }).timeout(waitSecs * 1000 * 2);
 
     it('should list 3 jobs with compendium_id', (done) => {
