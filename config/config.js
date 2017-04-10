@@ -23,6 +23,7 @@ var env = process.env;
 
 // Information about muncher
 c.api_version = 1;
+c.version = require('../package.json').version;
 
 // network & database
 c.net.port = env.MUNCHER_PORT || 8080;
