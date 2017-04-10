@@ -150,7 +150,7 @@ before(function (done) {
         };
 
         docker.createContainer({
-            Image: 'loader', // FIXME use online loader image
+            Image: 'o2rproject/o2r-loader', // FIXME use online loader image
             name: 'loader_for_testing',
             AttachStdin: false,
             AttachStdout: true,
