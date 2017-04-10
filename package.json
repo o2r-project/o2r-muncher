@@ -1,6 +1,6 @@
 {
   "name": "muncher",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Node.js implementation of parts of the [o2r web api](http://o2r.info/o2r-web-api).",
   "main": "index.js",
   "scripts": {
@@ -32,6 +32,7 @@
     "mimos": "^3.0.3",
     "mongoose": "^4.9.3",
     "mongoose-timestamp": "^0.6.0",
+    "multer": "^1.3.0",
     "nodemailer": "^2.7.2",
     "passport": "^0.3.2",
     "randomstring": "^1.1.4",
