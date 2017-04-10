@@ -21,6 +21,7 @@ const Docker = require('dockerode');
 const Stream = require('stream');
 const sleep = require('sleep');
 const exec = require('child_process').exec;
+const yn = require('yn');
 var debugContainer = require('debug')('loader_container');
 
 // test parameters for local session authentication directly via fixed database entries
@@ -35,7 +36,7 @@ var loader_container = null;
 
 var env = process.env;
 const config = require('../config/config');
-global.test_host = env.TEST_HOST ||  'http://localhost:' + config.net.port;
+global.test_host = env.TEST_HOST || 'http://localhost:' + config.net.port;
 global.test_host_loader = 'http://localhost:8088';
 console.log('Testing endpoint at ' + global.test_host);
 
@@ -134,49 +135,54 @@ before(function (done) {
     });
 
 
-    debugContainer('Starting loader in a Docker container to handle the ERC creation');
+    if (env.LOADER_CONTAINER && !yn(env.LOADER_CONTAINER)) {
+        debugContainer('Not starting container, found env var LOADER_CONTAINER="%s"', env.LOADER_CONTAINER);
+        done();
+    } else {
+        debugContainer('Starting loader in a Docker container to handle the ERC creation');
 
-    var docker = new Docker();
-    // create stream that logs container stdout
-    let container_stream = Stream.Writable();
-    container_stream._write = function (chunk, enc, next) {
-        debugContainer(chunk.toString('utf8'));
-        next();
-    };
+        var docker = new Docker();
+        // create stream that logs container stdout
+        let container_stream = Stream.Writable();
+        container_stream._write = function (chunk, enc, next) {
+            debugContainer(chunk.toString('utf8'));
+            next();
+        };
 
-    docker.createContainer({
-        Image: 'loader', // FIXME use online loader image
-        name: 'loader_for_testing',
-        AttachStdin: false,
-        AttachStdout: true,
-        AttachStderr: true,
-        Tty: true,
-        Cmd: [],
-        Env: [
-            "DEBUG=loader,loader:*",
-            "LOADER_MONGODB=mongodb://172.17.0.1/" // Docker default host IP
-        ],
-        Volumes: {
-            '/tmp/o2r': {}
-        },
-        HostConfig: {
-            Binds: [
-                '/tmp/o2r:/tmp/o2r'
+        docker.createContainer({
+            Image: 'loader', // FIXME use online loader image
+            name: 'loader_for_testing',
+            AttachStdin: false,
+            AttachStdout: true,
+            AttachStderr: true,
+            Tty: true,
+            Cmd: [],
+            Env: [
+                "DEBUG=loader,loader:*",
+                "LOADER_MONGODB=mongodb://172.17.0.1/" // Docker default host IP
             ],
-            PortBindings: { '8088/tcp': [{ 'HostPort': '8088' }] }
-        },
-        ExposedPorts: { '8088/tcp': {} }
-    }).then(function (container) {
-        loader_container = container;
-        return container.start({}, (err, data) => {
-            if (err) debugContainer('ERROR %s', JSON.stringify(err));
-            else {
-                debugContainer('Started loader container with id %s at port 8088', container.id)
-                sleep.sleep(3);
-                done();
-            }
+            Volumes: {
+                '/tmp/o2r': {}
+            },
+            HostConfig: {
+                Binds: [
+                    '/tmp/o2r:/tmp/o2r'
+                ],
+                PortBindings: { '8088/tcp': [{ 'HostPort': '8088' }] }
+            },
+            ExposedPorts: { '8088/tcp': {} }
+        }).then(function (container) {
+            loader_container = container;
+            return container.start({}, (err, data) => {
+                if (err) debugContainer('ERROR %s', JSON.stringify(err));
+                else {
+                    debugContainer('Started loader container with id %s at port 8088', container.id)
+                    sleep.sleep(3);
+                    done();
+                }
+            });
         });
-    });
+    }
 });
 
 after(function (done) {

@@ -94,7 +94,10 @@ mongod --dbpath ./db --replSet rso2r --smallfiles;
 npm test
 
 # you can also run the tests towards a manually specified host
-# TEST_HOST=http://localhost:80 npm test
+TEST_HOST=http://localhost:80 npm test
+
+# you can also disable the loader container
+LOADER_CONTAINER=no TEST_HOST=http://localhost npm test
 ```
 
 ## Development
