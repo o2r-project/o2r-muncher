@@ -29,6 +29,17 @@ RUN apk add --no-cache \
   && chmod +x /sbin/dumb-init
 
 # o2r-meta dependencies and installation
+# add mirrors
+RUN echo "http://dl-1.alpinelinux.org/alpine/v3.5/main" >> /etc/apk/repositories && \
+	echo "http://dl-2.alpinelinux.org/alpine/v3.5/main" >> /etc/apk/repositories && \
+	echo "http://dl-3.alpinelinux.org/alpine/v3.5/main" >> /etc/apk/repositories && \
+	echo "http://dl-4.alpinelinux.org/alpine/v3.5/main" >> /etc/apk/repositories && \
+	echo "http://dl-5.alpinelinux.org/alpine/v3.5/main" >> /etc/apk/repositories && \
+	echo "http://dl-1.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
+	echo "http://dl-2.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
+	echo "http://dl-3.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
+	echo "http://dl-4.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+
 RUN apk add --no-cache \
     gcc \
     g++ \
