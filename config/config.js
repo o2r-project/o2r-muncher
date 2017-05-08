@@ -123,13 +123,22 @@ c.email.sender = env.MUNCHER_EMAIL_SENDER;
 //}
 
 // metadata extraction and brokering options
-c.bagtainer.metaextract = {};
-c.bagtainer.metaextract.cliPath = env.MUNCHER_META_TOOL_EXE || 'python3 ../o2r-meta/o2rmeta.py';
-c.bagtainer.metaextract.module = 'extract';
-c.bagtainer.metaextract.outputDir = '.erc';
-c.bagtainer.metaextract.targetElement = 'o2r';
-c.bagtainer.metaextract.bestCandidateFile = 'metadata_raw.json';
-c.bagtainer.metaextract.failOnNoMetadata = false;
+c.meta = {};
+c.meta.cliPath = env.MUNCHER_META_TOOL_EXE || 'python3 ../o2r-meta/o2rmeta.py';
+c.meta.normativeFile = 'metadata_o2r.json';
+c.meta.dir = '.erc';
+
+c.meta.extract = {};
+c.meta.extract.targetElement = 'o2r';
+
+c.meta.broker = {};
+c.meta.broker.module = 'broker';
+c.meta.broker.mappings = {
+  zenodo: {
+    targetElement: 'zenodo',
+    mappingFile: '../o2r-meta/broker/mappings/zenodo-map.json'
+  }
+};
 
 c.payload = {};
 c.payload.tarball = {};

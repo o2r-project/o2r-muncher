@@ -70,7 +70,7 @@ describe('Reading compendium metadata', () => {
       request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        metadata = response.metadata[config.bagtainer.metaextract.targetElement];
+        metadata = response.metadata[config.meta.extract.targetElement];
         done();
         //console.log(JSON.stringify(metadata));
       });
@@ -329,6 +329,56 @@ describe('Updating compendium metadata', () => {
         done();
       });
     });
+  });
+
+});
+
+describe.only('Brokering updated compendium metadata', () => {
+  let compendium_id = '';
+  before(function (done) {
+    let req = createCompendiumPostRequest('./test/bagtainers/metatainer', cookie_o2r);
+    this.timeout(10000);
+
+    request(req, (err, res, body) => {
+      compendium_id = JSON.parse(body).id;
+
+      let data = {
+        'o2r': {
+          'title': 'New brokered title on the block'
+        }
+      };
+      let j2 = request.jar();
+      let ck2 = request.cookie('connect.sid=' + cookie_o2r);
+      j2.setCookie(ck2, global.test_host);
+
+      let req_doc_o2r = {
+        method: 'PUT',
+        jar: j2,
+        json: data,
+        timeout: 10000
+      };
+
+      req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      request(req_doc_o2r, (err, res, body) => {
+        assert.ifError(err);
+        done();
+      });
+    });
+  });
+
+  describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with author user', () => {
+    it('should have the brokered metadata in the respective section', (done) => {
+      console.log(global.test_host + '/api/v1/compendium/' + compendium_id);
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.property(response, 'metadata');
+        assert.property(response.metadata, 'zenodo');
+        assert.property(response.metadata.zenodo, 'title');
+        assert.propertyVal(response.metadata.zenodo, 'title', 'New brokered title on the block');
+        done();
+      });
+    }).timeout(20000);
   });
 
 });
