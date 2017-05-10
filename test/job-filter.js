@@ -46,8 +46,9 @@ describe('API job filtering', () => {
     let job_count_user_uploader = 0;
 
     // upload 1st compendium with final job status "success"
-    before((done) => {
+    before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
+      this.timeout(10000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;

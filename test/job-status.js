@@ -97,8 +97,9 @@ describe('API job overall status', () => {
     let compendium_id = '';
     let job_id = '';
 
-    before((done) => {
+    before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/step_image_prepare', cookie_o2r);
+      this.timeout(10000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -154,8 +155,9 @@ describe('API job overall status', () => {
     var compendium_id = '';
     var job_id = '';
 
-    before((done) => {
+    before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/step_image_build', cookie_o2r);
+      this.timeout(10000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -211,8 +213,9 @@ describe('API job overall status', () => {
     var compendium_id = '';
     var job_id = '';
 
-    before((done) => {
+    before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
+      this.timeout(10000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
