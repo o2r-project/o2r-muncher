@@ -73,8 +73,9 @@ describe('API Compendium', () => {
 
   describe('GET /api/v1/compendium with executing compendium loaded', () => {
     var compendium_id = '';
-    before((done) => {
+    before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie);
+      this.timeout(10000);
 
       request(req, (err, res, body) => {
         assert.ifError(err);
@@ -100,8 +101,9 @@ describe('API Compendium', () => {
 
   describe('GET /api/v1/compendium/<id of loaded compendium>', () => {
     var compendium_id = '';
-    before((done) => {
+    before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie);
+      this.timeout(10000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;

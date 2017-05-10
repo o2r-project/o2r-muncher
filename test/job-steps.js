@@ -79,8 +79,9 @@ describe('API job steps', () => {
     let compendium_id = '';
     let job_id = '';
 
-    before((done) => {
+    before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/step_validate_bag', cookie_o2r);
+      this.timeout(10000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -193,8 +194,9 @@ describe('API job steps', () => {
     let compendium_id = '';
     let job_id = '';
 
-    before((done) => {
+    before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/step_validate_compendium', cookie_o2r);
+      this.timeout(10000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -348,8 +350,9 @@ describe('API job steps', () => {
     let job_id = '';
 
     // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
-    before((done) => {
+    before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/step_image_prepare', cookie_o2r);
+      this.timeout(10000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -434,8 +437,9 @@ describe('API job steps', () => {
     var compendium_id = '';
     var job_id = '';
 
-    before((done) => {
+    before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/step_image_build', cookie_o2r);
+      this.timeout(10000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -517,8 +521,9 @@ describe('API job steps', () => {
     var Docker = require('dockerode');
     var docker = new Docker();
 
-    before((done) => {
+    before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
+      this.timeout(10000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;

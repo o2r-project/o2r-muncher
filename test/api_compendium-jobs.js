@@ -38,8 +38,9 @@ describe('API compendium / jobs', () => {
 
     describe('GET /api/v1/compendium/ sub-endpoint /jobs', () => {
         var compendium_id = '';
-        before((done) => {
+        before(function (done) {
             let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
+            this.timeout(10000);
 
             request(req, (err, res, body) => {
                 compendium_id = JSON.parse(body).id;
