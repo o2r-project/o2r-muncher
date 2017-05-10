@@ -199,7 +199,7 @@ exports.updateMetadata = (req, res) => {
                 config.meta.cliPath,
                 '-debug',
                 config.meta.broker.module,
-                '--inputdir', metabroker_dir, // FIXME I must tell the broker to use metadata_o2r.json, not metadata_raw.json!
+                '--inputfile', metadata_file,
                 '--map', config.meta.broker.mappings[current_mapping].mappingFile,
                 '--outputdir', metabroker_dir
               ].join(' ');

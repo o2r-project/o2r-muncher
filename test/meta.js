@@ -333,7 +333,7 @@ describe('Updating compendium metadata', () => {
 
 });
 
-describe.only('Brokering updated compendium metadata', () => {
+describe('Brokering updated compendium metadata', () => {
   let compendium_id = '';
   before(function (done) {
     let req = createCompendiumPostRequest('./test/bagtainers/metatainer', cookie_o2r);
