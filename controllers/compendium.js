@@ -194,13 +194,14 @@ exports.updateMetadata = (req, res) => {
             } else {
               // re-broker
               let current_mapping = 'zenodo';
+              let mapping_file = path.join(config.meta.broker.mappings.dir, config.meta.broker.mappings[current_mapping].file);
               let metabroker_dir = path.join(compendium_path, config.bagtainer.payloadDirectory, config.meta.dir);
               let cmd = [
                 config.meta.cliPath,
                 '-debug',
                 config.meta.broker.module,
                 '--inputfile', metadata_file,
-                '--map', config.meta.broker.mappings[current_mapping].mappingFile,
+                '--map', mapping_file,
                 '--outputdir', metabroker_dir
               ].join(' ');
 
@@ -225,7 +226,7 @@ exports.updateMetadata = (req, res) => {
                         files.length, id, JSON.stringify(files));
 
                       // get filename from mapping definition
-                      fs.readFile(config.meta.broker.mappings[current_mapping].mappingFile, (err, data) => {
+                      fs.readFile(mapping_file, (err, data) => {
                         if (err) {
                           debug('Error reading mapping file: %s', err.message);
                           res.status(500).send(JSON.stringify({ error: 'Error reading mapping file' }));

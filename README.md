@@ -54,6 +54,10 @@ You can override these environment variables (configured in `config/config.js`) 
   Base path for the compendia storage. Defaults to `/tmp/muncher`. If you want persistent compendia storage, you should point this to a separate volume.
 - `MUNCHER_EMAIL_TRANSPORT`, `MUNCHER_EMAIL_RECEIVERS`, `MUNCHER_EMAIL_SENDER`
   Email configuration settings for sending emails when critical events in the server occure, based on [nodemailer](https://www.npmjs.com/package/nodemailer). `_TRANSPORT` ist the mail transport string, see nodemailer documented, `_RECEIVERS` is a comma-seperated list, and `_SENDER` is the mails sender. All three must be set. Mail notification can also be disabled completely via `config.js`.
+- `MUNCHER_META_TOOL_EXE` __Required__
+  Executable for metadata tools, defaults to `python3 ../o2r-meta/o2rmeta.py`. You will very likely need to change this.
+- `MUNCHER_META_EXTRACT_MAPPINGS_DIR` __Required__
+  Path to extraction mappings, defaults to `../o2r-meta/broker/mappings`. You will very likely need to change this.
 
 ### Full API service with docker-compose
 
