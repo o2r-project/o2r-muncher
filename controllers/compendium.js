@@ -23,6 +23,7 @@ const exec = require('child_process').exec;
 
 var dirTree = require('directory-tree');
 var rewriteTree = require('../lib/rewrite-tree');
+const errorMessageHelper = require('../lib/error-message');
 
 var Compendium = require('../lib/model/compendium');
 var Job = require('../lib/model/job');
