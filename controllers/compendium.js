@@ -115,6 +115,13 @@ exports.view = (req, res) => {
   if (req.query.user != null) {
     filter.user = req.query.user;
   }
+  if (req.query.doi != null) {
+    filter.metadata = { 'identifier.doi' : req.query.doi};
+    // filter.metadata = {};
+    // filter.metadata.identifier = {};
+    // filter.metadata.identifier.doi = req.query.doi;
+    //todo check encoding
+  }
 
   Compendium.find(filter).select('id').skip(start).limit(limit).exec((err, comps) => {
     if (err) {
