@@ -135,7 +135,7 @@ c.meta.broker = {};
 c.meta.broker.module = 'broker';
 c.meta.broker.mappings = {
   zenodo: {
-    targetElement: 'zenodo',
+    targetElement: 'zenodo.metadata',
     file: 'zenodo-map.json'
   },
   dir: env.MUNCHER_META_EXTRACT_MAPPINGS_DIR || '../o2r-meta/broker/mappings'
