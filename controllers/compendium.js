@@ -115,12 +115,10 @@ exports.view = (req, res) => {
   if (req.query.user != null) {
     filter.user = req.query.user;
   }
+  // eslint-disable-next-line no-eq-null, eqeqeq
   if (req.query.doi != null) {
-    filter.metadata = { 'identifier.doi' : req.query.doi};
-    // filter.metadata = {};
-    // filter.metadata.identifier = {};
-    // filter.metadata.identifier.doi = req.query.doi;
-    //todo check encoding
+    //only look at the o2r.identifier.doi field
+    filter['metadata.o2r.identifier.doi'] = req.query.doi;
   }
 
   Compendium.find(filter).select('id').skip(start).limit(limit).exec((err, comps) => {
