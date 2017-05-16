@@ -20,6 +20,7 @@ const debug = require('debug')('compendium');
 const fs = require('fs');
 const path = require('path');
 const exec = require('child_process').exec;
+const objectPath = require('object-path');
 
 var dirTree = require('directory-tree');
 var rewriteTree = require('../lib/rewrite-tree');
@@ -248,8 +249,10 @@ exports.updateMetadata = (req, res) => {
                               res.status(500).send(JSON.stringify({ error: 'Error reading brokering output from file' }));
                             } else {
                               let mapping_output = JSON.parse(data);
-                              // read mapped metadata for saving to DB
-                              compendium.metadata[config.meta.broker.mappings[current_mapping].targetElement] = mapping_output;
+                              // read mapped metadata and save it also to DB
+                              objectPath.set(compendium.metadata,
+                                config.meta.broker.mappings[current_mapping].targetElement,
+                                mapping_output);
                               debug('Finished metadata brokering for %s !', id);
 
                               // FINALLY persist the metadata update to the database

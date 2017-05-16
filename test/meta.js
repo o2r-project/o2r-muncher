@@ -374,8 +374,9 @@ describe('Brokering updated compendium metadata', () => {
         let response = JSON.parse(body);
         assert.property(response, 'metadata');
         assert.property(response.metadata, 'zenodo');
-        assert.property(response.metadata.zenodo, 'title');
-        assert.propertyVal(response.metadata.zenodo, 'title', 'New brokered title on the block');
+        assert.property(response.metadata.zenodo, 'metadata');
+        assert.property(response.metadata.zenodo.metadata, 'title');
+        assert.propertyVal(response.metadata.zenodo.metadata, 'title', 'New brokered title on the block');
         done();
       });
     }).timeout(20000);
