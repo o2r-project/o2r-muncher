@@ -20,15 +20,16 @@ const assert = require('chai').assert;
 const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
-const fs = require('fs');
 const mongojs = require('mongojs');
 const chai = require('chai');
+const sleep = require('sleep');
 chai.use(require('chai-datetime'));
 
 require("./setup")
 const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 
 const requestTimeout = 10000;
+const waitSecs = 5;
 
 describe('API compendium filter', () => {
   before((done) => {
@@ -38,20 +39,23 @@ describe('API compendium filter', () => {
     });
   });
 
-
-
   describe('compendium filtering with DOI', () => {
     let compendium_id = '';
-    let test_doi = '10.9999%2Ftest';
+    let test_doi = '10.1006%2Fjeem.1994.1031';
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/bagtainers/metatainer', cookie);
-      this.timeout(10000);
+      let req = createCompendiumPostRequest('./test/bagtainers/metatainer-doi', cookie);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
         done();
       });
     });
+
+    it('should take a break', (done) => {
+      sleep.sleep(waitSecs);
+      done();
+    }).timeout(waitSecs * 1000 * 2);
 
     it('should find 1 compendium with the DOI "test_doi"', (done) => {
       request(global.test_host + '/api/v1/compendium/?doi=' + test_doi, (err, res, body) => {
@@ -60,7 +64,7 @@ describe('API compendium filter', () => {
         let response = JSON.parse(body);
         assert.isArray(response.results);
         assert.equal(response.results.length, 1);
-        assert.equal(response.result[0], compendium_id);
+        assert.equal(response.results[0], compendium_id);
         done();
       });
     });
