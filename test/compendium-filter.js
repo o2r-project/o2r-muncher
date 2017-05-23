@@ -31,7 +31,8 @@ const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2
 const waitSecs = 5;
 
 describe('API compendium filter', () => {
-  before((done) => {
+  before(function (done) {
+    this.timeout(10000);
     var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) { done(); });
@@ -41,6 +42,7 @@ describe('API compendium filter', () => {
   describe('compendium filtering with DOI', () => {
     let compendium_id = '';
     let test_doi = '10.1006/jeem.1994.1031';
+    var test_user = '0000-0001-6021-1617';
     
     before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/metatainer-doi', cookie);
@@ -70,12 +72,43 @@ describe('API compendium filter', () => {
     });
 
     it('should find no compendia with an unused DOI', (done) => {
-      request(global.test_host + '/api/v1/compendium/?doi=12.3456%2Fasdf' + test_doi, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/?doi=12.3456%2Fasdf', (err, res, body) => {
         assert.ifError(err);
         assert.notProperty(JSON.parse(body), 'results');
         assert.propertyVal(JSON.parse(body), 'error', 'no compendium found');
         done();
       });
     });
+
+    it('should find one compendia with test_doi and user 0000-0001-6021-1617', (done) => {
+      request(global.test_host + '/api/v1/compendium/?doi=' + test_doi + '&user='  + test_user, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.isArray(response.results);
+        assert.equal(response.results.length, 1);
+        assert.equal(response.results[0], compendium_id);
+        done();
+      });
+    });
+
+    it('should find no compendia with an unused DOI but valid user', (done) => {
+      request(global.test_host + '/api/v1/compendium/?doi=12.3456/asdf' + '&user=' + test_user, (err, res, body) => {
+        assert.ifError(err);
+        assert.notProperty(JSON.parse(body), 'results');
+        assert.propertyVal(JSON.parse(body), 'error', 'no compendium found');
+        done();
+      });
+    });
+
+    it('should find no compendia with an existing DOI but unknown user', (done) => {
+      request(global.test_host + '/api/v1/compendium/?doi=' + test_doi + '&user=9989-9999-9989-9899', (err, res, body) => {
+        assert.ifError(err);
+        assert.notProperty(JSON.parse(body), 'results');
+        assert.propertyVal(JSON.parse(body), 'error', 'no compendium found');
+        done();
+      });
+    });
+
   });
 });
