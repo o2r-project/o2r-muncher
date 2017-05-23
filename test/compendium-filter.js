@@ -28,7 +28,6 @@ chai.use(require('chai-datetime'));
 require("./setup")
 const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 
-const requestTimeout = 10000;
 const waitSecs = 5;
 
 describe('API compendium filter', () => {
@@ -41,10 +40,11 @@ describe('API compendium filter', () => {
 
   describe('compendium filtering with DOI', () => {
     let compendium_id = '';
-    let test_doi = '10.1006%2Fjeem.1994.1031';
+    let test_doi = '10.1006/jeem.1994.1031';
+    
     before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/metatainer-doi', cookie);
-      this.timeout(20000);
+      this.timeout(30000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;

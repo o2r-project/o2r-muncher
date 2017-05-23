@@ -28,10 +28,9 @@ chai.use(require('chai-datetime'));
 require("./setup")
 const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 
-const requestTimeout = 10000;
-
 describe('API Compendium', () => {
-  before((done) => {
+  before(function (done) {
+    this.timeout(10000);
     var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) { done(); });
@@ -75,7 +74,7 @@ describe('API Compendium', () => {
     var compendium_id = '';
     before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie);
-      this.timeout(10000);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         assert.ifError(err);
