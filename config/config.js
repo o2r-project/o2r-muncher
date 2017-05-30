@@ -141,6 +141,8 @@ c.meta.broker.mappings = {
   dir: env.MUNCHER_META_EXTRACT_MAPPINGS_DIR || '../o2r-meta/broker/mappings'
 };
 
+c.meta.doiPath = 'metadata.o2r.identifier.doi';
+
 c.payload = {};
 c.payload.tarball = {};
 c.payload.tarball.tmpdir = c.fs.base + 'payloads/';
