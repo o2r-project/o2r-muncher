@@ -116,6 +116,11 @@ exports.view = (req, res) => {
   if (req.query.user != null) {
     filter.user = req.query.user;
   }
+  // eslint-disable-next-line no-eq-null, eqeqeq
+  if (req.query.doi != null) {
+    //only look at the o2r.identifier.doi field
+    filter[config.meta.doiPath] = req.query.doi;
+  }
 
   Compendium.find(filter).select('id').skip(start).limit(limit).exec((err, comps) => {
     if (err) {

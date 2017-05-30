@@ -177,7 +177,7 @@ before(function (done) {
                 if (err) debugContainer('ERROR %s', JSON.stringify(err));
                 else {
                     debugContainer('Started loader container with id %s at port 8088', container.id)
-                    sleep.sleep(3);
+                    sleep.sleep(8);
                     done();
                 }
             });

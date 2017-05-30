@@ -31,7 +31,8 @@ const waitSecs = 5;
 
 
 describe('API job fields', () => {
-  before((done) => {
+  before(function (done) {
+    this.timeout(10000);
     var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) { done(); });
@@ -41,8 +42,9 @@ describe('API job fields', () => {
   describe('job filtering with compendium_id, status and user', () => {
     let compendium_id = '';
     // upload 1st compendium with final job status "success"
-    before((done) => {
+    before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;

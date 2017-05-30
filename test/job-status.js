@@ -40,8 +40,9 @@ describe('API job overall status', () => {
     let compendium_id = '';
     let job_id = '';
 
-    before((done) => {
+    before(function (done) {
       let req = createCompendiumPostRequest('./test/bagtainers/step_validate_compendium', cookie_o2r);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
