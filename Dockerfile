@@ -21,6 +21,7 @@ RUN apk add --no-cache \
     wget \
     unzip \
     nodejs \
+    nodejs-npm \
     ca-certificates \
   && pip install --upgrade pip \
   && pip install bagit \
@@ -70,8 +71,6 @@ ARG VCS_URL
 ARG VCS_REF
 ARG BUILD_DATE
 ARG META_VERSION
-
-# Metadata params within the container
 
 # Metadata http://label-schema.org/rc1/
 LABEL org.label-schema.vendor="o2r project" \
