@@ -102,6 +102,8 @@ TEST_HOST=http://localhost:80 npm test
 
 # you can also disable the loader container
 LOADER_CONTAINER=no TEST_HOST=http://localhost npm test
+# or
+npm run test_noloader
 ```
 
 ## Development

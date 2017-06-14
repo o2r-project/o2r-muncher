@@ -67,11 +67,11 @@ c.bagtainer.configFile = '/data/bagtainer.yml';
 c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
 c.bagtainer.keepImages = true; // required for image download!
 c.bagtainer.validateBeforeExecute = true; // cannot validate before execute when saving image tarball but not updating the bag
+c.bagtainer.failOnValidationError = false; // cannot validate before execute when saving image tarball but not updating the bag
 
 c.bagtainer.bagit = {};
 c.bagtainer.bagit.validateFast = false;
 c.bagtainer.bagit.failOnValidationError = {};
-c.bagtainer.bagit.failOnValidationError.upload = true;
 c.bagtainer.bagit.failOnValidationError.execute = false;
 
 c.bagtainer.imageNamePrefix = 'bagtainer:';
