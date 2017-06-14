@@ -71,7 +71,6 @@ c.bagtainer.validateBeforeExecute = true; // cannot validate before execute when
 c.bagtainer.bagit = {};
 c.bagtainer.bagit.validateFast = false;
 c.bagtainer.bagit.failOnValidationError = {};
-c.bagtainer.bagit.failOnValidationError.upload = true;
 c.bagtainer.bagit.failOnValidationError.execute = false;
 
 c.bagtainer.imageNamePrefix = 'bagtainer:';
