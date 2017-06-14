@@ -1,11 +1,12 @@
 {
   "name": "muncher",
-  "version": "0.8.4",
+  "version": "0.9.0",
   "description": "Node.js implementation of parts of the [o2r web api](http://o2r.info/o2r-web-api).",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "test": "DEBUG=*,-modem,-mocha:* mocha",
+    "test_noloader": "LOADER_CONTAINER=no TEST_HOST=http://localhost DEBUG=*,-modem,-mocha:* mocha",
     "debug": "DEBUG=muncher,executor node index.js"
   },
   "author": "o2r-project (http://o2r.info)",
