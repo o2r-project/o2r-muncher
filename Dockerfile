@@ -13,7 +13,6 @@
 # limitations under the License.
 #
 FROM alpine:3.6
-MAINTAINER o2r-project <https://o2r.info>
 
 # Python, based on frolvlad/alpine-python3
 RUN apk add --no-cache \
@@ -81,18 +80,19 @@ ENV NODE_VERSION=$(echo $(node --version))
 ENV NPM_VERSION=$(echo $(npm --version))
 
 # Metadata http://label-schema.org/rc1/
-LABEL org.label-schema.vendor="o2r project" \
-      org.label-schema.url="http://o2r.info" \
-      org.label-schema.name="o2r muncher" \
-      org.label-schema.description="ERC execution and CRUD" \    
-      org.label-schema.version=$VERSION \
-      org.label-schema.vcs-url=$VCS_URL \
-      org.label-schema.vcs-ref=$VCS_REF \
-      org.label-schema.build-date=$BUILD_DATE \
-      org.label-schema.docker.schema-version="rc1" \
-      info.o2r.meta.version=$META_VERSION \
-      info.o2r.node.version=$NODE_VERSION \
-      info.o2r.npm.version=$NPM_VERSION
+LABEL maintainer="o2r-project <https://o2r.info>" \
+  org.label-schema.vendor="o2r project" \
+  org.label-schema.url="http://o2r.info" \
+  org.label-schema.name="o2r muncher" \
+  org.label-schema.description="ERC execution and CRUD" \    
+  org.label-schema.version=$VERSION \
+  org.label-schema.vcs-url=$VCS_URL \
+  org.label-schema.vcs-ref=$VCS_REF \
+  org.label-schema.build-date=$BUILD_DATE \
+  org.label-schema.docker.schema-version="rc1" \
+  info.o2r.meta.version=$META_VERSION \
+  info.o2r.node.version=$NODE_VERSION \
+  info.o2r.npm.version=$NPM_VERSION
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["npm", "start" ]
