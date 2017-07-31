@@ -77,8 +77,8 @@ ARG VCS_REF
 ARG BUILD_DATE
 ARG META_VERSION
 
-ENV NODE_VERSION=$(node --version)
-ENV NPM_VERSION=$(npm --version)
+ENV NODE_VERSION=$(echo $(node --version))
+ENV NPM_VERSION=$(echo $(npm --version))
 
 # Metadata http://label-schema.org/rc1/
 LABEL org.label-schema.vendor="o2r project" \
