@@ -58,16 +58,16 @@ ENV MUNCHER_META_TOOL_EXE="python3 /meta/o2rmeta.py"
 ENV MUNCHER_META_EXTRACT_MAPPINGS_DIR="/meta/broker/mappings"
 RUN echo $(git rev-parse --short HEAD) >> version
 
+# App installation
+WORKDIR /muncher
+RUN git clone --depth 1 -b master https://github.com/o2r-project/o2r-muncher /muncher \
+  && npm install --production
+
 RUN apk del \
     git \
     wget \
     ca-certificates \
   && rm -rf /var/cache
-
-# App installation
-WORKDIR /muncher
-RUN git clone --depth 1 -b master https://github.com/o2r-project/o2r-muncher /muncher \
-  && npm install --production
 
 # Metadata params provided with docker build command
 ARG VERSION=dev
