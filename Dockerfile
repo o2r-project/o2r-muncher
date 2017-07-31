@@ -12,8 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM frolvlad/alpine-python3
+FROM alpine:3.6
 MAINTAINER o2r-project <https://o2r.info>
+
+# Python, based on frolvlad/alpine-python3
+RUN apk add --no-cache \
+  python3 \
+  && python3 -m ensurepip \
+  && rm -r /usr/lib/python*/ensurepip \
+  && pip3 install --upgrade pip setuptools \
+  && if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi \
+  && rm -r /root/.cache
+
+# Add Alpine mirrors, replacing default repositories with edge ones, based on https://github.com/jfloff/alpine-python/blob/master/3.4/Dockerfile
+RUN echo \
+  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" > /etc/apk/repositories \
+  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
+  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
 
 # Installation time and run-time dependencies
 RUN apk add --no-cache \
@@ -23,31 +38,20 @@ RUN apk add --no-cache \
     nodejs \
     nodejs-npm \
     ca-certificates \
+    dumb-init \
   && pip install --upgrade pip \
-  && pip install bagit \
-  && git clone --depth 1 -b master https://github.com/o2r-project/o2r-muncher /muncher \
-  && wget -O /sbin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.0/dumb-init_1.2.0_amd64 \
-  && chmod +x /sbin/dumb-init
+  && pip install bagit
 
 # o2r-meta dependencies and installation
-# add mirrors
-RUN echo "http://dl-1.alpinelinux.org/alpine/v3.5/main" >> /etc/apk/repositories && \
-	echo "http://dl-2.alpinelinux.org/alpine/v3.5/main" >> /etc/apk/repositories && \
-	echo "http://dl-3.alpinelinux.org/alpine/v3.5/main" >> /etc/apk/repositories && \
-	echo "http://dl-4.alpinelinux.org/alpine/v3.5/main" >> /etc/apk/repositories && \
-	echo "http://dl-5.alpinelinux.org/alpine/v3.5/main" >> /etc/apk/repositories && \
-	echo "http://dl-1.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
-	echo "http://dl-2.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
-	echo "http://dl-3.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
-	echo "http://dl-4.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
-
 RUN apk add --no-cache \
     gcc \
     g++ \
     python3-dev \
     libxml2-dev \
     libxslt-dev \
-  && apk add gdal gdal-dev py-gdal --no-cache --repository http://nl.alpinelinux.org/alpine/edge/testing \
+    gdal \
+    gdal-dev \
+    py-gdal \
   && git clone --depth 1 -b master https://github.com/o2r-project/o2r-meta.git /meta
 WORKDIR /meta
 RUN pip install -r requirements.txt
@@ -63,7 +67,8 @@ RUN apk del \
 
 # App installation
 WORKDIR /muncher
-RUN npm install --production
+RUN git clone --depth 1 -b master https://github.com/o2r-project/o2r-muncher /muncher \
+  && npm install --production
 
 # Metadata params provided with docker build command
 ARG VERSION=dev
@@ -71,6 +76,9 @@ ARG VCS_URL
 ARG VCS_REF
 ARG BUILD_DATE
 ARG META_VERSION
+
+ENV NODE_VERSION=$(node --version)
+ENV NPM_VERSION=$(npm --version)
 
 # Metadata http://label-schema.org/rc1/
 LABEL org.label-schema.vendor="o2r project" \
@@ -82,7 +90,9 @@ LABEL org.label-schema.vendor="o2r project" \
       org.label-schema.vcs-ref=$VCS_REF \
       org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.docker.schema-version="rc1" \
-      info.o2r.meta.version=$META_VERSION
+      info.o2r.meta.version=$META_VERSION \
+      info.o2r.node.version=$NODE_VERSION \
+      info.o2r.npm.version=$NPM_VERSION
 
-ENTRYPOINT ["/sbin/dumb-init", "--"]
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["npm", "start" ]

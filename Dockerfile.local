@@ -12,9 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM frolvlad/alpine-python3
+FROM alpine:3.6
 MAINTAINER o2r-project <https://o2r.info>
 
+# Python, based on frolvlad/alpine-python3
+RUN apk add --no-cache \
+  python3 \
+  && python3 -m ensurepip \
+  && rm -r /usr/lib/python*/ensurepip \
+  && pip3 install --upgrade pip setuptools \
+  && if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi \
+  && rm -r /root/.cache
+
+# Add Alpine mirrors, replacing default repositories with edge ones, based on https://github.com/jfloff/alpine-python/blob/master/3.4/Dockerfile
+RUN echo \
+  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" > /etc/apk/repositories \
+  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
+  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
+
+# Installation time and run-time dependencies
 RUN apk add --no-cache \
     git \
     wget \
@@ -22,19 +38,20 @@ RUN apk add --no-cache \
     nodejs \
     nodejs-npm \
     ca-certificates \
+    dumb-init \
   && pip install --upgrade pip \
-  && pip install bagit \
-  && wget -O /sbin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.0/dumb-init_1.2.0_amd64 \
-  && chmod +x /sbin/dumb-init
+  && pip install bagit
 
-# o2r-meta
+# o2r-meta dependencies and installation
 RUN apk add --no-cache \
     gcc \
     g++ \
     python3-dev \
     libxml2-dev \
     libxslt-dev \
-  && apk add  --no-cache gdal gdal-dev py-gdal --repository http://nl.alpinelinux.org/alpine/edge/testing \
+    gdal \
+    gdal-dev \
+    py-gdal \
   && git clone --depth 1 -b master https://github.com/o2r-project/o2r-meta.git /meta
 WORKDIR /meta
 RUN pip install -r requirements.txt
@@ -56,7 +73,7 @@ COPY index.js index.js
 COPY package.json package.json
 
 RUN npm install --production
-ENTRYPOINT ["/sbin/dumb-init", "--"]
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["npm", "start" ]
 
 # docker build --tag muncher -f Dockerfile.local --no-cache .
