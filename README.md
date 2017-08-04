@@ -161,17 +161,8 @@ curl --cookie connect.sid=s:S1oH7... -F "compendium=@/<path to compendium.zip>;t
 
 See `o2r-bagtainers/README.md` on using the much more convenient *uploader container*.
 
-### User levels
+See the [o2r Web API docs](http://o2r.info/o2r-web-api/user/#user-levels) for information on **user levels**.
 
-Users are authenticated via OAuth and the actions on the website are limited by the `level` assocciated with an account.
-On registration, each account is assigned a level `0`. Below is a list of actions and the corresponding required user level.
-_To adjust a user's level, you currently have to log in to the database and change the stored JSON string._
-
-- `0` Create new jobs
-- `100` Upload new compendium
-- `1000` and above are admins
-  - edit users
-  - delete compendia and jobs (TBD)
 
 ## License
 
