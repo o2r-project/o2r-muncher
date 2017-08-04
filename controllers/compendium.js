@@ -27,6 +27,7 @@ var rewriteTree = require('../lib/rewrite-tree');
 const errorMessageHelper = require('../lib/error-message');
 
 var Compendium = require('../lib/model/compendium');
+var User = require('../lib/model/user');
 var Job = require('../lib/model/job');
 
 exports.viewSingle = (req, res) => {
@@ -172,11 +173,29 @@ exports.updateMetadata = (req, res) => {
     if (err || compendium == null) {
       res.status(404).send(JSON.stringify({ error: 'no compendium with this id' }));
     } else {
-      if (user_id != compendium.user) {
-        debug('User %s trying to edit metadata of compendium %s by user %s', user_id, id, compendium.user.id);
-        res.status(401).send(JSON.stringify({ error: 'not authorized' }));
-      }
-      else {
+
+      let detect_rights = new Promise(function (resolve, reject) {
+        if (user_id === compendium.user) {
+          resolve({ user_has_rights: true });
+        } else {
+          debug('User %s trying to edit metadata of compendium %s by user %s', user_id, id, compendium.user);
+
+          User.findOne({ orcid: user_id }, (err, user) => {
+            if (err) {
+              res.status(500).send(JSON.stringify({ error: 'problem retrieving user information' }));
+            } else {
+              if (user.level >= config.user.level.edit_metadata) {
+                debug('User %s has metadata editing level (%s), continueing..', user_id, user.level);
+                resolve({ user_has_rights: true });
+              } else {
+                reject({ error: 'not authorized to edit metadata of ' + id });
+              }
+            }
+          });
+        }
+      });
+
+      detect_rights.then(function (passon) {
         if (!req.body.hasOwnProperty('o2r')) {
           debug('[%s] invalid metadata provided: no o2r root element', id);
           res.status(422).send(JSON.stringify({ error: "JSON with root element 'o2r' required" }));
@@ -277,7 +296,9 @@ exports.updateMetadata = (req, res) => {
             }
           });
         });
-      }
+      }, function (passon) {
+        res.status(401).send(JSON.stringify(passon));
+      });
     }
   });
 };

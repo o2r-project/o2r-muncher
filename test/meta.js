@@ -26,6 +26,8 @@ const createCompendiumPostRequest = require('./util').createCompendiumPostReques
 require("./setup")
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
+const cookie_admin = 's:hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i.IEPb0lmtGojn2cVk2edRuomIEanX6Ddz87egE5Pe8UM';
+const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
 
 describe('Reading compendium metadata', () => {
   let compendium_id = '';
@@ -179,6 +181,7 @@ describe('Updating compendium metadata', () => {
       'author': 'npm test!'
     }
   };
+
   let j = request.jar();
   let ck = request.cookie('connect.sid=' + cookie_plain);
   j.setCookie(ck, global.test_host);
@@ -198,6 +201,22 @@ describe('Updating compendium metadata', () => {
     method: 'PUT',
     jar: j2,
     json: data,
+    timeout: 10000
+  };
+
+  let j3 = request.jar();
+  let ck3 = request.cookie('connect.sid=' + cookie_editor);
+  j3.setCookie(ck3, global.test_host);
+
+  let req_doc_editor = {
+    method: 'PUT',
+    jar: j3,
+    json: {
+      'o2r': {
+        'title': 'New edited title on the block',
+        'author': 'editor!'
+      }
+    },
     timeout: 10000
   };
 
@@ -222,7 +241,7 @@ describe('Updating compendium metadata', () => {
     }).timeout(20000);
   });
 
-  describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with author user', () => {
+  describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with *author* user', () => {
     it('should respond with HTTP 200', (done) => {
       req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req_doc_o2r, (err, res, body) => {
@@ -253,6 +272,27 @@ describe('Updating compendium metadata', () => {
         assert.propertyVal(response.metadata.o2r, 'author', 'npm test!');
         assert.notProperty(response.metadata.o2r, 'abstract');
         assert.notProperty(response.metadata.o2r, 'file');
+        done();
+      });
+    }).timeout(20000);
+  });
+
+  describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with *editor* user', () => {
+
+    it('should respond with a valid JSON document with the updated metadata', (done) => {
+      req_doc_editor.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      request(req_doc_editor, (err, res, body) => {
+        assert.ifError(err);
+        assert.isObject(body);
+        assert.include(body.metadata.o2r.title, 'New edited title on the block');
+        done();
+      });
+    }).timeout(20000);
+    it('should have the updated metadata in the metadata section', (done) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.metadata.o2r, 'title', 'New edited title on the block');
         done();
       });
     }).timeout(20000);
