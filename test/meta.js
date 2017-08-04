@@ -235,7 +235,7 @@ describe('Updating compendium metadata', () => {
       request(req_doc_plain, (err, res, body) => {
         assert.ifError(err);
         assert.isObject(body);
-        assert.propertyVal(body, 'error', 'not authorized');
+        assert.propertyVal(body, 'error', 'not authorized to edit metadata of ' + compendium_id);
         done();
       });
     }).timeout(20000);
