@@ -27,7 +27,7 @@ require("./setup")
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 const cookie_uploader = 's:lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO.0iapdV1c85wc5NO3d3h+svorp3Tm56cfqRhhpFJZBnk';
-const waitSecs = 5;
+const waitSecs = 20;
 
 describe('API job filtering', () => {
   before((done) => {
@@ -198,7 +198,7 @@ describe('API job filtering', () => {
       done();
     }).timeout(waitSecs * 1000 * 2);
 
-    it('should list 3 jobs with compendium_id', (done) => {
+    it('should list 3 jobs with given compendium_id', (done) => {
       request(global.test_host + '/api/v1/job/?compendium_id=' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);

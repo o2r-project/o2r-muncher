@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "DEBUG=*,-modem,-mocha:* mocha",
-    "test_noloader": "LOADER_CONTAINER=no TEST_HOST=http://localhost DEBUG=*,-modem,-mocha:* mocha",
+    "test_loader": "DEBUG=*,-modem,-mocha:* mocha",
+    "test_port80": "LOADER_CONTAINER=no TEST_HOST=http://localhost DEBUG=*,-modem,-mocha:* mocha",
+    "test": "LOADER_CONTAINER=no DEBUG=*,-modem,-mocha:* mocha",
     "debug": "DEBUG=muncher,executor node index.js"
   },
   "author": "o2r-project (http://o2r.info)",
