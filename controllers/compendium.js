@@ -58,8 +58,13 @@ exports.viewSingle = (req, res) => {
           '/api/v1/compendium/' + id + '/data' // prepend proper location
         );
       } catch (e) {
-        res.status(500).send({ error: 'internal error: could not read compendium contents from storage', e });
-        return;
+        debug('ERROR: No data files found for compendium %s. Fail? %s', id, config.fs.fail_on_no_files);
+        if (config.fs.fail_on_no_files) {
+          res.status(500).send({ error: 'internal error: could not read compendium contents from storage', e });
+          return;
+        } else {
+          answer.filesMissing = true;
+        }
       }
       res.status(200).send(answer);
     }
