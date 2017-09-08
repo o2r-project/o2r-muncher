@@ -21,7 +21,6 @@ addons:
       - python3-dev
       - libxml2-dev
       - libxslt1-dev
-      - libgdal
       - libgdal-dev
       - python3-gdal
 before_install:
