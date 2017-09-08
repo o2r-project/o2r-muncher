@@ -1,13 +1,29 @@
+---
+sudo: required
 language: node_js
 node_js:
   - "6"
+  - "7"
+  - "8"
 services:
-  - mongodb
+  - docker
+cache:
+  directories:
+    - "node_modules"
+before_install:
+  - docker --version
+  - docker pull o2rproject/o2r-loader:latest
+  - docker pull mongo:3.4
 install:
   - npm install
   - npm install -g mocha
 before_script:
-  - npm start &
+  - docker run --name mongodb -d -p 27017:27017 mongo:3.4
+  - docker run --name testloader -d -p 8088:8088 --link mongodb:mongodb -v $HOME:/tmp/o2r -e LOADER_MONGODB=mongodb://mongodb:27017 -e DEBUG=* o2rproject/o2r-loader:latest
   - sleep 10
 script:
-  - mocha
+  - DEBUG=muncher,executor,compendium,executor:*,muncher:* MUNCHER_BASEPATH=$HOME/ npm start &
+  - DEBUG=* npm test
+after_failure:
+  - sleep 5
+  - docker logs testloader
