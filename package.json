@@ -1,6 +1,6 @@
 {
   "name": "muncher",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "Node.js implementation of parts of the [o2r web api](http://o2r.info/o2r-web-api).",
   "main": "index.js",
   "scripts": {
@@ -41,7 +41,8 @@
     "randomstring": "^1.1.5",
     "starwars": "1.0.0",
     "tar": "^4.0.1",
-    "yamljs": "^0.3.0"
+    "yamljs": "^0.3.0",
+    "yn": "^2.0.0"
   },
   "devDependencies": {
     "adm-zip": "^0.4.7",
@@ -54,7 +55,6 @@
     "node-uname": "^1.0.1",
     "request": "^2.81.0",
     "sleep": "^5.1.1",
-    "tmp": "0.0.33",
-    "yn": "^2.0.0"
+    "tmp": "0.0.33"
   }
 }
