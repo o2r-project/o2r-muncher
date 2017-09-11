@@ -32,12 +32,13 @@ before_install:
   - sudo pip3 install --upgrade pip
   - sudo pip3 install bagit
   - git clone --depth 1 -b master https://github.com/o2r-project/o2r-meta.git $HOME/meta
+  - cd $HOME/meta
   - pip3 install -r requirements.txt
   - export MUNCHER_META_TOOL_EXE="python3 $HOME/meta/o2rmeta.py"
   - export MUNCHER_META_EXTRACT_MAPPINGS_DIR="$HOME/meta/broker/mappings"
+  - cd $HOME
 install:
   - npm install
-  - npm install -g mocha
 before_script:
   - docker run --name mongodb -d -p 27017:27017 mongo:3.4
   - docker run --name testloader -d -p 8088:8088 --link mongodb:mongodb -v $HOME:/tmp/o2r -e LOADER_MONGODB=mongodb://mongodb:27017 -e DEBUG=* o2rproject/o2r-loader:latest
