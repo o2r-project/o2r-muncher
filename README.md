@@ -58,6 +58,8 @@ You can override these environment variables (configured in `config/config.js`) 
   Executable for metadata tools, defaults to `python3 ../o2r-meta/o2rmeta.py`. You will very likely need to change this.
 - `MUNCHER_META_EXTRACT_MAPPINGS_DIR` __Required__
   Path to extraction mappings, defaults to `../o2r-meta/broker/mappings`. You will very likely need to change this.
+- `MUNCHER_FAIL_ON_NO_FILES`
+  Should an error be thrown when files for a compendium that exists in the database are _not found_? Defaults to `false` (useful for testing).
 
 ### Full API service with docker-compose
 

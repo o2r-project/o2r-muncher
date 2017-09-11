@@ -25,6 +25,9 @@ const Docker = require('dockerode');
 
 // mongo connection
 const mongoose = require('mongoose');
+
+// use ES6 promises for mongoose
+mongoose.Promise = global.Promise;
 const dbURI = c.mongo.location + c.mongo.database;
 // see http://blog.mlab.com/2014/04/mongodb-driver-mongoose/#Production-ready_connection_settings and http://mongodb.github.io/node-mongodb-native/2.1/api/Server.html and http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/overview.html
 var dbOptions = {
@@ -32,7 +35,9 @@ var dbOptions = {
     auto_reconnect: true,
     reconnectTries: Number.MAX_VALUE,
     socketOptions: { keepAlive: 30000, connectTimeoutMS: 30000, autoReconnect: true }
-  }
+  },
+  useMongoClient: true,
+  promiseLibrary: mongoose.Promise
 };
 mongoose.connection.on('error', (err) => {
   debug('Could not connect to MongoDB @ %s: %s', dbURI, err);

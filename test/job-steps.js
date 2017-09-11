@@ -28,7 +28,7 @@ const unamecall = require('node-uname');
 require("./setup")
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
-const sleepSecs = 1;
+const sleepSecs = 10;
 
 describe('API job steps', () => {
   before((done) => {
@@ -158,7 +158,7 @@ describe('API job steps', () => {
         assert.propertyVal(response.steps.validate_bag, 'status', 'success');
         done();
       });
-    }).timeout(sleepSecs * 1000 * 3);
+    }).timeout(sleepSecs * 1000 * 2);
 
     it('should fail step "validate_compendium"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {

@@ -14,6 +14,8 @@
  * limitations under the License.
  *
  */
+const yn = require('yn');
+
 var c = {};
 c.net = {};
 c.mongo = {};
@@ -44,6 +46,7 @@ c.fs.incoming = c.fs.base + 'incoming/';
 c.fs.compendium = c.fs.base + 'compendium/';
 c.fs.job = c.fs.base + 'job/';
 c.fs.delete_inc = true;
+c.fs.fail_on_no_files = yn(env.MUNCHER_FAIL_ON_NO_FILES) || false;
 
 // muncher behaviour & defaults
 c.list_limit = 100; // amount of results per page
