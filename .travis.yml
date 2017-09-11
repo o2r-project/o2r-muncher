@@ -33,7 +33,7 @@ before_install:
   - sudo pip3 install bagit
   - git clone --depth 1 -b master https://github.com/o2r-project/o2r-meta.git $HOME/meta
   - cd $HOME/meta
-  - pip3 install -r requirements.txt
+  - sudo pip3 install -r requirements.txt
   - export MUNCHER_META_TOOL_EXE="python3 $HOME/meta/o2rmeta.py"
   - export MUNCHER_META_EXTRACT_MAPPINGS_DIR="$HOME/meta/broker/mappings"
   - cd $HOME
