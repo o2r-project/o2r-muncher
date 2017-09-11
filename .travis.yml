@@ -29,7 +29,6 @@ before_install:
   - python3 --version
   - docker pull o2rproject/o2r-loader:latest
   - docker pull mongo:3.4
-  - pip3 install --upgrade pip
   - pip3 install bagit
   - git clone --depth 1 -b master https://github.com/o2r-project/o2r-meta.git $HOME/meta
   - pip3 install -r requirements.txt
