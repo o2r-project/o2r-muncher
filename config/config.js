@@ -62,6 +62,7 @@ c.user.level.create_compendium = 100;
 c.user.level.create_job = 0;
 c.user.level.view_status = 1000;
 c.user.level.edit_metadata = 500;
+c.user.level.view_candidates = 500;
 
 // bagtainer configuration
 c.bagtainer = {};
