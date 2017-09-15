@@ -109,7 +109,7 @@ exports.viewSingle = (req, res) => {
             res.status(200).send(answer);
           }, function (passon) {
             debug('[%s] User %s may NOT see candidate.', id, req.user.orcid);
-            res.status(401).send(JSON.stringify(passon));
+            res.status(401).send(passon);
           });
       } else {
         res.status(200).send(answer);
@@ -155,10 +155,7 @@ exports.viewSingleJobs = (req, res) => {
 };
 
 exports.view = (req, res) => {
-  var answer = {};
-  var filter = {};
-  var limit = parseInt(req.query.limit || config.list_limit, 10);
-  var start = parseInt(req.query.start || 1, 10) - 1;
+  let filter = {};
 
   // add query element to filter (used in database search)
   // eslint-disable-next-line no-eq-null, eqeqeq
@@ -175,24 +172,92 @@ exports.view = (req, res) => {
     filter[config.meta.doiPath] = req.query.doi;
   }
 
-  filter.candidate = false;
+  let search = {
+    limit: parseInt(req.query.limit || config.list_limit, 10),
+    start: parseInt(req.query.start || 1, 10) - 1,
+    filter: filter
+  };
 
-  Compendium.find(filter).select('id').skip(start).limit(limit).exec((err, comps) => {
-    if (err) {
-      res.status(500).send(JSON.stringify({ error: 'query failed' }));
-    } else {
-      var count = comps.length;
-      if (count <= 0) {
-        res.status(404).send(JSON.stringify({ error: 'no compendium found' }));
-      } else {
+  let findCompendia = (passon) => {
+    // do not show candidates by default
+    passon.filter.candidate = false;
 
-        answer.results = comps.map(comp => {
-          return comp.id;
+    return new Promise(function (resolve, reject) {
+      Compendium.find(passon.filter).select('id').skip(passon.start).limit(passon.limit).exec((err, comps) => {
+        if (err) {
+          debug('Error querying candidates for user %s: %s', req.user.orcid, err);
+          let error = new Error('query failed');
+          error.code = 500;
+          reject(error);
+        } else {
+          var count = comps.length;
+          if (count <= 0) {
+            res.status(404).send(JSON.stringify({ error: 'no compendium found' }));
+          } else {
+
+            passon.results = comps.map(comp => {
+              return comp.id;
+            });
+
+            resolve(passon);
+          }
+        }
+      })
+    });
+  };
+
+  // additionally, add the user's candidates if he requests compendia for himself as the first results
+  let findCandidates = (passon) => {
+    return new Promise(function (resolve, reject) {
+      if (req.query.user != null && req.isAuthenticated() && req.user.orcid === req.query.user) {
+        debug('User %s requests compendia for %s, so prepending candidates to the response.');
+        passon.filter.candidate = true;
+
+        Compendium.find(passon.filter).select('id').skip(passon.start).limit(passon.limit).exec((err, comps) => {
+          if (err) {
+            debug('Error querying candidates for user %s: %s', req.user.orcid, err);
+            let error = new Error('query failed');
+            error.code = 500;
+            reject(error);
+          } else {
+            var count = comps.length;
+            if (count <= 0) {
+              let error = new Error('qno compendium found');
+              error.code = 404;
+              reject(error);
+            } else {
+
+              passon.candidates = comps.map(comp => {
+                return comp.id;
+              });
+
+              resolve(passon);
+            }
+          }
         });
-        res.status(200).send(JSON.stringify(answer));
       }
-    }
-  });
+    });
+  };
+
+  findCompendia(search)
+    .then(findCandidates)
+    .then(passon => {
+      debug('Completed search, returning %s compendia plus %s candidates.', passon.results.length, passon.candidates.length);
+
+      let answer = {};
+      answer.results = passon.candidates.concat(passon.results);
+      res.status(200).send(answer);
+    })
+    .catch(err => {
+      debug('Rejection during search: \n\t%s', JSON.stringify(err));
+      let status = 500;
+      if (err.status) {
+        status = err.status;
+      }
+      done(null, err);
+      res.status(status).send({ error: error.message });
+    });
+
 };
 
 exports.viewSingleMetadata = (req, res) => {
@@ -233,6 +298,11 @@ exports.updateMetadata = (req, res) => {
             debug('[%s] invalid metadata provided: no o2r root element', id);
             res.status(422).send(JSON.stringify({ error: "JSON with root element 'o2r' required" }));
             return;
+          }
+
+          // TODO check metadata conformance with profile
+          if (passon.user_has_rights) {
+            compendium.candidate = false;
           }
 
           compendium.metadata.o2r = req.body.o2r;
@@ -330,7 +400,7 @@ exports.updateMetadata = (req, res) => {
             });
           });
         }, function (passon) {
-          res.status(401).send(JSON.stringify(passon));
+          res.status(401).send(passon);
         });
     }
   });
