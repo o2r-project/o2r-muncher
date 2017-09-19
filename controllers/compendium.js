@@ -31,8 +31,11 @@ var User = require('../lib/model/user');
 var Job = require('../lib/model/job');
 
 detect_rights = function (user_id, compendium, level) {
+  debug('[%s] Checking rights for user %s against level %s', user_id, level);
+
   return new Promise(function (resolve, reject) {
     if (user_id === compendium.user) {
+      debug('[%s] User %s is owner!', user_id);
       resolve({ user_has_rights: true });
     } else {
       // user is not author but could have required level
@@ -56,12 +59,16 @@ detect_rights = function (user_id, compendium, level) {
 
 exports.viewSingle = (req, res) => {
   let id = req.params.id;
+  debug('[%s] view single compendium', id);
 
   Compendium.findOne({ id }).select('id user metadata created candidate').exec((err, compendium) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (err || compendium == null) {
-      res.status(404).send(JSON.stringify({ error: 'no compendium with this id' }));
+      debug('[%s] compendium does not exist!', id);
+      res.status(404).send({ error: 'no compendium with this id' });
     } else {
+      debug('[%s] single compendium found!', id);
+
       let answer = {
         id: id,
         metadata: compendium.metadata,
@@ -84,10 +91,10 @@ exports.viewSingle = (req, res) => {
           config.fs.compendium.length + config.id_length, // remove local fs path and id
           '/api/v1/compendium/' + id + '/data' // prepend proper location
         );
-      } catch (e) {
-        debug('ERROR: No data files found for compendium %s. Fail? %s', id, config.fs.fail_on_no_files);
+      } catch (err) {
+        debug('ERROR: No data files found for compendium %s. Fail? %s\n%s', id, config.fs.fail_on_no_files, err);
         if (config.fs.fail_on_no_files) {
-          res.status(500).send({ error: 'internal error: could not read compendium contents from storage', e });
+          res.status(500).send({ error: 'internal error: could not read compendium contents from storage' });
           return;
         } else {
           answer.filesMissing = true;
@@ -96,6 +103,8 @@ exports.viewSingle = (req, res) => {
 
       // check if user is allowed to view the candidate (easier to check async if done after answer creation)
       if (compendium.candidate) {
+        debug('[%s] Compendium is a candidate, need to make some checks.', id);
+
         if (!req.isAuthenticated()) {
           debug('[%s] User is not authenticated, cannot view candidate.', id);
           res.status(401).send('{"error":"user is not authenticated"}');
@@ -127,19 +136,19 @@ exports.viewSingleJobs = (req, res) => {
 
   Job.find(filter).select('id').skip(start).limit(limit).exec((err, jobs) => {
     if (err) {
-      res.status(500).send(JSON.stringify({ error: 'query failed' }));
+      res.status(500).send({ error: 'query failed' });
     } else {
       var count = jobs.length;
       if (count <= 0) {
         Compendium.find({ id }).limit(1).exec((err, compendium) => { // https://blog.serverdensity.com/checking-if-a-document-exists-mongodb-slow-findone-vs-find/
           if (err) {
-            res.status(404).send(JSON.stringify({ error: 'no compendium found: ' + err.message }));
+            res.status(404).send({ error: 'no compendium found: ' + err.message });
           }
           else {
             if (compendium.length <= 0) {
-              res.status(404).send(JSON.stringify({ error: 'no compendium with this id' }));
+              res.status(404).send({ error: 'no compendium with this id' });
             } else {
-              res.status(404).send(JSON.stringify({ error: 'no job found for compendium ' + id }));
+              res.status(404).send({ error: 'no job found for compendium ' + id });
             }
           }
         });
@@ -148,7 +157,7 @@ exports.viewSingleJobs = (req, res) => {
         answer.results = jobs.map(job => {
           return job.id;
         });
-        res.status(200).send(JSON.stringify(answer));
+        res.status(200).send(answer);
       }
     }
   });
@@ -192,7 +201,7 @@ exports.view = (req, res) => {
         } else {
           var count = comps.length;
           if (count <= 0) {
-            res.status(404).send(JSON.stringify({ error: 'no compendium found' }));
+            res.status(404).send({ error: 'no compendium found' });
           } else {
 
             passon.results = comps.map(comp => {
@@ -267,7 +276,7 @@ exports.viewSingleMetadata = (req, res) => {
   Compendium.findOne({ id }).select('id metadata').exec((err, compendium) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (err || compendium == null) {
-      res.status(404).send(JSON.stringify({ error: 'no compendium with this id' }));
+      res.status(404).send({ error: 'no compendium with this id' });
     } else {
       answer.metadata = {};
       answer.metadata.o2r = compendium.metadata.o2r;
@@ -290,13 +299,13 @@ exports.updateMetadata = (req, res) => {
   Compendium.findOne({ id }).select('id metadata user').exec((err, compendium) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (err || compendium == null) {
-      res.status(404).send(JSON.stringify({ error: 'no compendium with this id' }));
+      res.status(404).send({ error: 'no compendium with this id' });
     } else {
       detect_rights(user_id, compendium, config.user.level.edit_metadata)
         .then(function (passon) {
           if (!req.body.hasOwnProperty('o2r')) {
             debug('[%s] invalid metadata provided: no o2r root element', id);
-            res.status(422).send(JSON.stringify({ error: "JSON with root element 'o2r' required" }));
+            res.status(422).send({ error: "JSON with root element 'o2r' required" });
             return;
           }
 
@@ -319,7 +328,7 @@ exports.updateMetadata = (req, res) => {
             fs.writeFile(metadata_file, JSON.stringify(compendium.metadata.o2r), function (err) {
               if (err) {
                 debug('[%s] Error updating normative metadata file: %s', id, err);
-                res.status(500).send(JSON.stringify({ error: 'Error updating normative metadata file' }));
+                res.status(500).send({ error: 'Error updating normative metadata file' });
               } else {
                 // re-broker
                 let current_mapping = 'zenodo';
@@ -342,14 +351,14 @@ exports.updateMetadata = (req, res) => {
                     debug(error, stderr, stdout);
                     let errors = error.message.split(':');
                     let message = errorMessageHelper(errors[errors.length - 1]);
-                    res.status(500).send(JSON.stringify({ error: 'metadata brokering failed: ' + message }));
+                    res.status(500).send({ error: 'metadata brokering failed: ' + message });
                   } else {
                     debug('Completed metadata brokering for compendium %s:\n\n%s\n', id, stdout);
 
                     fs.readdir(metabroker_dir, (err, files) => {
                       if (err) {
                         debug('Error reading brokered metadata directory %s:\n\t%s', metabroker_dir, err);
-                        res.status(500).send(JSON.stringify({ error: 'error reading brokered metadata directory' }));
+                        res.status(500).send({ error: 'error reading brokered metadata directory' });
                       } else {
                         debug('Completed metadata brokering and now have %s metadata files for compendium %: %s',
                           files.length, id, JSON.stringify(files));
@@ -358,7 +367,7 @@ exports.updateMetadata = (req, res) => {
                         fs.readFile(mapping_file, (err, data) => {
                           if (err) {
                             debug('Error reading mapping file: %s', err.message);
-                            res.status(500).send(JSON.stringify({ error: 'Error reading mapping file' }));
+                            res.status(500).send({ error: 'Error reading mapping file' });
                           } else {
                             let mapping = JSON.parse(data);
                             let mapping_output_file = path.join(metabroker_dir, mapping.Settings.outputfile);
@@ -368,7 +377,7 @@ exports.updateMetadata = (req, res) => {
                             fs.readFile(mapping_output_file, (err, data) => {
                               if (err) {
                                 debug('Error reading brokering output file for %s: %s', id, err.message);
-                                res.status(500).send(JSON.stringify({ error: 'Error reading brokering output from file' }));
+                                res.status(500).send({ error: 'Error reading brokering output from file' });
                               } else {
                                 let mapping_output = JSON.parse(data);
                                 // read mapped metadata and save it also to DB
@@ -382,7 +391,7 @@ exports.updateMetadata = (req, res) => {
                                 compendium.save((err, doc) => {
                                   if (err) {
                                     debug('[%s] ERROR saving new compendium: %s', id, err);
-                                    res.status(500).send(JSON.stringify({ error: 'internal error' }));
+                                    res.status(500).send({ error: 'internal error' });
                                   } else {
                                     debug('[%s] Updated compendium, now is:\n%s', id, JSON.stringify(doc));
                                     res.status(200).send(answer);

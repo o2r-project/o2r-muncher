@@ -58,11 +58,11 @@ exports.view = (req, res) => {
 
   Job.find(filter).select(fields).skip(start).limit(limit).exec((err, jobs) => {
     if (err) {
-      res.status(500).send(JSON.stringify({ error: 'query failed' }));
+      res.status(500).send({ error: 'query failed' });
     } else {
       var count = jobs.length;
       if (count <= 0) {
-        res.status(404).send(JSON.stringify({ error: 'no jobs found' }));
+        res.status(404).send({ error: 'no jobs found' });
       } else {
         
         switch (req.query.fields) { //return requested fields
@@ -72,7 +72,7 @@ exports.view = (req, res) => {
           default:
             answer.results = jobs.map((job) => { return job.id; });            
         }
-        res.status(200).send(JSON.stringify(answer));
+        res.status(200).send(answer);
       }
     }
   });
@@ -85,7 +85,7 @@ exports.viewSingle = (req, res) => {
   Job.findOne({ id }).exec((err, job) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (err || job == null) { // intentially loose comparison
-      res.status(404).send(JSON.stringify({ error: 'no job with this id' }));
+      res.status(404).send({ error: 'no job with this id' });
     } else {
       debug(job);
       answer.compendium_id = job.compendium_id;
@@ -107,7 +107,7 @@ exports.viewSingle = (req, res) => {
           answer.filesMissing = true;
         }
       }
-      res.status(200).send(JSON.stringify(answer));
+      res.status(200).send(answer);
     }
   });
 };
@@ -151,13 +151,12 @@ exports.create = (req, res) => {
 
         var execution = new Executor(job_id, config.fs.job);
         execution.execute();
-        res.status(200).send(JSON.stringify({job_id}));
+        res.status(200).send({job_id});
         debug("[%s] Reqeuest complete and response sent; job executes compendium %s and is saved to database; job files are at %s", 
           job_id, compendium_id, job_path);
-        //  throw new Error('compendium path does not exist for compendium id ' + compendium_id);
       }
     });
   } catch (error) {
-    res.status(500).send(JSON.stringify({ error }));
+    res.status(500).send({ error: error.message });
   }
 };
