@@ -21,6 +21,8 @@ const c = require('./config/config');
 const fse = require('fs-extra');
 const backoff = require('backoff');
 const child_process = require('child_process');
+const exec = require('child_process').exec;
+const fs = require('fs');
 const Docker = require('dockerode');
 
 // mongo connection
@@ -31,11 +33,10 @@ mongoose.Promise = global.Promise;
 const dbURI = c.mongo.location + c.mongo.database;
 // see http://blog.mlab.com/2014/04/mongodb-driver-mongoose/#Production-ready_connection_settings and http://mongodb.github.io/node-mongodb-native/2.1/api/Server.html and http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/overview.html
 var dbOptions = {
-  server: {
-    auto_reconnect: true,
-    reconnectTries: Number.MAX_VALUE,
-    socketOptions: { keepAlive: 30000, connectTimeoutMS: 30000, autoReconnect: true }
-  },
+  autoReconnect: true,
+  reconnectTries: Number.MAX_VALUE,
+  keepAlive: 30000,
+  socketTimeoutMS: 30000,
   useMongoClient: true,
   promiseLibrary: mongoose.Promise
 };
@@ -200,6 +201,28 @@ function initApp(callback) {
     app.post('/api/v1/job', upload.any(), controllers.job.create);
     app.get('/api/v1/job/:id', controllers.job.viewSingle);
 
+    /*
+     * Python version and meta tools version
+     */
+    let pythonVersionCmd = 'echo ';
+    if (c.meta.cliPath.toLowerCase().startsWith('python')) {
+      pythonVersionCmd = pythonVersionCmd.concat('$(', c.meta.cliPath.split(" ")[0], ' --version)');
+    } else {
+      pythonVersionCmd = pythonVersionCmd.concat('$(python --version)')
+    }
+    exec(pythonVersionCmd, (error, stdout, stderr) => {
+      if (error) {
+        debug('Error detecting python version: %s', error);
+      } else {
+        let version = stdout.concat(stderr);
+        debug('Using "%s" for meta tools at "%s"', version.trim(), c.meta.cliPath);
+      }
+    });
+    let versionFile = c.meta.broker.mappings.dir.split('broker/')[0].concat(c.meta.versionFile);
+    fs.readFile(versionFile, 'utf8', function (err, data) {
+      debug('meta tools version: %s', data.trim());
+    })
+
     app.listen(c.net.port, () => {
       debug('muncher %s with API version %s waiting for requests on port %s',
         c.version,
@@ -228,11 +251,11 @@ function initApp(callback) {
 // auto_reconnect is on by default and only for RE(!)connects, not for the initial attempt: http://bites.goodeggs.com/posts/reconnecting-to-mongodb-when-mongoose-connect-fails-at-startup/
 var dbBackoff = backoff.fibonacci({
   randomisationFactor: 0,
-  initialDelay: c.mongo.inital_connection_initial_delay,
-  maxDelay: c.mongo.inital_connection_max_delay
+  initialDelay: c.mongo.initial_connection_initial_delay,
+  maxDelay: c.mongo.initial_connection_max_delay
 });
 
-dbBackoff.failAfter(c.mongo.inital_connection_attempts);
+dbBackoff.failAfter(c.mongo.initial_connection_attempts);
 dbBackoff.on('backoff', function (number, delay) {
   debug('Trying to connect to MongoDB (#%s) in %sms', number, delay);
 });

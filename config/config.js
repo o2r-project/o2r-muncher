@@ -31,9 +31,9 @@ c.version = require('../package.json').version;
 c.net.port = env.MUNCHER_PORT || 8080;
 c.mongo.location = env.MUNCHER_MONGODB || 'mongodb://localhost/';
 c.mongo.database = env.MUNCHER_MONGODB_DATABASE || 'muncher';
-c.mongo.inital_connection_attempts = 30;
-c.mongo.inital_connection_max_delay = 5000;
-c.mongo.inital_connection_initial_delay = 1000;
+c.mongo.initial_connection_attempts = 30;
+c.mongo.initial_connection_max_delay = 5000;
+c.mongo.initial_connection_initial_delay = 1000;
 
 // fix mongo location if trailing slash was omitted
 if (c.mongo.location[c.mongo.location.length - 1] !== '/') {
@@ -130,6 +130,7 @@ c.email.sender = env.MUNCHER_EMAIL_SENDER;
 // metadata extraction and brokering options
 c.meta = {};
 c.meta.cliPath = env.MUNCHER_META_TOOL_EXE || 'python3 ../o2r-meta/o2rmeta.py';
+c.meta.versionFile = 'version';
 c.meta.normativeFile = 'metadata_o2r.json';
 c.meta.dir = '.erc';
 

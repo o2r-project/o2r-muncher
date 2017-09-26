@@ -121,7 +121,7 @@ npm run test_noloader
 ### Removing all containers/images created by muncher
 
 ```bash
-docker ps -a | grep bagtainer | awk '{print $1}' | xargs --no-run-if-empty docker rm
+docker ps -a | grep erc | awk '{print $1}' | xargs --no-run-if-empty docker rm
 
 docker images --no-trunc | grep bagtainer | awk '{print $3}' | xargs --no-run-if-empty docker rmi -f
 ```
