@@ -165,6 +165,20 @@ See `o2r-bagtainers/README.md` on using the much more convenient *uploader conta
 
 See the [o2r Web API docs](http://o2r.info/o2r-web-api/user/#user-levels) for information on **user levels**.
 
+### Create bags for testing
+
+The following code uses `bagit.py` to create, validate, or load and update an existing bag _in place_:
+
+```bash
+# create bag
+python -c "import bagit; bag = bagit.make_bag('success-validate');"
+
+# validate bag
+python -c "import bagit; bag = bagit.Bag('success-load-validate'); print('Is Bag valid?', bag.validate());"
+
+# update manifest and validate it with (run twice)
+python -c "import bagit; bag = bagit.Bag('success-load-validate'); bag.save(manifests=True); print('Updated manifest. Is Bag valid?', bag.validate());"
+```
 
 ## License
 
