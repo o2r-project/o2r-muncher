@@ -80,7 +80,7 @@ describe('API job steps', () => {
     let job_id = '';
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/bagtainers/step_validate_bag', cookie_o2r);
+      let req = createCompendiumPostRequest('./test/erc/step_validate_bag', cookie_o2r);
       this.timeout(10000);
 
       request(req, (err, res, body) => {
@@ -195,7 +195,7 @@ describe('API job steps', () => {
     let job_id = '';
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/bagtainers/step_validate_compendium', cookie_o2r);
+      let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
       this.timeout(10000);
 
       request(req, (err, res, body) => {
@@ -351,7 +351,7 @@ describe('API job steps', () => {
 
     // useful command: unzip -l /tmp/tmp-5697QCBn11BrFvTl.zip 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/bagtainers/step_image_prepare', cookie_o2r);
+      let req = createCompendiumPostRequest('./test/erc/step_image_prepare', cookie_o2r);
       this.timeout(10000);
 
       request(req, (err, res, body) => {
@@ -438,7 +438,7 @@ describe('API job steps', () => {
     var job_id = '';
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/bagtainers/step_image_build', cookie_o2r);
+      let req = createCompendiumPostRequest('./test/erc/step_image_build', cookie_o2r);
       this.timeout(10000);
 
       request(req, (err, res, body) => {
@@ -522,7 +522,7 @@ describe('API job steps', () => {
     var docker = new Docker();
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
+      let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
       this.timeout(10000);
 
       request(req, (err, res, body) => {

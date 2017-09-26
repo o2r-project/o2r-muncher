@@ -68,7 +68,7 @@ c.user.level.view_candidates = 500;
 c.bagtainer = {};
 c.bagtainer.supportedVersions = ['0.1', '1'];
 c.bagtainer.payloadDirectory = '/data';
-c.bagtainer.configFile = '/data/bagtainer.yml';
+c.bagtainer.configFile = 'erc.yml';
 c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
 c.bagtainer.keepImages = true; // required for image download!
 c.bagtainer.validateBeforeExecute = true; // cannot validate before execute when saving image tarball but not updating the bag
@@ -79,7 +79,7 @@ c.bagtainer.bagit.validateFast = false;
 c.bagtainer.bagit.failOnValidationError = {};
 c.bagtainer.bagit.failOnValidationError.execute = false;
 
-c.bagtainer.imageNamePrefix = 'bagtainer:';
+c.bagtainer.imageNamePrefix = 'erc:';
 c.bagtainer.forceImageRemoval = true;
 c.bagtainer.docker = {};
 // See https://docs.docker.com/engine/reference/commandline/create/ and https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#create-a-container

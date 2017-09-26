@@ -43,7 +43,7 @@ describe('API job fields', () => {
     let compendium_id = '';
     // upload 1st compendium with final job status "success"
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
+      let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
       this.timeout(20000);
 
       request(req, (err, res, body) => {

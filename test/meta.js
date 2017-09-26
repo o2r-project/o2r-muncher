@@ -32,7 +32,7 @@ const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPu
 describe('Reading compendium metadata', () => {
   let compendium_id = '';
   before(function (done) {
-    let req = createCompendiumPostRequest('./test/bagtainers/metatainer', cookie_o2r);
+    let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
     this.timeout(10000);
 
     request(req, (err, res, body) => {
@@ -132,7 +132,7 @@ describe('Reading compendium metadata', () => {
 describe('Updating compendium metadata', () => {
   let compendium_id = '';
   before(function (done) {
-    let req = createCompendiumPostRequest('./test/bagtainers/metatainer', cookie_o2r);
+    let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
     this.timeout(10000);
 
     request(req, (err, res, body) => {
@@ -376,7 +376,7 @@ describe('Updating compendium metadata', () => {
 describe('Brokering updated compendium metadata', () => {
   let compendium_id = '';
   before(function (done) {
-    let req = createCompendiumPostRequest('./test/bagtainers/metatainer', cookie_o2r);
+    let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
     this.timeout(10000);
 
     request(req, (err, res, body) => {

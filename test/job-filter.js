@@ -47,7 +47,7 @@ describe('API job filtering', () => {
 
     // upload 1st compendium with final job status "success"
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
+      let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
       this.timeout(10000);
 
       request(req, (err, res, body) => {
@@ -107,7 +107,7 @@ describe('API job filtering', () => {
     }).timeout(10000);
 
     it('upload 2nd compendium with final job status "failure"', (done) => {
-      let req = createCompendiumPostRequest('./test/bagtainers/step_image_build', cookie_o2r);
+      let req = createCompendiumPostRequest('./test/erc/step_image_build', cookie_o2r);
 
       request(req, (err, res, body) => {
         assert.ifError(err);

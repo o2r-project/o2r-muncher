@@ -3,5 +3,5 @@ incoming
 workspace
 .vscode
 npm-debug.log
-test/bagtainers/step*.zip
+test/erc/step*.zip
 *.Rhistory

@@ -45,7 +45,7 @@ describe('API compendium filter', () => {
     var test_user = '0000-0001-6021-1617';
     
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/bagtainers/metatainer-doi', cookie);
+      let req = createCompendiumPostRequest('./test/erc/metatainer-doi', cookie);
       this.timeout(30000);
 
       request(req, (err, res, body) => {

@@ -158,7 +158,7 @@ You can authenticate locally with OAuth as well.
 To upload compendia, the user must have the appropriate level. If you want to upload from the command line, get the session cookie out of the browser and use it in the curl request:
 
 ```bash
-curl --cookie connect.sid=s:S1oH7... -F "compendium=@/<path to compendium.zip>;type=application/zip" -F "content_type=compendium_v1"
+curl --cookie connect.sid=s:S1oH7... -F "compendium=@/<path to compendium.zip>;type=application/zip" -F "content_type=compendium"
 ```
 
 See `o2r-bagtainers/README.md` on using the much more convenient *uploader container*.

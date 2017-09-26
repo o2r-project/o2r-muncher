@@ -31,9 +31,11 @@ const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2
 describe('API Compendium', () => {
   before(function (done) {
     this.timeout(10000);
-    var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
+    let db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
-      db.jobs.drop(function (err, doc) { done(); });
+      db.jobs.drop(function (err, doc) {
+        done();
+      });
     });
   });
 
@@ -70,13 +72,15 @@ describe('API Compendium', () => {
     });
   });
 
-  describe('GET /api/v1/compendium with executing compendium loaded', () => {
-    var compendium_id = '';
+  describe.only('GET /api/v1/compendium with executing compendium loaded', () => {
+    let compendium_id = '';
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie);
-      this.timeout(20000);
+      let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);
+      this.timeout(30000);
 
       request(req, (err, res, body) => {
+        console.log(body);
+
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         assert.isObject(JSON.parse(body), 'returned JSON');
@@ -101,7 +105,7 @@ describe('API Compendium', () => {
   describe('GET /api/v1/compendium/<id of loaded compendium>', () => {
     var compendium_id = '';
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie);
+      let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);
       this.timeout(10000);
 
       request(req, (err, res, body) => {
