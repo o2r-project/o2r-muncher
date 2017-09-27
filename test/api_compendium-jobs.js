@@ -19,6 +19,7 @@
 const assert = require('chai').assert;
 const request = require('request');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
+const publishCandidate = require('./util').publishCandidate;
 const fs = require('fs');
 const mongojs = require('mongojs');
 const chai = require('chai');
@@ -44,11 +45,14 @@ describe('API compendium / jobs', () => {
 
             request(req, (err, res, body) => {
                 compendium_id = JSON.parse(body).id;
-                done();
+                publishCandidate(compendium_id, cookie_o2r, () => {
+                    done();
+                });
             });
         });
 
         let job_id;
+
         it('should respond with HTTP 404 and an error message when there is no job for an existing compendium', (done) => {
             request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
                 assert.ifError(err);
@@ -60,6 +64,7 @@ describe('API compendium / jobs', () => {
                 done();
             });
         });
+
         it('should return job ID when starting job', (done) => {
             let j = request.jar();
             let ck = request.cookie('connect.sid=' + cookie_o2r);
@@ -82,6 +87,7 @@ describe('API compendium / jobs', () => {
                 done();
             });
         }).timeout(10000);
+
         it('should respond with HTTP 200 and one job when one is started', (done) => {
             request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
                 assert.ifError(err);
@@ -91,6 +97,7 @@ describe('API compendium / jobs', () => {
                 done();
             });
         });
+
         it('should respond with HTTP 404 and error message when that compendium does not exist', (done) => {
             request(global.test_host + '/api/v1/compendium/1234/jobs', (err, res, body) => {
                 assert.ifError(err);

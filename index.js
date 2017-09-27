@@ -160,8 +160,11 @@ function initApp(callback) {
     // set up routes
     app.get('/status', function (req, res) {
       res.setHeader('Content-Type', 'application/json');
-      if (!req.isAuthenticated() || req.user.level < c.user.level.view_status) {
-        res.status(401).send('{"error":"not authenticated or not allowed"}');
+      if (!req.isAuthenticated()) {
+        res.status(401).send({ error: 'not authenticated' });
+        return;
+      } else if (req.user.level < c.user.level.view_status) {
+        res.status(403).send({ error: 'not allowed' });
         return;
       }
 

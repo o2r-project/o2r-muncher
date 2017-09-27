@@ -15,18 +15,20 @@
  *
  */
 
-var config = require('../config/config');
-var debug = require('debug')('job');
-var randomstring = require('randomstring');
-var fs = require('fs');
-var fse = require('fs-extra');
+const config = require('../config/config');
+const debug = require('debug')('job');
+const randomstring = require('randomstring');
+const fs = require('fs');
+const fse = require('fs-extra');
+const path = require('path');
 
-var dirTree = require('directory-tree');
-var rewriteTree = require('../lib/rewrite-tree');
+const dirTree = require('directory-tree');
+const rewriteTree = require('../lib/rewrite-tree');
 
-var Executor = require('../lib/executor').Executor;
+const Executor = require('../lib/executor').Executor;
 
-var Job = require('../lib/model/job');
+const Compendium = require('../lib/model/compendium');
+const Job = require('../lib/model/job');
 
 exports.view = (req, res) => {
   var answer = {};
@@ -64,13 +66,13 @@ exports.view = (req, res) => {
       if (count <= 0) {
         res.status(404).send({ error: 'no jobs found' });
       } else {
-        
+
         switch (req.query.fields) { //return requested fields
           case 'status':
-            answer.results = jobs.map((job) => { return {id: job.id, status: job.status}; });
+            answer.results = jobs.map((job) => { return { id: job.id, status: job.status }; });
             break;
           default:
-            answer.results = jobs.map((job) => { return job.id; });            
+            answer.results = jobs.map((job) => { return job.id; });
         }
         res.status(200).send(answer);
       }
@@ -118,45 +120,64 @@ exports.create = (req, res) => {
 
   // check user level
   if (!req.isAuthenticated()) {
-    res.status(401).send('{"error":"user is not authenticated"}');
+    res.status(401).send({ error: 'user is not authenticated' });
     return;
   }
   if (req.user.level < config.user.level.create_job) {
-    res.status(401).send('{"error":"user level does not allow job creation"}');
+    res.status(401).send({ error: 'user level does not allow job creation' });
     return;
   }
 
-  var user_id = req.user.orcid;
-
-  try {
-    if (req.body.compendium_id) {
-      compendium_id = req.body.compendium_id;
-    } else {
-      throw new Error('compendium_id required');
-    }
-
-    var executionJob = new Job({
-      id: job_id,
-      user: user_id,
-      compendium_id: compendium_id
-    });
-    executionJob.save(err => {
-      if (err) {
-        debug("ERROR starting job %s for compendium %s and user %s", job_id, compendium_id, user_id);
-        throw new Error('error creating job');
-      } else {
-        var job_path = config.fs.job + job_id;
-        var compendium_path = config.fs.compendium + compendium_id;
-        fse.copySync(compendium_path, job_path); // throws error if it does not exist
-
-        var execution = new Executor(job_id, config.fs.job);
-        execution.execute();
-        res.status(200).send({job_id});
-        debug("[%s] Request complete and response sent; job executes compendium %s and is saved to database; job files are at %s", 
-          job_id, compendium_id, job_path);
-      }
-    });
-  } catch (error) {
-    res.status(500).send({ error: error.message });
+  // check parameters
+  if (req.body.compendium_id) {
+    compendium_id = req.body.compendium_id;
+  } else {
+    debug('[%s] compendium_id parameter not provided', job_id);
+    res.status(400).send({ error: 'compendium_id required' });
   }
+
+  // check compendium existence
+  Compendium.findOne({ id: compendium_id }).select('id candidate').exec((err, compendium) => {
+    // eslint-disable-next-line no-eq-null, eqeqeq
+    if (err || compendium == null) {
+      debug('[%s] compendium "%s" not found, cannot create job', job_id, compendium_id);
+      res.status(400).send({ error: 'compendium is a candidate, cannot start job' });
+    } else {
+      if (compendium.candidate) {
+        debug('[%s] compendium "%s" is a candidate, not starting job', job_id, compendium_id);
+        res.status(400).send({ error: 'compendium is a candidate, cannot start job' });
+      } else {
+        debug('[%s] found compendium "%s" and it is not a candidate, can create job!', job_id, compendium.id);
+
+        var executionJob = new Job({
+          id: job_id,
+          user: req.user.orcid,
+          compendium_id: compendium.id
+        });
+
+        executionJob.save(err => {
+          if (err) {
+            debug('[%s] error starting job for compendium %s and user %s', job_id, compendium.id, req.user.orcid);
+            throw new Error('error creating job');
+          } else {
+            var job_path = path.join(config.fs.job, job_id);
+            var compendium_path = path.join(config.fs.compendium, compendium.id);
+            try {
+              fse.copySync(compendium_path, job_path); // throws error if it does not exist
+            } catch (err) {
+              debug('[%s] error copying compendium files for job: %s', err);
+              res.status(500).send({ error: 'internal error' });
+              return;
+            }
+
+            var execution = new Executor(job_id, config.fs.job);
+            execution.execute();
+            res.status(200).send({ job_id });
+            debug("[%s] Request complete and response sent; job executes compendium %s and is saved to database; job files are at %s",
+              job_id, compendium_id, job_path);
+          }
+        });
+      }
+    }
+  });
 };

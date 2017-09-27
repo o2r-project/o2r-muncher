@@ -110,8 +110,8 @@ describe('Reading compendium metadata', () => {
     });
 
     it('should contain correct file path', (done) => {
-      assert.property(metadata.file, 'file path');
-      assert.propertyVal(metadata.file, 'file path', compendium_id + '/data/' + main_file);
+      assert.property(metadata.file, 'filepath');
+      assert.propertyVal(metadata.file, 'filepath', compendium_id + '/data/' + main_file);
       done();
     });
 
@@ -219,7 +219,7 @@ describe('Reading compendium metadata', () => {
   });
 });
 
-describe.only('Updating compendium metadata', () => {
+describe('Updating compendium metadata', () => {
   let newMetadata = {
     'o2r': {
       'title': 'New title on the block',

@@ -20,6 +20,7 @@ const assert = require('chai').assert;
 const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
+const publishCandidate = require('./util').publishCandidate;
 const mongojs = require('mongojs');
 const sleep = require('sleep');
 
@@ -39,7 +40,8 @@ describe('API job filtering', () => {
 
   describe('job filtering with compendium_id, status and user', () => {
     let job_id = '';
-    let compendium_id = '';
+    let compendium_id_success = '';
+    let compendium_id_failure = '';
     let job_count_success = 0;
     let job_count_failure = 0;
     let job_count_user_o2r = 0;
@@ -51,8 +53,17 @@ describe('API job filtering', () => {
       this.timeout(10000);
 
       request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        done();
+        compendium_id_success = JSON.parse(body).id;
+        publishCandidate(compendium_id_success, cookie_o2r, () => {
+          let req_f = createCompendiumPostRequest('./test/erc/step_image_build', cookie_o2r);
+
+          request(req_f, (err, res, body) => {
+            compendium_id_failure = JSON.parse(body).id;
+            publishCandidate(compendium_id_failure, cookie_o2r, () => {
+              done();
+            });
+          });
+        });
       });
     });
 
@@ -66,7 +77,7 @@ describe('API job filtering', () => {
         method: 'POST',
         jar: j,
         formData: {
-          compendium_id: compendium_id
+          compendium_id: compendium_id_success
         },
         timeout: 5000
       }, (err, res, body) => {
@@ -91,7 +102,7 @@ describe('API job filtering', () => {
         method: 'POST',
         jar: j,
         formData: {
-          compendium_id: compendium_id
+          compendium_id: compendium_id_success
         },
         timeout: 5000
       }, (err, res, body) => {
@@ -106,19 +117,7 @@ describe('API job filtering', () => {
       });
     }).timeout(10000);
 
-    it('upload 2nd compendium with final job status "failure"', (done) => {
-      let req = createCompendiumPostRequest('./test/erc/step_image_build', cookie_o2r);
-
-      request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
-        compendium_id = JSON.parse(body).id;
-        done();
-      });
-    }).timeout(10000);
-
-    it('3rd job (failure, orcid_o2r user): should return job ID when starting job execution', (done) => {
+    it('3rd job (failure compendium, orcid_o2r user): should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_o2r);
       j.setCookie(ck, global.test_host);
@@ -128,7 +127,7 @@ describe('API job filtering', () => {
         method: 'POST',
         jar: j,
         formData: {
-          compendium_id: compendium_id
+          compendium_id: compendium_id_failure
         },
         timeout: 5000
       }, (err, res, body) => {
@@ -143,7 +142,7 @@ describe('API job filtering', () => {
       });
     }).timeout(10000);
 
-    it('4th job (failure, orcid_uploader user): should return job ID when starting job execution', (done) => {
+    it('4th job (failing compendium, orcid_uploader user): should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_uploader);
       j.setCookie(ck, global.test_host);
@@ -153,7 +152,7 @@ describe('API job filtering', () => {
         method: 'POST',
         jar: j,
         formData: {
-          compendium_id: compendium_id
+          compendium_id: compendium_id_failure
         },
         timeout: 5000
       }, (err, res, body) => {
@@ -168,7 +167,7 @@ describe('API job filtering', () => {
       });
     }).timeout(10000);
 
-    it('5th job (failure, orcid_uploader user): should return job ID when starting job execution', (done) => {
+    it('5th job (failing compendium, orcid_uploader user): should return job ID when starting job execution', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_uploader);
       j.setCookie(ck, global.test_host);
@@ -178,7 +177,7 @@ describe('API job filtering', () => {
         method: 'POST',
         jar: j,
         formData: {
-          compendium_id: compendium_id
+          compendium_id: compendium_id_failure
         },
         timeout: 5000
       }, (err, res, body) => {
@@ -193,13 +192,21 @@ describe('API job filtering', () => {
       });
     }).timeout(10000);
 
-    it('should take a break', (done) => {
+    it('should list 2 jobs for successful compendium _after some waiting_', (done) => {
       sleep.sleep(waitSecs);
-      done();
+
+      request(global.test_host + '/api/v1/job/?compendium_id=' + compendium_id_success, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.isArray(response.results);
+        assert.equal(response.results.length, 2);
+        done();
+      });
     }).timeout(waitSecs * 1000 * 2);
 
-    it('should list 3 jobs with given compendium_id', (done) => {
-      request(global.test_host + '/api/v1/job/?compendium_id=' + compendium_id, (err, res, body) => {
+    it('should list 3 jobs for failing compendium', (done) => {
+      request(global.test_host + '/api/v1/job/?compendium_id=' + compendium_id_failure, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         let response = JSON.parse(body);
@@ -207,7 +214,7 @@ describe('API job filtering', () => {
         assert.equal(response.results.length, 3);
         done();
       });
-    });
+    }).timeout(waitSecs * 1000 * 2);
 
     it('should list 3 jobs of the test user "orcid_o2r"', (done) => {
       request(global.test_host + '/api/v1/job/?user=0000-0001-6021-1617', (err, res, body) => {

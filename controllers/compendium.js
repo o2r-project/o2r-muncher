@@ -107,7 +107,7 @@ exports.viewSingle = (req, res) => {
 
         if (!req.isAuthenticated()) {
           debug('[%s] User is not authenticated, cannot view candidate.', id);
-          res.status(401).send('{"error":"user is not authenticated"}');
+          res.status(401).send({ error: 'user is not authenticated' });
           return;
         }
         detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
@@ -298,7 +298,7 @@ exports.viewSingleMetadata = (req, res) => {
 
         if (!req.isAuthenticated()) {
           debug('[%s] User is not authenticated, cannot view candidate.', id);
-          res.status(401).send('{"error":"user is not authenticated"}');
+          res.status(401).send({ error: 'user is not authenticated' });
           return;
         }
         detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
@@ -326,7 +326,7 @@ exports.updateMetadata = (req, res) => {
 
   // check user
   if (!req.isAuthenticated()) {
-    res.status(401).send('{"error":"user is not authenticated"}');
+    res.status(401).send({ error: 'user is not authenticated' });
     return;
   }
   let user_id = req.user.orcid;

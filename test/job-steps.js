@@ -80,7 +80,32 @@ describe('API job steps', () => {
     });
   });
 
-  describe('EXECUTION multiple jobs', () => {
+  describe('EXECUTION of unknown compendium', () => {
+    it('should return HTTP error and valid JSON with error message', (done) => {
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie_plain);
+      j.setCookie(ck, global.test_host);
+
+      request({
+        uri: global.test_host + '/api/v1/job',
+        method: 'POST',
+        jar: j,
+        formData: {
+          compendium_id: '54321'
+        },
+        timeout: 1000
+      }, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 400);
+        let response = JSON.parse(body);
+        assert.notProperty(response, 'job_id');
+        assert.property(response, 'error');
+        done();
+      });
+    });
+  });
+
+  describe('EXECUTION of multiple jobs', () => {
     let job_id0, job_id1, job_id2 = '';
 
     before(function (done) {
@@ -148,15 +173,17 @@ describe('API job steps', () => {
     });
   });
 
-  describe('EXECUTION not possible for candidate compendium', () => {
+  describe('EXECUTION of candidate compendium', () => {
     let compendium_id = '';
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
-      this.timeout(10000);
+      this.timeout(sleepSecs * 1000 * 2);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
+        sleep.sleep(sleepSecs);
+        done();
       });
     });
 
@@ -175,9 +202,9 @@ describe('API job steps', () => {
         timeout: 1000
       }, (err, res, body) => {
         assert.ifError(err);
+        let response = JSON.parse(body);
         assert.equal(res.statusCode, 400);
         assert.isObject(JSON.parse(body));
-        let response = JSON.parse(body);
         assert.notProperty(response, 'job_id');
         assert.property(response, 'error');
         done();
@@ -291,12 +318,20 @@ describe('API job steps', () => {
   });
 
   describe('GET /api/v1/job with multiple jobs overall', () => {
+    
     it('should contain fewer results if start is provided', (done) => {
-      request(global.test_host + '/api/v1/job?start=3', (err, res, body) => {
+      request(global.test_host + '/api/v1/job', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.equal(response.results.length, 2); // there are 4, starting with no. 3 leaves 2
-        done();
+        let all_count = response.results.length;
+        let start = 3;
+
+        request(global.test_host + '/api/v1/job?start=' + start, (err2, res2, body2) => {
+          assert.ifError(err2);
+          let response2 = JSON.parse(body2);
+          assert.equal(response2.results.length, all_count - start + 1);
+          done();
+        });
       });
     });
 
