@@ -34,9 +34,9 @@ RUN apk add --no-cache \
     wget \
     unzip \
     nodejs \
+    dumb-init \
     nodejs-npm \
     ca-certificates \
-    dumb-init \
   && pip install --upgrade pip \
   && pip install bagit
 
@@ -44,12 +44,12 @@ RUN apk add --no-cache \
 RUN apk add --no-cache \
     gcc \
     g++ \
+    gdal \
+    py-gdal \
+    gdal-dev \
     python3-dev \
     libxml2-dev \
     libxslt-dev \
-    gdal \
-    gdal-dev \
-    py-gdal \
   && git clone --depth 1 -b master https://github.com/o2r-project/o2r-meta.git /meta
 WORKDIR /meta
 RUN pip install -r requirements.txt

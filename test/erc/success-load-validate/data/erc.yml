@@ -1,0 +1,14 @@
+---
+id: jB0aSTPe2f
+version: "0.10"
+bag_mount: "/bag"
+run_mount: "/o2r_run"
+data:
+    working_directory: ""
+    run_file: "Bagtainer.R"
+packages:
+environment:
+    TZ: CET
+precommand:
+postcommand:
+command: "source('analysis.R')"

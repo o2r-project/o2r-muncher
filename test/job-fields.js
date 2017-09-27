@@ -20,6 +20,7 @@ const assert = require('chai').assert;
 const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
+const publishCandidate = require('./util').publishCandidate;
 const mongojs = require('mongojs');
 const sleep = require('sleep');
 
@@ -27,10 +28,9 @@ require("./setup")
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 const cookie_uploader = 's:lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO.0iapdV1c85wc5NO3d3h+svorp3Tm56cfqRhhpFJZBnk';
-const waitSecs = 5;
 
 
-describe('API job fields', () => {
+describe('API job returned fields', () => {
   before(function (done) {
     this.timeout(10000);
     var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
@@ -39,56 +39,59 @@ describe('API job fields', () => {
     });
   });
 
-  describe('job filtering with compendium_id, status and user', () => {
-    let compendium_id = '';
+  describe('job listing additional fields', () => {
+    let job_id = '';
+
     // upload 1st compendium with final job status "success"
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/bagtainers/step_image_execute', cookie_o2r);
+      let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
       this.timeout(20000);
 
       request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        done();
+        let compendium_id = JSON.parse(body).id;
+        publishCandidate(compendium_id, cookie_o2r, () => {
+
+          let j = request.jar();
+          let ck = request.cookie('connect.sid=' + cookie_o2r);
+          j.setCookie(ck, global.test_host);
+
+          request({
+            uri: global.test_host + '/api/v1/job',
+            method: 'POST',
+            jar: j,
+            formData: {
+              compendium_id: compendium_id
+            },
+            timeout: 5000
+          }, (err, res, body) => {
+            assert.ifError(err);
+            assert.equal(res.statusCode, 200);
+            let response = JSON.parse(body);
+            assert.property(response, 'job_id');
+            job_id = response.job_id;
+
+            sleep.sleep(10);
+            done();
+          });
+        });
       });
     });
 
-    let job_id = '';
-    it('should return job ID when starting job execution', (done) => {
-      let j = request.jar();
-      let ck = request.cookie('connect.sid=' + cookie_o2r);
-      j.setCookie(ck, global.test_host);
-
-      request({
-        uri: global.test_host + '/api/v1/job',
-        method: 'POST',
-        jar: j,
-        formData: {
-          compendium_id: compendium_id
-        },
-        timeout: 5000
-      }, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        let response = JSON.parse(body);
-        assert.property(response, 'job_id');
-        job_id = response.job_id;
-        done();
-      });
-    }).timeout(10000);
-
-    it('should list the status of a job', (done) => {
+    it('should show the status of a job already in the list view', (done) => {
       request(global.test_host + '/api/v1/job/?fields=status', (err, res, body) => {
         assert.ifError(err);
-        assert.equal(res.statusCode, 200);
         let response = JSON.parse(body);
+        console.log(body);
+        assert.equal(res.statusCode, 200);
         assert.isArray(response.results);
-        assert.property(response.results[0], 'status');
         assert.property(response.results[0], 'id');
+        assert.property(response.results[0], 'status');
+        assert.propertyVal(response.results[0], 'status', 'success');
         done();
       });
     });
 
-    it('should return no field "foo"', (done) => {
+    it('should not return a field "foo"', (done) => {
       request(global.test_host + '/api/v1/job/?fields=foo', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);

@@ -31,9 +31,9 @@ c.version = require('../package.json').version;
 c.net.port = env.MUNCHER_PORT || 8080;
 c.mongo.location = env.MUNCHER_MONGODB || 'mongodb://localhost/';
 c.mongo.database = env.MUNCHER_MONGODB_DATABASE || 'muncher';
-c.mongo.inital_connection_attempts = 30;
-c.mongo.inital_connection_max_delay = 5000;
-c.mongo.inital_connection_initial_delay = 1000;
+c.mongo.initial_connection_attempts = 30;
+c.mongo.initial_connection_max_delay = 5000;
+c.mongo.initial_connection_initial_delay = 1000;
 
 // fix mongo location if trailing slash was omitted
 if (c.mongo.location[c.mongo.location.length - 1] !== '/') {
@@ -62,15 +62,17 @@ c.user.level.create_compendium = 100;
 c.user.level.create_job = 0;
 c.user.level.view_status = 1000;
 c.user.level.edit_metadata = 500;
+c.user.level.view_candidates = 500;
 
 // bagtainer configuration
 c.bagtainer = {};
 c.bagtainer.supportedVersions = ['0.1', '1'];
 c.bagtainer.payloadDirectory = '/data';
-c.bagtainer.configFile = '/data/bagtainer.yml';
+c.bagtainer.configFile = 'erc.yml';
 c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
 c.bagtainer.keepImages = true; // required for image download!
-c.bagtainer.validateBeforeExecute = true; // cannot validate before execute when saving image tarball but not updating the bag
+c.bagtainer.validateBagBeforeExecute = false; // cannot validate before execute because metadata files are arleady added and invalidating the bag
+c.bagtainer.validateCompendiumBeforeExecute = true;
 c.bagtainer.failOnValidationError = false; // cannot validate before execute when saving image tarball but not updating the bag
 
 c.bagtainer.bagit = {};
@@ -78,7 +80,7 @@ c.bagtainer.bagit.validateFast = false;
 c.bagtainer.bagit.failOnValidationError = {};
 c.bagtainer.bagit.failOnValidationError.execute = false;
 
-c.bagtainer.imageNamePrefix = 'bagtainer:';
+c.bagtainer.imageNamePrefix = 'erc:';
 c.bagtainer.forceImageRemoval = true;
 c.bagtainer.docker = {};
 // See https://docs.docker.com/engine/reference/commandline/create/ and https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#create-a-container
@@ -129,6 +131,7 @@ c.email.sender = env.MUNCHER_EMAIL_SENDER;
 // metadata extraction and brokering options
 c.meta = {};
 c.meta.cliPath = env.MUNCHER_META_TOOL_EXE || 'python3 ../o2r-meta/o2rmeta.py';
+c.meta.versionFile = 'version';
 c.meta.normativeFile = 'metadata_o2r.json';
 c.meta.dir = '.erc';
 
