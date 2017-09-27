@@ -102,7 +102,7 @@ describe('API Compendium', () => {
     });
   });
 
-  describe('GET /api/v1/compendium/<id of loaded compendium>', () => {
+  describe('GET /api/v1/compendium/<id>', () => {
     let compendium_id = '';
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);

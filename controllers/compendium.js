@@ -49,7 +49,7 @@ detect_rights = function (user_id, compendium, level) {
             debug('[%] User %s has level (%s), continuing ...', compendium.id, user_id, user.level);
             resolve({ user_has_rights: true });
           } else {
-            reject({ error: 'not authorized to edit/view' + compendium.id });
+            reject({ error: 'not authorized to edit/view ' + compendium.id });
           }
         }
       });
@@ -112,10 +112,14 @@ exports.viewSingle = (req, res) => {
         }
         detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
           .then((passon) => {
-            debug('[%s] User %s may see candidate.', id, req.user.orcid);
-            answer.candidate = compendium.candidate;
+            if (passon.user_has_rights) {
+              debug('[%s] User %s may see candidate.', id, req.user.orcid);
+              answer.candidate = compendium.candidate;
 
-            res.status(200).send(answer);
+              res.status(200).send(answer);
+            } else {
+              debug('[%s] Error: user does not have rights but promise fulfilled', id);
+            }
           }, function (passon) {
             debug('[%s] User %s may NOT see candidate.', id, req.user.orcid);
             res.status(401).send(passon);
@@ -280,14 +284,38 @@ exports.viewSingleMetadata = (req, res) => {
   let id = req.params.id;
   let answer = { id: id };
 
-  Compendium.findOne({ id }).select('id metadata').exec((err, compendium) => {
+  Compendium.findOne({ id }).select('id metadata candidate user').exec((err, compendium) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (err || compendium == null) {
       res.status(404).send({ error: 'no compendium with this id' });
     } else {
       answer.metadata = {};
       answer.metadata.o2r = compendium.metadata.o2r;
-      res.status(200).send(answer);
+
+      // check if user is allowed to view the candidate (easier to check async if done after answer creation)
+      if (compendium.candidate) {
+        debug('[%s] Compendium is a candidate, need to make some checks.', id);
+
+        if (!req.isAuthenticated()) {
+          debug('[%s] User is not authenticated, cannot view candidate.', id);
+          res.status(401).send('{"error":"user is not authenticated"}');
+          return;
+        }
+        detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
+          .then((passon) => {
+            if (passon.user_has_rights) {
+              debug('[%s] User %s may see candidate metadata.', id, req.user.orcid);
+              res.status(200).send(answer);
+            } else {
+              debug('[%s] Error: user does not have rights but promise fulfilled', id);
+            }
+          }, function (passon) {
+            debug('[%s] User %s may NOT see candidate metadata.', id, req.user.orcid);
+            res.status(403).send(passon);
+          });
+      } else {
+        res.status(200).send(answer);
+      }
     }
   });
 };

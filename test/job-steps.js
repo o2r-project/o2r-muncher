@@ -148,6 +148,90 @@ describe('API job steps', () => {
     });
   });
 
+  describe('EXECUTION not possible for candidate compendium', () => {
+    let compendium_id = '';
+
+    before(function (done) {
+      let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
+      this.timeout(10000);
+
+      request(req, (err, res, body) => {
+        compendium_id = JSON.parse(body).id;
+      });
+    });
+
+    it('should return HTTP error code and error message as valid JSON when starting job as logged-in user', (done) => {
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie_plain);
+      j.setCookie(ck, global.test_host);
+
+      request({
+        uri: global.test_host + '/api/v1/job',
+        method: 'POST',
+        jar: j,
+        formData: {
+          compendium_id: compendium_id
+        },
+        timeout: 1000
+      }, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 400);
+        assert.isObject(JSON.parse(body));
+        let response = JSON.parse(body);
+        assert.notProperty(response, 'job_id');
+        assert.property(response, 'error');
+        done();
+      });
+    });
+
+    it('should return HTTP error code and error message as valid JSON even when starting as author', (done) => {
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie_o2r);
+      j.setCookie(ck, global.test_host);
+
+      request({
+        uri: global.test_host + '/api/v1/job',
+        method: 'POST',
+        jar: j,
+        formData: {
+          compendium_id: compendium_id
+        },
+        timeout: 1000
+      }, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 400);
+        assert.isObject(JSON.parse(body));
+        let response = JSON.parse(body);
+        assert.notProperty(response, 'job_id');
+        assert.property(response, 'error');
+        done();
+      });
+    });
+
+    it('should return job ID after publishing compendium', (done) => {
+      publishCandidate(compendium_id, cookie_o2r, () => {
+        let j = request.jar();
+        let ck = request.cookie('connect.sid=' + cookie_plain);
+        j.setCookie(ck, global.test_host);
+
+        request({
+          uri: global.test_host + '/api/v1/job',
+          method: 'POST',
+          jar: j,
+          formData: {
+            compendium_id: compendium_id
+          },
+          timeout: 1000
+        }, (err, res, body) => {
+          assert.ifError(err);
+          let response = JSON.parse(body);
+          assert.property(response, 'job_id');
+          done();
+        });
+      });
+    });
+  });
+
   describe('EXECUTION step_validate_compendium', () => {
     let job_id = '';
 
@@ -498,16 +582,16 @@ describe('API job steps', () => {
       }
     });
 
-  it('should have deleted payload file during cleanup', (done) => {
-    let tarballFileName = config.payload.tarball.tmpdir + job_id + '.tar';
-    try {
-      fs.lstatSync(tarballFileName);
-      assert.fail();
-    } catch (error) {
-      assert.include(error.message, 'no such file or directory');
-      done();
-    }
+    it('should have deleted payload file during cleanup', (done) => {
+      let tarballFileName = config.payload.tarball.tmpdir + job_id + '.tar';
+      try {
+        fs.lstatSync(tarballFileName);
+        assert.fail();
+      } catch (error) {
+        assert.include(error.message, 'no such file or directory');
+        done();
+      }
+    });
   });
-});
 
 });
