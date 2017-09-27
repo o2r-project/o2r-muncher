@@ -1,2 +1,0 @@
-67f3d64eb8f47f3af8516d35cdfc1e6c  data/bagtainer.yml
-c198a85d8cb97639ee7b996d13913ab1  data/Dockerfile

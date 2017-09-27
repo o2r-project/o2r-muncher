@@ -1,0 +1,3 @@
+9cf7573f752e32bbd9c1ecb05d99bc64  data/Dockerfile
+f68643e6dc33964564a371adb052e38d  data/erc.yml
+eadd49d3a3facebd5baa60d519505662  data/test.txt

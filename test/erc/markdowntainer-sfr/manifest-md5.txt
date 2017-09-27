@@ -1,0 +1,3 @@
+d9e94b795c0df6b4382abaca9a14b165  data/2016-07-17-sf2.Rmd
+3798bbbee1048eb41a14ad9b63760805  data/Dockerfile
+091dec60429f5a08bee2708b4d0b0937  data/erc.yml

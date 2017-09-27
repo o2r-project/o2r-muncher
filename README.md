@@ -121,7 +121,7 @@ npm run test_noloader
 ### Removing all containers/images created by muncher
 
 ```bash
-docker ps -a | grep bagtainer | awk '{print $1}' | xargs --no-run-if-empty docker rm
+docker ps -a | grep erc | awk '{print $1}' | xargs --no-run-if-empty docker rm
 
 docker images --no-trunc | grep bagtainer | awk '{print $3}' | xargs --no-run-if-empty docker rmi -f
 ```
@@ -158,13 +158,27 @@ You can authenticate locally with OAuth as well.
 To upload compendia, the user must have the appropriate level. If you want to upload from the command line, get the session cookie out of the browser and use it in the curl request:
 
 ```bash
-curl --cookie connect.sid=s:S1oH7... -F "compendium=@/<path to compendium.zip>;type=application/zip" -F "content_type=compendium_v1"
+curl --cookie connect.sid=s:S1oH7... -F "compendium=@/<path to compendium.zip>;type=application/zip" -F "content_type=compendium"
 ```
 
 See `o2r-bagtainers/README.md` on using the much more convenient *uploader container*.
 
 See the [o2r Web API docs](http://o2r.info/o2r-web-api/user/#user-levels) for information on **user levels**.
 
+### Create bags for testing
+
+The following code uses `bagit.py` to create, validate, or load and update an existing bag _in place_:
+
+```bash
+# create bag
+python -c "import bagit; bag = bagit.make_bag('success-validate');"
+
+# validate bag
+python -c "import bagit; bag = bagit.Bag('success-load-validate'); print('Is Bag valid?', bag.validate());"
+
+# update manifest and validate it with (run twice)
+python -c "import bagit; bag = bagit.Bag('success-load-validate'); bag.save(manifests=True); print('Updated manifest. Is Bag valid?', bag.validate());"
+```
 
 ## License
 
