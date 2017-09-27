@@ -113,8 +113,8 @@ exports.viewSingle = (req, res) => {
 };
 
 exports.create = (req, res) => {
-  var compendium_id = '';
-  var job_id = randomstring.generate(config.id_length);
+  let compendium_id = '';
+  let job_id = randomstring.generate(config.id_length);
 
   // check user level
   if (!req.isAuthenticated()) {
@@ -152,7 +152,7 @@ exports.create = (req, res) => {
         var execution = new Executor(job_id, config.fs.job);
         execution.execute();
         res.status(200).send({job_id});
-        debug("[%s] Reqeuest complete and response sent; job executes compendium %s and is saved to database; job files are at %s", 
+        debug("[%s] Request complete and response sent; job executes compendium %s and is saved to database; job files are at %s", 
           job_id, compendium_id, job_path);
       }
     });

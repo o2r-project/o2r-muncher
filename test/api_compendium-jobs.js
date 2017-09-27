@@ -37,7 +37,7 @@ describe('API compendium / jobs', () => {
     });
 
     describe('GET /api/v1/compendium/ sub-endpoint /jobs', () => {
-        var compendium_id = '';
+        let compendium_id = '';
         before(function (done) {
             let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
             this.timeout(10000);
@@ -48,7 +48,7 @@ describe('API compendium / jobs', () => {
             });
         });
 
-        var job_id;
+        let job_id;
         it('should respond with HTTP 404 and an error message when there is no job for an existing compendium', (done) => {
             request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
                 assert.ifError(err);

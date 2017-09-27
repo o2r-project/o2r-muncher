@@ -74,7 +74,6 @@ describe('Reading compendium metadata', () => {
         let response = JSON.parse(body);
         metadata = response.metadata[config.meta.extract.targetElement];
         done();
-        //console.log(JSON.stringify(metadata));
       });
     });
 
@@ -408,7 +407,6 @@ describe('Brokering updated compendium metadata', () => {
 
   describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with author user', () => {
     it('should have the brokered metadata in the respective section', (done) => {
-      console.log(global.test_host + '/api/v1/compendium/' + compendium_id);
       request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);

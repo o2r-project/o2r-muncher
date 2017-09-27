@@ -20,6 +20,7 @@ const assert = require('chai').assert;
 const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
+const publishCandidate = require('./util').publishCandidate;
 const fs = require('fs');
 const mongojs = require('mongojs');
 const chai = require('chai');
@@ -72,22 +73,21 @@ describe('API Compendium', () => {
     });
   });
 
-  describe.only('GET /api/v1/compendium with executing compendium loaded', () => {
+  describe('GET /api/v1/compendium with executing compendium loaded and published', () => {
     let compendium_id = '';
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);
       this.timeout(30000);
 
       request(req, (err, res, body) => {
-        console.log(body);
-
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         assert.isObject(JSON.parse(body), 'returned JSON');
         assert.isDefined(JSON.parse(body).id, 'returned id');
         assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
-        done();
+
+        publishCandidate(compendium_id, cookie, done);
       });
     });
 
@@ -103,14 +103,15 @@ describe('API Compendium', () => {
   });
 
   describe('GET /api/v1/compendium/<id of loaded compendium>', () => {
-    var compendium_id = '';
+    let compendium_id = '';
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);
       this.timeout(10000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
-        done();
+
+        publishCandidate(compendium_id, cookie, done);
       });
     });
 
@@ -156,10 +157,10 @@ describe('API Compendium', () => {
         let response = JSON.parse(body);
         let created = new Date(response.created);
         let now = new Date();
-        let afewsecondsago = new Date(now.getTime() - (1000 * 42));
+        let aFewSecondsAgo = new Date(now.getTime() - (1000 * 42));
         assert.equalDate(created, now);
         assert.beforeTime(created, now);
-        assert.afterTime(created, afewsecondsago);
+        assert.afterTime(created, aFewSecondsAgo);
         done();
       });
     });

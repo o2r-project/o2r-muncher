@@ -71,7 +71,8 @@ c.bagtainer.payloadDirectory = '/data';
 c.bagtainer.configFile = 'erc.yml';
 c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
 c.bagtainer.keepImages = true; // required for image download!
-c.bagtainer.validateBeforeExecute = true; // cannot validate before execute when saving image tarball but not updating the bag
+c.bagtainer.validateBagBeforeExecute = false; // cannot validate before execute because metadata files are arleady added and invalidating the bag
+c.bagtainer.validateCompendiumBeforeExecute = true;
 c.bagtainer.failOnValidationError = false; // cannot validate before execute when saving image tarball but not updating the bag
 
 c.bagtainer.bagit = {};

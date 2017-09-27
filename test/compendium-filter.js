@@ -20,15 +20,13 @@ const assert = require('chai').assert;
 const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
+const publishCandidate = require('./util').publishCandidate;
 const mongojs = require('mongojs');
 const chai = require('chai');
-const sleep = require('sleep');
 chai.use(require('chai-datetime'));
 
 require("./setup")
 const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
-
-const waitSecs = 5;
 
 describe('API compendium filter', () => {
   before(function (done) {
@@ -41,25 +39,22 @@ describe('API compendium filter', () => {
 
   describe('compendium filtering with DOI', () => {
     let compendium_id = '';
-    let test_doi = '10.1006/jeem.1994.1031';
+    let test_doi = '10.5555/12345678';
     var test_user = '0000-0001-6021-1617';
-    
+
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer-doi', cookie);
       this.timeout(30000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
-        done();
+        publishCandidate(compendium_id, cookie, () => {
+          done();
+        });
       });
     });
 
-    it('should take a break', (done) => {
-      sleep.sleep(waitSecs);
-      done();
-    }).timeout(waitSecs * 1000 * 2);
-
-    it('should find 1 compendium with the DOI "test_doi"', (done) => {
+    it('should find 1 compendium with the DOI test doi', (done) => {
       request(global.test_host + '/api/v1/compendium/?doi=' + test_doi, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
@@ -81,7 +76,7 @@ describe('API compendium filter', () => {
     });
 
     it('should find one compendia with test_doi and user 0000-0001-6021-1617', (done) => {
-      request(global.test_host + '/api/v1/compendium/?doi=' + test_doi + '&user='  + test_user, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/?doi=' + test_doi + '&user=' + test_user, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         let response = JSON.parse(body);

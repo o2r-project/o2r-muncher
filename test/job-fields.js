@@ -30,7 +30,7 @@ const cookie_uploader = 's:lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO.0iapdV1c85wc5NO3d3h+
 const waitSecs = 5;
 
 
-describe('API job fields', () => {
+describe('API job returned fields', () => {
   before(function (done) {
     this.timeout(10000);
     var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
@@ -39,8 +39,10 @@ describe('API job fields', () => {
     });
   });
 
-  describe('job filtering with compendium_id, status and user', () => {
+  describe('job response content filtering with compendium_id, status and user', () => {
     let compendium_id = '';
+    let job_id = '';
+
     // upload 1st compendium with final job status "success"
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
@@ -48,33 +50,29 @@ describe('API job fields', () => {
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
-        done();
+
+        let j = request.jar();
+        let ck = request.cookie('connect.sid=' + cookie_o2r);
+        j.setCookie(ck, global.test_host);
+
+        request({
+          uri: global.test_host + '/api/v1/job',
+          method: 'POST',
+          jar: j,
+          formData: {
+            compendium_id: compendium_id
+          },
+          timeout: 5000
+        }, (err, res, body) => {
+          assert.ifError(err);
+          assert.equal(res.statusCode, 200);
+          let response = JSON.parse(body);
+          assert.property(response, 'job_id');
+          job_id = response.job_id;
+          done();
+        });
       });
     });
-
-    let job_id = '';
-    it('should return job ID when starting job execution', (done) => {
-      let j = request.jar();
-      let ck = request.cookie('connect.sid=' + cookie_o2r);
-      j.setCookie(ck, global.test_host);
-
-      request({
-        uri: global.test_host + '/api/v1/job',
-        method: 'POST',
-        jar: j,
-        formData: {
-          compendium_id: compendium_id
-        },
-        timeout: 5000
-      }, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        let response = JSON.parse(body);
-        assert.property(response, 'job_id');
-        job_id = response.job_id;
-        done();
-      });
-    }).timeout(10000);
 
     it('should list the status of a job', (done) => {
       request(global.test_host + '/api/v1/job/?fields=status', (err, res, body) => {

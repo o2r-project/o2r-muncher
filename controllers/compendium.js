@@ -31,22 +31,22 @@ var User = require('../lib/model/user');
 var Job = require('../lib/model/job');
 
 detect_rights = function (user_id, compendium, level) {
-  debug('[%s] Checking rights for user %s against level %s', user_id, level);
+  debug('[%s] Checking rights for user %s against level %s', compendium.id, user_id, level);
 
   return new Promise(function (resolve, reject) {
     if (user_id === compendium.user) {
-      debug('[%s] User %s is owner!', user_id);
+      debug('[%s] User %s is owner!', compendium.id, user_id);
       resolve({ user_has_rights: true });
     } else {
       // user is not author but could have required level
-      debug('User %s trying to edit/view compendium %s by user %s', user_id, compendium.id, compendium.user);
+      debug('[%s] User %s trying to edit/view compendium by user %s', compendium.id, user_id, compendium.user);
 
       User.findOne({ orcid: user_id }, (err, user) => {
         if (err) {
           reject({ error: 'problem retrieving user information: ' + err });
         } else {
           if (user.level >= level) {
-            debug('User %s has level (%s), continueing..', user_id, user.level);
+            debug('[%] User %s has level (%s), continuing ...', compendium.id, user_id, user.level);
             resolve({ user_has_rights: true });
           } else {
             reject({ error: 'not authorized to edit/view' + compendium.id });
@@ -196,12 +196,14 @@ exports.view = (req, res) => {
         if (err) {
           debug('Error querying candidates for user %s: %s', req.user.orcid, err);
           let error = new Error('query failed');
-          error.code = 500;
+          error.status = 500;
           reject(error);
         } else {
           var count = comps.length;
           if (count <= 0) {
-            res.status(404).send({ error: 'no compendium found' });
+            let error = new Error('no compendium found');
+            error.status = 404;
+            reject(error);
           } else {
 
             passon.results = comps.map(comp => {
@@ -219,20 +221,20 @@ exports.view = (req, res) => {
   let findCandidates = (passon) => {
     return new Promise(function (resolve, reject) {
       if (req.query.user != null && req.isAuthenticated() && req.user.orcid === req.query.user) {
-        debug('User %s requests compendia for %s, so prepending candidates to the response.');
+        debug('User %s requests compendia for %s, so pre-pending candidates to the response.');
         passon.filter.candidate = true;
 
         Compendium.find(passon.filter).select('id').skip(passon.start).limit(passon.limit).exec((err, comps) => {
           if (err) {
             debug('Error querying candidates for user %s: %s', req.user.orcid, err);
             let error = new Error('query failed');
-            error.code = 500;
+            error.status = 500;
             reject(error);
           } else {
             var count = comps.length;
             if (count <= 0) {
-              let error = new Error('qno compendium found');
-              error.code = 404;
+              let error = new Error('no compendium found');
+              error.status = 404;
               reject(error);
             } else {
 
@@ -244,6 +246,8 @@ exports.view = (req, res) => {
             }
           }
         });
+      } else {
+        resolve(passon);
       }
     });
   };
@@ -251,20 +255,23 @@ exports.view = (req, res) => {
   findCompendia(search)
     .then(findCandidates)
     .then(passon => {
-      debug('Completed search, returning %s compendia plus %s candidates.', passon.results.length, passon.candidates.length);
+      debug('Completed search, returning %s compendia plus %s candidates.', passon.results.length, ((passon.candidates) ? passon.candidates.length : '0'));
 
       let answer = {};
-      answer.results = passon.candidates.concat(passon.results);
+      if (passon.candidates) {
+        answer.results = passon.candidates.concat(passon.results);
+      } else {
+        answer.results = passon.results;
+      }
       res.status(200).send(answer);
     })
     .catch(err => {
-      debug('Rejection during search: \n\t%s', JSON.stringify(err));
+      debug('Rejection during search: \n\t%s', err);
       let status = 500;
       if (err.status) {
         status = err.status;
       }
-      done(null, err);
-      res.status(status).send({ error: error.message });
+      res.status(status).send({ error: err.message });
     });
 
 };
