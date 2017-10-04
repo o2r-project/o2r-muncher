@@ -250,14 +250,18 @@ before(function (done) {
 });
 
 after(function (done) {
-    exec('docker rm -f loader_for_testing', (error, stdout, stderr) => {
-        if (error || stderr) {
-            debugContainer(error, stderr, stdout);
-        } else {
-            debugContainer('Removed container: %s', stdout);
-        }
+    if (env.LOADER_CONTAINER && yn(env.LOADER_CONTAINER)) {
+        exec('docker rm -f loader_for_testing', (error, stdout, stderr) => {
+            if (error || stderr) {
+                debugContainer(error, stderr, stdout);
+            } else {
+                debugContainer('Removed container: %s', stdout);
+            }
+            done();
+        });
+    } else {
         done();
-    });
+    }
 });
 
 

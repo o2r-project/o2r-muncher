@@ -20,6 +20,7 @@ const assert = require('chai').assert;
 const request = require('request');
 const path = require('path');
 const mongojs = require('mongojs');
+const fs = require('fs');
 const config = require('../config/config');
 const chai = require('chai');
 chai.use(require('chai-datetime'));
@@ -32,11 +33,15 @@ const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9y
 const cookie_admin = 's:hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i.IEPb0lmtGojn2cVk2edRuomIEanX6Ddz87egE5Pe8UM';
 const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
 
-describe.only('Delete candidate', () => {
+describe('Delete candidate', () => {
+  var db = null;
+
   before((done) => {
-    var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
+    db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
-      db.jobs.drop(function (err, doc) { done(); });
+      db.jobs.drop(function (err, doc) {
+        done();
+      });
     });
   });
 
@@ -47,19 +52,19 @@ describe.only('Delete candidate', () => {
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
+        done();
       });
     });
 
-    it('should return HTTP code 204 with empty body', (done) => {
-      let j = request.jar();
-      let ck = request.cookie('connect.sid=' + cookie_o2r);
+    it('should return HTTP code 204 with empty body for DELETE request', (done) => {
+      j = request.jar();
+      ck = request.cookie('connect.sid=' + cookie_o2r);
       j.setCookie(ck, global.test_host);
 
       request({
         uri: global.test_host + '/api/v1/compendium/' + compendium_id,
         method: 'DELETE',
-        jar: j,
-        timeout: 1000
+        jar: j
       }, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 204);
@@ -68,42 +73,68 @@ describe.only('Delete candidate', () => {
       });
     });
 
-    it('should return HTTP 400 with valid JSON and error response when requesting compendium by id', (done) => {
-      let j = request.jar();
-      let ck = request.cookie('connect.sid=' + cookie_plain);
-      j.setCookie(ck, global.test_host);
+    it('should not have the compendium in the database anymore', (done) => {
+      db.compendia.findOne({ id: compendium_id }, function (err, doc) {
+        assert.ifError(err);
+        assert.isNull(doc);
+        done();
+      })
+    });
 
+    it('should return HTTP 404 with valid JSON and error response when requesting compendium by id after deletion', (done) => {
       request({
         uri: global.test_host + '/api/v1/compendium/' + compendium_id,
         method: 'GET'
       }, (err, res, body) => {
         assert.ifError(err);
-        assert.equal(res.statusCode, 400);
+        assert.equal(res.statusCode, 404);
         let response = JSON.parse(body);
         assert.isObject(response);
-        assert.property(response, 'id');
-        assert.notProperty(response, 'error');
+        assert.property(response, 'error');
+        assert.notProperty(response, 'id');
         done();
       });
     });
 
-    it('should return not have files in the storage anymore', (done) => {
+    it('should return HTTP 404 with valid JSON and error response when DELETING again', (done) => {
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie_o2r);
+      j.setCookie(ck, global.test_host);
+
+      request({
+        uri: global.test_host + '/api/v1/compendium/' + compendium_id,
+        method: 'DELETE',
+        jar: j
+      }, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 404);
+        let response = JSON.parse(body);
+        assert.isObject(response);
+        assert.property(response, 'error');
+        assert.notProperty(response, 'id');
+        done();
+      });
+    });
+
+    it('should return not have the files in the storage anymore', (done) => {
       tryAccess = function () {
-        fs.accessSync(path.join(config.fs.compendium, id));
+        fs.accessSync(path.join(config.fs.compendium, compendium_id));
       }
-      assert.throws(tryAccess, Error, 'Error thrown on accessing compendium directory');
+      assert.throws(tryAccess, Error, 'no such file or directory');
       done();
     });
   });
 
   describe('as unauthorized user', () => {
-    let compendium_id = '';
+    let compendium_id = null;
+
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
       this.timeout(10000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
+        done();
       });
     });
 
@@ -121,15 +152,27 @@ describe.only('Delete candidate', () => {
         done();
       });
     });
+
+    it('should still have the compendium in the database', (done) => {
+      db.compendia.findOne({ id: compendium_id }, function (err, doc) {
+        assert.ifError(err);
+        assert.isNotNull(doc);
+        assert.propertyVal(doc, 'id', compendium_id);
+        done();
+      })
+    });
   });
 
-  describe('as another authorized user', () => {
+  describe('as a different but at least logged-in user', () => {
+    let compendium_id = null;
+
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
       this.timeout(10000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
+        done();
       });
     });
 
@@ -153,15 +196,28 @@ describe.only('Delete candidate', () => {
         done();
       });
     });
+
+    it('should still have the compendium in the database', (done) => {
+      db.compendia.findOne({ id: compendium_id }, function (err, doc) {
+        assert.ifError(err);
+        assert.isNotNull(doc);
+        assert.propertyVal(doc, 'id', compendium_id);
+        done();
+      })
+    });
   });
 
   describe('as admin user', () => {
+    let compendium_id = null;
+
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_admin);
       this.timeout(10000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
+        done();
+
       });
     });
 
@@ -182,27 +238,61 @@ describe.only('Delete candidate', () => {
         done();
       });
     });
+
+    it('should not have the compendium in the database anymore', (done) => {
+      db.compendia.findOne({ id: compendium_id }, function (err, doc) {
+        assert.ifError(err);
+        assert.isNull(doc);
+        done();
+      })
+    });
   });
 
   describe('wrong requests', () => {
-    it('should return HTTP 400 with valid JSON and error response when trying to delete non-existing compendium', (done) => {
-      let j = request.jar();
-      let ck = request.cookie('connect.sid=' + cookie_admin);
-      j.setCookie(ck, global.test_host);
-
+    it('should return HTTP 404 with valid JSON and error response when trying to delete non-existing compendium', (done) => {
       request({
-        uri: global.test_host + '/api/v1/compendium/' + compendium_id,
+        uri: global.test_host + '/api/v1/compendium/' + 'not-an-id',
         method: 'DELETE'
       }, (err, res, body) => {
         assert.ifError(err);
-        assert.equal(res.statusCode, 400);
+        assert.equal(res.statusCode, 404);
         let response = JSON.parse(body);
         assert.isObject(response);
         assert.property(response, 'error');
         done();
       });
     });
+
+    it('should return HTTP 400 with valid JSON and error response when trying to delete non-candidate compendium', (done) => {
+      let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
+      let compendium_id = null;
+
+      request(req, (err, res, body) => {
+        compendium_id = JSON.parse(body).id;
+        publishCandidate(compendium_id, cookie_o2r, () => {
+
+          j = request.jar();
+          ck = request.cookie('connect.sid=' + cookie_o2r);
+          j.setCookie(ck, global.test_host);
+
+          request({
+            uri: global.test_host + '/api/v1/compendium/' + compendium_id,
+            method: 'DELETE',
+            jar: j,
+            timeout: 1000
+          }, (err, res, body) => {
+            assert.ifError(err);
+            assert.equal(res.statusCode, 400);
+            let response = JSON.parse(body);
+            assert.isObject(response);
+            assert.property(response, 'error');
+            done();
+          });
+        });
+      });
+    }).timeout(10000);
   });
+
 });
 
 

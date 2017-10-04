@@ -18,6 +18,7 @@
 const config = require('../config/config');
 const debug = require('debug')('compendium');
 const fs = require('fs');
+const fse = require('fs-extra');
 const path = require('path');
 const exec = require('child_process').exec;
 const objectPath = require('object-path');
@@ -36,7 +37,7 @@ detect_rights = function (user_id, compendium, level) {
   return new Promise(function (resolve, reject) {
     if (user_id === compendium.user) {
       debug('[%s] User %s is owner!', compendium.id, user_id);
-      resolve({ user_has_rights: true });
+      resolve({ user_has_rights: true, user_id: user_id });
     } else {
       // user is not author but could have required level
       debug('[%s] User %s trying to edit/view compendium by user %s', compendium.id, user_id, compendium.user);
@@ -77,7 +78,7 @@ exports.viewSingle = (req, res) => {
       }
 
       try {
-        fs.accessSync(config.fs.compendium + id); // throws if does not exist
+        fs.accessSync(path.join(config.fs.compendium, id)); // throws if does not exist
         /*
          *  Rewrite file URLs with api path. directory-tree creates path like
          *  config.fs.compendium + id + filepath
@@ -87,12 +88,12 @@ exports.viewSingle = (req, res) => {
          *  host/api/v1/compendium/id/data/filepath
          *
          */
-        answer.files = rewriteTree(dirTree(config.fs.compendium + id),
+        answer.files = rewriteTree(dirTree(path.join(config.fs.compendium, id)),
           config.fs.compendium.length + config.id_length, // remove local fs path and id
           '/api/v1/compendium/' + id + '/data' // prepend proper location
         );
       } catch (err) {
-        debug('ERROR: No data files found for compendium %s. Fail? %s\n%s', id, config.fs.fail_on_no_files, err);
+        debug('[%s] Error: No data files found. Fail? %s\n%s', id, config.fs.fail_on_no_files, err);
         if (config.fs.fail_on_no_files) {
           res.status(500).send({ error: 'internal error: could not read compendium contents from storage' });
           return;
@@ -128,6 +129,59 @@ exports.viewSingle = (req, res) => {
         res.status(200).send(answer);
       }
     }
+  });
+};
+
+exports.delete = (req, res) => {
+  let id = req.params.id;
+  debug('[%s] DELETE compendium', id);
+
+  Compendium.findOne({ id: id }).select('id user candidate').exec((err, compendium) => {
+    // eslint-disable-next-line no-eq-null, eqeqeq
+    if (err || compendium == null) {
+      debug('[%s] compendium does not exist!', id);
+      res.status(404).send({ error: 'no compendium with this id' });
+    } else {
+      let compendium_path = path.join(config.fs.compendium, id);
+      // check if user is allowed to delete the candidate
+      if (!compendium.candidate) {
+        debug('[%s] Compendium is NOT a candidate, can NOT be deleted.', id);
+        res.status(400).send({ error: 'compendium is not a candidate, cannot be deleted' });
+        return;
+      } else if (!req.isAuthenticated()) {
+        debug('[%s] User is not authenticated, cannot view candidate.', id);
+        res.status(401).send({ error: 'user is not authenticated' });
+        return;
+      }
+
+      detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
+        .then((passon) => {
+          if (passon.user_has_rights) {
+            debug('[%s] single compendium found, going to remove it and its files at %s on behalf of user %s (has rights: )',
+              compendium.id, compendium_path, passon.user_id, passon.user_has_rights);
+            Compendium.findOneAndRemove({ id: compendium.id }).exec((err) => {
+              if (err) {
+                debug('[%s] error deleting compendium: %s', compendium.id, err);
+                res.status(500).send({ error: err.message });
+              } else {
+                fse.remove(compendium_path, (err) => {
+                  if (err) {
+                    debug('[%s] Error deleting data files: %s', compendium.id, err);
+                    res.status(500).send({ error: err.message });
+                  } else {
+                    res.status(204).send();
+                  }
+                });
+              };
+            });
+          } else {
+            debug('[%s] Error: user does not have rights but promise fulfilled', id);
+          }
+        }, function (passon) {
+          debug('[%s] User %s may NOT delete candidate.', id, req.user.orcid);
+          res.status(403).send(passon);
+        });
+    };
   });
 };
 
@@ -358,7 +412,7 @@ exports.updateMetadata = (req, res) => {
           // overwrite metadata file in compendium directory (needed for brokering)
           let compendium_path = path.join(config.fs.compendium, id);
           let metadata_file = path.join(compendium_path, config.bagtainer.payloadDirectory, config.meta.dir, config.meta.normativeFile);
-          debug('Overwriting file %s for compendium %s', metadata_file, id);
+          debug('[%s] Overwriting file %s', id, metadata_file);
           fs.truncate(metadata_file, 0, function () {
             fs.writeFile(metadata_file, JSON.stringify(compendium.metadata.o2r), function (err) {
               if (err) {
@@ -388,15 +442,14 @@ exports.updateMetadata = (req, res) => {
                     let message = errorMessageHelper(errors[errors.length - 1]);
                     res.status(500).send({ error: 'metadata brokering failed: ' + message });
                   } else {
-                    debug('Completed metadata brokering for compendium %s:\n\n%s\n', id, stdout);
+                    debug('[%s] Completed metadata brokering:\n\n%s\n', id, stdout);
 
                     fs.readdir(metabroker_dir, (err, files) => {
                       if (err) {
                         debug('Error reading brokered metadata directory %s:\n\t%s', metabroker_dir, err);
                         res.status(500).send({ error: 'error reading brokered metadata directory' });
                       } else {
-                        debug('Completed metadata brokering and now have %s metadata files for compendium %: %s',
-                          files.length, id, JSON.stringify(files));
+                        debug('[%s] Now have %s metadata files: %s', id, files.length, JSON.stringify(files));
 
                         // get filename from mapping definition
                         fs.readFile(mapping_file, (err, data) => {
