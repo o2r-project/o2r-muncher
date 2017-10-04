@@ -23,7 +23,6 @@ const backoff = require('backoff');
 const child_process = require('child_process');
 const exec = require('child_process').exec;
 const fs = require('fs');
-const Docker = require('dockerode');
 
 // mongo connection
 const mongoose = require('mongoose');
@@ -132,6 +131,22 @@ function initApp(callback) {
     app.use(passport.session());
 
     /*
+     * check Docker availability
+     */
+    Docker = require('dockerode');
+    docker = new Docker();
+    docker.ping((err, data) => {
+      if(err) {
+        debug('Error pinging Docker: %s', err);
+        throw err;
+      } else {
+        debug('Docker available? %s', data);
+        delete docker;
+        delete Docker;
+      }
+    });
+
+    /*
      *  Routes & general Middleware
      */
     app.use('/', (req, res, next) => {
@@ -195,6 +210,7 @@ function initApp(callback) {
 
     app.get('/api/v1/compendium', controllers.compendium.view);
     app.get('/api/v1/compendium/:id', controllers.compendium.viewSingle);
+    app.delete('/api/v1/compendium/:id', controllers.compendium.delete);
     app.get('/api/v1/compendium/:id/jobs', controllers.compendium.viewSingleJobs);
 
     app.get('/api/v1/compendium/:id/metadata', controllers.compendium.viewSingleMetadata);
