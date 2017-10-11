@@ -279,7 +279,7 @@ exports.view = (req, res) => {
   let findCandidates = (passon) => {
     return new Promise(function (resolve, reject) {
       if (req.query.user != null && req.isAuthenticated() && req.user.orcid === req.query.user) {
-        debug('User %s requests compendia for %s, so pre-pending candidates to the response.');
+        debug('User %s requests compendia for herself (%s), so pre-pending candidates to the response.', req.user.orcid, req.query.user);
         passon.filter.candidate = true;
 
         Compendium.find(passon.filter).select('id').skip(passon.start).limit(passon.limit).exec((err, comps) => {
@@ -291,10 +291,10 @@ exports.view = (req, res) => {
           } else {
             var count = comps.length;
             if (count <= 0) {
-              let error = new Error('no compendium found');
-              error.status = 404;
-              reject(error);
+              debug('User %s has no candidates', req.user.orcid);
+              resolve(passon);
             } else {
+              debug('Adding %s candidates to the response for user.', req.user.orcid);
 
               passon.candidates = comps.map(comp => {
                 return comp.id;

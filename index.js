@@ -171,6 +171,7 @@ function initApp(callback) {
     indexResponseV1.jobs = '/api/v1/job';
     indexResponseV1.users = '/api/v1/user';
     indexResponseV1.shipments = '/api/v1/shipment';
+    indexResponseV1.substitutions = '/api/v1/substitution';
 
     // set up routes
     app.get('/status', function (req, res) {
