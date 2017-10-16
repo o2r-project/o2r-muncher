@@ -8,6 +8,7 @@
     "test_loader": "DEBUG=*,-modem,-mocha:* mocha",
     "test_port80": "LOADER_CONTAINER=no TEST_HOST=http://localhost DEBUG=*,-modem,-mocha:* mocha",
     "test": "LOADER_CONTAINER=no DEBUG=*,-modem,-mocha:* mocha",
+    "test_ci": "LOADER_CONTAINER=no DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access\"",
     "debug": "DEBUG=muncher,executor node index.js"
   },
   "author": "o2r-project (http://o2r.info)",
@@ -51,6 +52,7 @@
     "eslint": "^4.7.2",
     "eslint-config-google": "^0.9.1",
     "mocha": "^3.5.0",
+    "mocha-tags": "^1.0.1",
     "mongojs": "^2.4.1",
     "node-uname": "^1.0.1",
     "request": "^2.83.0",

@@ -17,8 +17,7 @@ before_script:
   - docker run --name testmuncher -d -p 8080:8080 --link mongodb:mongodb -v $HOME:/tmp/o2r -v /var/run/docker.sock:/var/run/docker.sock -e MUNCHER_MONGODB=mongodb://mongodb:27017 -e DEBUG=muncher,muncher:* muncher
   - sleep 10
 script:
-  #- DEBUG=* npm test
-  - npm test
+  - npm run test_ci
 after_failure:
   - sleep 5
   - docker logs testloader

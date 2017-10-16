@@ -19,6 +19,8 @@ const request = require('request');
 const tmp = require('tmp');
 const AdmZip = require('adm-zip');
 const fs = require('fs');
+const tags = require('mocha-tags');
+console.log('Test filter: ', tags.filter);
 
 require("./setup");
 console.log('Using loader at ' + global.test_host_loader);

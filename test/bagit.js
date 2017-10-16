@@ -20,6 +20,7 @@ const mongojs = require('mongojs');
 const request = require('request');
 const assert = require('chai').assert;
 const bagit = require('../lib/bagit');
+const tags = require('mocha-tags');
 
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
@@ -29,7 +30,8 @@ require("./setup");
 
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 
-describe('BagIt functions', () => {
+tags('storage_access')
+.describe('BagIt functions', () => {
   before((done) => {
     db = mongojs('localhost/muncher', ['compendia']);
     db.compendia.drop(function (err, doc) {
