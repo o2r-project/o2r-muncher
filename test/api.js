@@ -26,7 +26,7 @@ const mongojs = require('mongojs');
 const chai = require('chai');
 chai.use(require('chai-datetime'));
 
-require("./setup")
+require("./setup");
 const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 
 describe('API Compendium', () => {

@@ -24,7 +24,7 @@ const publishCandidate = require('./util').publishCandidate;
 const mongojs = require('mongojs');
 const sleep = require('sleep');
 
-require("./setup")
+require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 const cookie_uploader = 's:lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO.0iapdV1c85wc5NO3d3h+svorp3Tm56cfqRhhpFJZBnk';
@@ -81,7 +81,6 @@ describe('API job returned fields', () => {
       request(global.test_host + '/api/v1/job/?fields=status', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        console.log(body);
         assert.equal(res.statusCode, 200);
         assert.isArray(response.results);
         assert.property(response.results[0], 'id');
@@ -89,7 +88,7 @@ describe('API job returned fields', () => {
         assert.propertyVal(response.results[0], 'status', 'success');
         done();
       });
-    });
+    }).timeout(5000);
 
     it('should not return a field "foo"', (done) => {
       request(global.test_host + '/api/v1/job/?fields=foo', (err, res, body) => {
