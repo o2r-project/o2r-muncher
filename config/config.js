@@ -75,10 +75,11 @@ c.bagtainer.validateBagBeforeExecute = false; // cannot validate before execute 
 c.bagtainer.validateCompendiumBeforeExecute = true;
 c.bagtainer.failOnValidationError = false; // cannot validate before execute when saving image tarball but not updating the bag
 
-c.bagtainer.bagit = {};
-c.bagtainer.bagit.validateFast = false;
-c.bagtainer.bagit.failOnValidationError = {};
-c.bagtainer.bagit.failOnValidationError.execute = false;
+c.bagit = {};
+c.bagit.detectionFileName = 'bagit.txt';
+c.bagit.validateFast = false;
+c.bagit.failOnValidationError = {};
+c.bagit.failOnValidationError.execute = false;
 
 c.bagtainer.imageNamePrefix = 'erc:';
 c.bagtainer.forceImageRemoval = true;

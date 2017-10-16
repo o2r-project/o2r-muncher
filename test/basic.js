@@ -21,7 +21,7 @@ const request = require('request');
 const config = require('../config/config');
 const url = require('url');
 
-require("./setup")
+require("./setup");
 
 describe('API', () => {
   describe('GET /', function() {

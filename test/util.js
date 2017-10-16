@@ -20,19 +20,19 @@ const tmp = require('tmp');
 const AdmZip = require('adm-zip');
 const fs = require('fs');
 
-require("./setup")
+require("./setup");
 console.log('Using loader at ' + global.test_host_loader);
 
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 
-module.exports.createCompendiumPostRequest = function (path, cookie) {
+module.exports.createCompendiumPostRequest = function (path, cookie, type = 'compendium') {
   var zip = new AdmZip();
   zip.addLocalFolder(path);
   var tmpfile = tmp.tmpNameSync() + '.zip';
   zip.writeZip(tmpfile);
 
   let formData = {
-    'content_type': 'compendium',
+    'content_type': type,
     'compendium': {
       value: fs.createReadStream(tmpfile),
       options: {

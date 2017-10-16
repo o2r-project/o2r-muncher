@@ -23,9 +23,10 @@ const path = require('path');
 const exec = require('child_process').exec;
 const objectPath = require('object-path');
 
-var dirTree = require('directory-tree');
-var rewriteTree = require('../lib/rewrite-tree');
+const dirTree = require('directory-tree');
+const rewriteTree = require('../lib/rewrite-tree');
 const errorMessageHelper = require('../lib/error-message');
+const bagit = require('../lib/bagit');
 
 var Compendium = require('../lib/model/compendium');
 var User = require('../lib/model/user');
@@ -403,6 +404,8 @@ exports.updateMetadata = (req, res) => {
             compendium.candidate = false;
           }
 
+          let isBag = bagit.compendiumIsBag(id);
+
           compendium.metadata.o2r = req.body.o2r;
           answer.metadata = {};
           answer.metadata.o2r = compendium.metadata.o2r;
@@ -411,7 +414,13 @@ exports.updateMetadata = (req, res) => {
 
           // overwrite metadata file in compendium directory (needed for brokering)
           let compendium_path = path.join(config.fs.compendium, id);
-          let metadata_file = path.join(compendium_path, config.bagtainer.payloadDirectory, config.meta.dir, config.meta.normativeFile);
+          let metadata_file;
+          if (isBag) {
+            metadata_file = path.join(compendium_path, config.bagtainer.payloadDirectory, config.meta.dir, config.meta.normativeFile);
+          } else {
+            metadata_file = path.join(compendium_path, config.meta.dir, config.meta.normativeFile);
+          }
+
           debug('[%s] Overwriting file %s', id, metadata_file);
           fs.truncate(metadata_file, 0, function () {
             fs.writeFile(metadata_file, JSON.stringify(compendium.metadata.o2r), function (err) {
@@ -422,7 +431,13 @@ exports.updateMetadata = (req, res) => {
                 // re-broker
                 let current_mapping = 'zenodo';
                 let mapping_file = path.join(config.meta.broker.mappings.dir, config.meta.broker.mappings[current_mapping].file);
-                let metabroker_dir = path.join(compendium_path, config.bagtainer.payloadDirectory, config.meta.dir);
+                let metabroker_dir;
+                if (isBag) {
+                  metabroker_dir = path.join(compendium_path, config.bagtainer.payloadDirectory, config.meta.dir);
+                } else {
+                  metabroker_dir = path.join(compendium_path, config.meta.dir);
+                }
+
                 let cmd = [
                   config.meta.cliPath,
                   '-debug',
