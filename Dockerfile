@@ -28,15 +28,12 @@ RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" > /etc/apk/reposito
   && echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
   && echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
 
-# Installation time and run-time dependencies
+# App system dependencies
 RUN apk add --no-cache \
-    git \
-    wget \
     unzip \
     nodejs \
     dumb-init \
     nodejs-npm \
-    ca-certificates \
   && pip install --upgrade pip \
   && pip install bagit
 
@@ -44,6 +41,7 @@ RUN apk add --no-cache \
 RUN apk add --no-cache \
     gcc \
     g++ \
+    git \
     gdal \
     py-gdal \
     gdal-dev \
@@ -57,16 +55,19 @@ ENV MUNCHER_META_TOOL_EXE="python3 /meta/o2rmeta.py"
 ENV MUNCHER_META_EXTRACT_MAPPINGS_DIR="/meta/broker/mappings"
 RUN echo $(git rev-parse --short HEAD) >> version
 
+RUN apk del \
+  git \
+  && rm -rf /var/cache
+
 # App installation
 WORKDIR /muncher
-RUN git clone --depth 1 -b master https://github.com/o2r-project/o2r-muncher /muncher \
-  && npm install --production
+COPY config config
+COPY controllers controllers
+COPY lib lib
+COPY index.js index.js
+COPY package.json package.json
 
-RUN apk del \
-    git \
-    wget \
-    ca-certificates \
-  && rm -rf /var/cache
+RUN npm install --production
 
 # Metadata params provided with docker build command
 ARG VERSION=dev
