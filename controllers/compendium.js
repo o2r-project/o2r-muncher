@@ -63,74 +63,78 @@ exports.viewSingle = (req, res) => {
   let id = req.params.id;
   debug('[%s] view single compendium', id);
 
-  Compendium.findOne({ id }).select('id user metadata created candidate').exec((err, compendium) => {
-    // eslint-disable-next-line no-eq-null, eqeqeq
-    if (err || compendium == null) {
-      debug('[%s] compendium does not exist!', id);
-      res.status(404).send({ error: 'no compendium with this id' });
-    } else {
-      debug('[%s] single compendium found!', id);
-
-      let answer = {
-        id: id,
-        metadata: compendium.metadata,
-        created: compendium.created,
-        user: compendium.user
-      }
-
-      try {
-        fs.accessSync(path.join(config.fs.compendium, id)); // throws if does not exist
-        /*
-         *  Rewrite file URLs with api path. directory-tree creates path like
-         *  config.fs.compendium + id + filepath
-         *
-         *  We are only interested in the filepath itself and want to create a
-         *  url like
-         *  host/api/v1/compendium/id/data/filepath
-         *
-         */
-        answer.files = rewriteTree(dirTree(path.join(config.fs.compendium, id)),
-          config.fs.compendium.length + config.id_length, // remove local fs path and id
-          '/api/v1/compendium/' + id + '/data' // prepend proper location
-        );
-      } catch (err) {
-        debug('[%s] Error: No data files found. Fail? %s\n%s', id, config.fs.fail_on_no_files, err);
-        if (config.fs.fail_on_no_files) {
-          res.status(500).send({ error: 'internal error: could not read compendium contents from storage' });
-          return;
-        } else {
-          answer.filesMissing = true;
-        }
-      }
-
-      // check if user is allowed to view the candidate (easier to check async if done after answer creation)
-      if (compendium.candidate) {
-        debug('[%s] Compendium is a candidate, need to make some checks.', id);
-
-        if (!req.isAuthenticated()) {
-          debug('[%s] User is not authenticated, cannot view candidate.', id);
-          res.status(401).send({ error: 'user is not authenticated' });
-          return;
-        }
-        detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
-          .then((passon) => {
-            if (passon.user_has_rights) {
-              debug('[%s] User %s may see candidate.', id, req.user.orcid);
-              answer.candidate = compendium.candidate;
-
-              res.status(200).send(answer);
-            } else {
-              debug('[%s] Error: user does not have rights but promise fulfilled', id);
-            }
-          }, function (passon) {
-            debug('[%s] User %s may NOT see candidate.', id, req.user.orcid);
-            res.status(401).send(passon);
-          });
+  Compendium.findOne({ id })
+    .select('id user metadata created candidate bag compendium')
+    .exec((err, compendium) => {
+      // eslint-disable-next-line no-eq-null, eqeqeq
+      if (err || compendium == null) {
+        debug('[%s] compendium does not exist!', id);
+        res.status(404).send({ error: 'no compendium with this id' });
       } else {
-        res.status(200).send(answer);
+        debug('[%s] single compendium found!', id);
+
+        let answer = {
+          id: id,
+          metadata: compendium.metadata,
+          created: compendium.created,
+          user: compendium.user,
+          bag: compendium.bag,
+          compendium: compendium.compendium
+        }
+
+        try {
+          fs.accessSync(path.join(config.fs.compendium, id)); // throws if does not exist
+          /*
+           *  Rewrite file URLs with api path. directory-tree creates path like
+           *  config.fs.compendium + id + filepath
+           *
+           *  We are only interested in the filepath itself and want to create a
+           *  url like
+           *  host/api/v1/compendium/id/data/filepath
+           *
+           */
+          answer.files = rewriteTree(dirTree(path.join(config.fs.compendium, id)),
+            config.fs.compendium.length + config.id_length, // remove local fs path and id
+            '/api/v1/compendium/' + id + '/data' // prepend proper location
+          );
+        } catch (err) {
+          debug('[%s] Error: No data files found. Fail? %s\n%s', id, config.fs.fail_on_no_files, err);
+          if (config.fs.fail_on_no_files) {
+            res.status(500).send({ error: 'internal error: could not read compendium contents from storage' });
+            return;
+          } else {
+            answer.filesMissing = true;
+          }
+        }
+
+        // check if user is allowed to view the candidate (easier to check async if done after answer creation)
+        if (compendium.candidate) {
+          debug('[%s] Compendium is a candidate, need to make some checks.', id);
+
+          if (!req.isAuthenticated()) {
+            debug('[%s] User is not authenticated, cannot view candidate.', id);
+            res.status(401).send({ error: 'user is not authenticated' });
+            return;
+          }
+          detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
+            .then((passon) => {
+              if (passon.user_has_rights) {
+                debug('[%s] User %s may see candidate.', id, req.user.orcid);
+                answer.candidate = compendium.candidate;
+
+                res.status(200).send(answer);
+              } else {
+                debug('[%s] Error: user does not have rights but promise fulfilled', id);
+              }
+            }, function (passon) {
+              debug('[%s] User %s may NOT see candidate.', id, req.user.orcid);
+              res.status(401).send(passon);
+            });
+        } else {
+          res.status(200).send(answer);
+        }
       }
-    }
-  });
+    });
 };
 
 exports.delete = (req, res) => {
