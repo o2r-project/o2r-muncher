@@ -136,8 +136,8 @@ python -c "import bagit; bag = bagit.make_bag('success-validate');"
 # validate bag
 python -c "import bagit; bag = bagit.Bag('success-load-validate'); print('Is Bag valid?', bag.validate());"
 
-# update manifest and validate it with (run twice)
-python -c "import bagit; bag = bagit.Bag('success-load-validate'); bag.save(manifests=True); print('Updated manifest. Is Bag valid?', bag.validate());"
+# update manifest and validate it with
+python -c "import bagit; bag = bagit.Bag('success-load-validate'); bag.save(manifests=True);"
 ```
 
 ## License
