@@ -32,6 +32,7 @@ RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" > /etc/apk/reposito
 RUN apk add --no-cache \
     unzip \
     nodejs \
+    icu-dev \
     dumb-init \
     nodejs-npm \
   && pip install --upgrade pip \
