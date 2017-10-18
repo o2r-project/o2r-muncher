@@ -240,7 +240,11 @@ function initApp(callback) {
     });
     let versionFile = c.meta.broker.mappings.dir.split('broker/')[0].concat(c.meta.versionFile);
     fs.readFile(versionFile, 'utf8', function (err, data) {
-      debug('meta tools version: %s', data.trim());
+      if (err) {
+        debug('could not read meta tools version: %s', err);
+      } else {
+        debug('meta tools version: %s', data.trim());
+      }
     })
 
     app.listen(c.net.port, () => {
