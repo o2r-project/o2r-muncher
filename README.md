@@ -25,7 +25,7 @@ docker build -t muncher .
 
 docker run --name mongodb -d -p 27017:27017 mongo:3.4
 
-DEBUG=muncher,muncher:* docker run -it -p 8080:8080 --link mongodb:mongodb -v /var/run/docker.sock:/var/run/docker.sock -e MUNCHER_MONGODB=mongodb://mongodb:27017 -e DEBUG=muncher,muncher:* muncher
+docker run -it -p 8080:8080 --link mongodb:mongodb -v /var/run/docker.sock:/var/run/docker.sock -e MUNCHER_MONGODB=mongodb://mongodb:27017 -e DEBUG=muncher,muncher:* muncher
 ```
 
 ## Configuration
@@ -77,6 +77,12 @@ npm run test
 ```
 
 ## Development
+
+### Run container with MongoDB on host
+
+```bash
+docker run -it -p 8080:8080 -v /var/run/docker.sock:/var/run/docker.sock -e MUNCHER_MONGODB=mongodb://172.17.0.1:27017 -e DEBUG=muncher,muncher:* muncher
+```
 
 ### Removing all containers/images created by muncher
 

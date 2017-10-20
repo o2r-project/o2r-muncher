@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM alpine:3.6
+FROM node:8-alpine
 
 # Python, based on frolvlad/alpine-python3
 RUN apk add --no-cache \
@@ -31,10 +31,8 @@ RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" > /etc/apk/reposito
 # App system dependencies
 RUN apk add --no-cache \
     unzip \
-    nodejs \
     icu-dev \
     dumb-init \
-    nodejs-npm \
   && pip install --upgrade pip \
   && pip install bagit
 
@@ -62,13 +60,15 @@ RUN apk del \
 
 # App installation
 WORKDIR /muncher
+COPY package.json package.json
+
+RUN npm install --production
+
+# Copy files after npm install to utilize build caching
 COPY config config
 COPY controllers controllers
 COPY lib lib
 COPY index.js index.js
-COPY package.json package.json
-
-RUN npm install --production
 
 # Metadata params provided with docker build command
 ARG VERSION=dev
