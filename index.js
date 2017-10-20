@@ -26,9 +26,6 @@ const fs = require('fs');
 
 // mongo connection
 const mongoose = require('mongoose');
-
-// use ES6 promises for mongoose
-mongoose.Promise = global.Promise;
 const dbURI = c.mongo.location + c.mongo.database;
 // see http://blog.mlab.com/2014/04/mongodb-driver-mongoose/#Production-ready_connection_settings and http://mongodb.github.io/node-mongodb-native/2.1/api/Server.html and http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/overview.html
 var dbOptions = {
@@ -37,7 +34,7 @@ var dbOptions = {
   keepAlive: 30000,
   socketTimeoutMS: 30000,
   useMongoClient: true,
-  promiseLibrary: mongoose.Promise
+  promiseLibrary: mongoose.Promise // use ES6 promises for mongoose
 };
 mongoose.connection.on('error', (err) => {
   debug('Could not connect to MongoDB @ %s: %s', dbURI, err);
@@ -103,7 +100,24 @@ passport.deserializeUser((user, cb) => {
 function initApp(callback) {
   debug('Initialize application...');
 
-  try {
+  checkDocker = new Promise((fulfill, reject) => {
+    Docker = require('dockerode');
+    docker = new Docker();
+    docker.ping((err, data) => {
+      if (err) {
+        debug('Error pinging Docker: %s', err);
+        reject(err);
+      } else {
+        debug('Docker available? %s', data);
+        delete docker;
+        delete Docker;
+
+        fulfill();
+      }
+    });
+  });
+
+  configureAuthentication = new Promise((fulfill, reject) => {
     // configure express-session, stores reference to authdetails in cookie.
     // authdetails themselves are stored in MongoDBStore
     var mongoStore = new MongoDBStore({
@@ -111,44 +125,32 @@ function initApp(callback) {
       collection: 'sessions'
     }, err => {
       if (err) {
-        debug('Error starting MongoStore: %s', err);
-      }
-    });
-
-    mongoStore.on('error', err => {
-      debug('Error with MongoStore: %s', err);
-    });
-
-    app.use(session({
-      secret: c.sessionsecret,
-      resave: true,
-      saveUninitialized: true,
-      maxAge: 60 * 60 * 24 * 7, // cookies become invalid after one week
-      store: mongoStore
-    }));
-
-    app.use(passport.initialize());
-    app.use(passport.session());
-
-    /*
-     * check Docker availability
-     */
-    Docker = require('dockerode');
-    docker = new Docker();
-    docker.ping((err, data) => {
-      if(err) {
-        debug('Error pinging Docker: %s', err);
-        throw err;
+        debug('Error connecting MongoStore used for session authentication: %s', err);
+        reject(err);
       } else {
-        debug('Docker available? %s', data);
-        delete docker;
-        delete Docker;
+
+        app.use(session({
+          secret: c.sessionsecret,
+          resave: true,
+          saveUninitialized: true,
+          maxAge: 60 * 60 * 24 * 7, // cookies become invalid after one week
+          store: mongoStore
+        }));
+
+        app.use(passport.initialize());
+        app.use(passport.session());
+
+        fulfill();
       }
     });
 
-    /*
-     *  Routes & general Middleware
-     */
+    mongoStore.on('error', (err) => {
+      debug('Error with MongoStore used for session authentication: %s', err);
+      process.exit(1);
+    });
+  });
+
+  configureRoutesAndMiddlewares = new Promise((fulfill, reject) => {
     app.use('/', (req, res, next) => {
       var orcid = '';
       if (req.user && req.user.orcid) {
@@ -222,9 +224,23 @@ function initApp(callback) {
     app.post('/api/v1/job', upload.any(), controllers.job.create);
     app.get('/api/v1/job/:id', controllers.job.viewSingle);
 
-    /*
-     * Python version and meta tools version
-     */
+    fulfill();
+  });
+
+  configureEmailTransporter = new Promise((fulfill, reject) => {
+    if (c.email.enable
+      && c.email.transport
+      && c.email.sender
+      && c.email.receivers) {
+      emailTransporter = nodemailer.createTransport(c.email.transport);
+      debug('Sending emails on critical events to %s', c.email.receivers);
+    } else {
+      debug('Email notification for critical events _not_ active: %s', JSON.stringify(c.email));
+    }
+    fulfill();
+  });
+
+  logVersions = new Promise((fulfill, reject) => {
     let pythonVersionCmd = 'echo ';
     if (c.meta.cliPath.toLowerCase().startsWith('python')) {
       pythonVersionCmd = pythonVersionCmd.concat('$(', c.meta.cliPath.split(" ")[0], ' --version)');
@@ -234,39 +250,54 @@ function initApp(callback) {
     exec(pythonVersionCmd, (error, stdout, stderr) => {
       if (error) {
         debug('Error detecting python version: %s', error);
+        reject(error);
       } else {
         let version = stdout.concat(stderr);
         debug('Using "%s" for meta tools at "%s"', version.trim(), c.meta.cliPath);
+        let metaVersionFile = c.meta.broker.mappings.dir.split('broker/')[0].concat(c.meta.versionFile);
+        try {
+          let metaVersionInfo = fs.readFileSync(metaVersionFile, 'utf8');
+          debug('meta tools version: %s', metaVersionInfo.trim());
+          fulfill();
+        } catch (err) {
+          debug('Error detecting meta tools version: %s', err);
+          reject(err);
+        }
       }
     });
-    let versionFile = c.meta.broker.mappings.dir.split('broker/')[0].concat(c.meta.versionFile);
-    fs.readFile(versionFile, 'utf8', function (err, data) {
-      debug('meta tools version: %s', data.trim());
-    })
+  });
+
+  startListening = new Promise((fulfill, reject) => {
+    app.use(function (err, req, res, next) {
+      debug('Error: %s\n%s', err, JSON.stringify(err));
+
+      res.status(err.status || 500);
+      res.render('error', {
+        message: err.message
+      });
+    });
 
     app.listen(c.net.port, () => {
       debug('muncher %s with API version %s waiting for requests on port %s',
         c.version,
         c.api_version,
         c.net.port);
+      fulfill();
     });
+  });
 
-    // create reusable transporter object using the default SMTP transport
-    if (c.email.enable
-      && c.email.transport
-      && c.email.sender
-      && c.email.receivers) {
-
-      emailTransporter = nodemailer.createTransport(c.email.transport);
-      debug('Sending emails on critical events to %s', c.email.receivers);
-    } else {
-      debug('Email notification for critical events _not_ active: %s', JSON.stringify(c.email));
-    }
-  } catch (err) {
-    callback(err);
-  }
-
-  callback(null);
+  checkDocker
+    .then(logVersions)
+    .then(configureAuthentication)
+    .then(configureEmailTransporter)
+    .then(configureRoutesAndMiddlewares)
+    .then(startListening)
+    .then(() => {
+      callback(null);
+    })
+    .catch((err) => {
+      callback(err);
+    });
 }
 
 // auto_reconnect is on by default and only for RE(!)connects, not for the initial attempt: http://bites.goodeggs.com/posts/reconnecting-to-mongodb-when-mongoose-connect-fails-at-startup/
