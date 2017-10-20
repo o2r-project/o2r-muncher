@@ -23,6 +23,12 @@ const backoff = require('backoff');
 const child_process = require('child_process');
 const exec = require('child_process').exec;
 const fs = require('fs');
+const colors = require('colors');
+
+// handle unhandled rejections
+process.on('unhandledRejection', (reason) => {
+  debug('Unhandled rejection: %s'.red, reason);
+});
 
 // mongo connection
 const mongoose = require('mongoose');
@@ -37,7 +43,7 @@ var dbOptions = {
   promiseLibrary: mongoose.Promise // use ES6 promises for mongoose
 };
 mongoose.connection.on('error', (err) => {
-  debug('Could not connect to MongoDB @ %s: %s', dbURI, err);
+  debug('Could not connect to MongoDB @ %s: %s'.yellow, dbURI, err);
 });
 // If the Node process ends, close the Mongoose connection 
 process.on('SIGINT', function () {
@@ -74,7 +80,6 @@ const starwars = require('starwars');
  *  File Upload
  */
 // check fs & create dirs if necessary
-
 fse.mkdirsSync(c.fs.job);
 fse.mkdirsSync(c.payload.tarball.tmpdir);
 
@@ -105,7 +110,7 @@ function initApp(callback) {
     docker = new Docker();
     docker.ping((err, data) => {
       if (err) {
-        debug('Error pinging Docker: %s', err);
+        debug('Error pinging Docker: %s'.yellow, err);
         reject(err);
       } else {
         debug('Docker available? %s', data);
@@ -278,7 +283,7 @@ function initApp(callback) {
     });
 
     app.listen(c.net.port, () => {
-      debug('muncher %s with API version %s waiting for requests on port %s',
+      debug('muncher %s with API version %s waiting for requests on port %s'.green,
         c.version,
         c.api_version,
         c.net.port);
@@ -331,7 +336,7 @@ dbBackoff.on('ready', function (number, delay) {
           });
           dbBackoff.backoff();
         }
-        debug('Started application.');
+        debug('Started application.'.green);
       });
     }
   });
