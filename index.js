@@ -24,6 +24,7 @@ const child_process = require('child_process');
 const exec = require('child_process').exec;
 const fs = require('fs');
 const colors = require('colors');
+const starwars = require('starwars');
 
 // handle unhandled rejections
 process.on('unhandledRejection', (reason) => {
@@ -57,15 +58,11 @@ process.on('SIGINT', function () {
 const express = require('express');
 const compression = require('compression');
 const bodyParser = require('body-parser');
-
+const multer = require('multer');
+const upload = multer();
 const app = express();
 app.use(compression());
 app.use(bodyParser.json());
-
-// load controllers
-var controllers = {};
-controllers.compendium = require('./controllers/compendium');
-controllers.job = require('./controllers/job');
 
 // passport & session modules for authenticating users.
 const User = require('./lib/model/user');
@@ -73,25 +70,39 @@ const passport = require('passport');
 const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
 
-// Less crucial things
-const starwars = require('starwars');
+var mongoStore = new MongoDBStore({
+  uri: dbURI,
+  collection: 'sessions'
+}, err => {
+  if (err) {
+    debug('Error connecting MongoStore used for session authentication: %s', err);
+  }
+});
+mongoStore.on('error', (err) => {
+  debug('Error with MongoStore used for session authentication: %s', err);
+  process.exit(1);
+});
 
-/*
- *  File Upload
- */
+app.use(session({
+  secret: c.sessionsecret,
+  resave: true,
+  saveUninitialized: true,
+  maxAge: 60 * 60 * 24 * 7, // cookies become invalid after one week
+  store: mongoStore
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+var controllers = {};
+controllers.compendium = require('./controllers/compendium');
+controllers.job = require('./controllers/job');
+
 // check fs & create dirs if necessary
 fse.mkdirsSync(c.fs.job);
 fse.mkdirsSync(c.payload.tarball.tmpdir);
 
-var multer = require('multer');
-
-var upload = multer();
-
-/*
- *  Authentication & Authorization
- *  This is be needed in every service that wants to check if a user is authenticated.
- */
-// minimal serialize/deserialize to make authdetails cookie-compatible.
+// minimal serialize/deserialize to make auth details cookie-compatible.
 passport.serializeUser((user, cb) => {
   cb(null, user.orcid);
 });
@@ -119,39 +130,6 @@ function initApp(callback) {
 
         fulfill();
       }
-    });
-  });
-
-  configureAuthentication = new Promise((fulfill, reject) => {
-    // configure express-session, stores reference to authdetails in cookie.
-    // authdetails themselves are stored in MongoDBStore
-    var mongoStore = new MongoDBStore({
-      uri: dbURI,
-      collection: 'sessions'
-    }, err => {
-      if (err) {
-        debug('Error connecting MongoStore used for session authentication: %s', err);
-        reject(err);
-      } else {
-
-        app.use(session({
-          secret: c.sessionsecret,
-          resave: true,
-          saveUninitialized: true,
-          maxAge: 60 * 60 * 24 * 7, // cookies become invalid after one week
-          store: mongoStore
-        }));
-
-        app.use(passport.initialize());
-        app.use(passport.session());
-
-        fulfill();
-      }
-    });
-
-    mongoStore.on('error', (err) => {
-      debug('Error with MongoStore used for session authentication: %s', err);
-      process.exit(1);
     });
   });
 
@@ -273,15 +251,6 @@ function initApp(callback) {
   });
 
   startListening = new Promise((fulfill, reject) => {
-    app.use(function (err, req, res, next) {
-      debug('Error: %s\n%s', err, JSON.stringify(err));
-
-      res.status(err.status || 500);
-      res.render('error', {
-        message: err.message
-      });
-    });
-
     app.listen(c.net.port, () => {
       debug('muncher %s with API version %s waiting for requests on port %s'.green,
         c.version,
@@ -293,7 +262,6 @@ function initApp(callback) {
 
   checkDocker
     .then(logVersions)
-    .then(configureAuthentication)
     .then(configureEmailTransporter)
     .then(configureRoutesAndMiddlewares)
     .then(startListening)

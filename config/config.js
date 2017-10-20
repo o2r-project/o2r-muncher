@@ -71,9 +71,9 @@ c.bagtainer.payloadDirectory = '/data';
 c.bagtainer.configFile = 'erc.yml';
 c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
 c.bagtainer.keepImages = true; // required for image download!
-c.bagtainer.validateBagBeforeExecute = false; // cannot validate before execute because metadata files are arleady added and invalidating the bag
+c.bagtainer.validateBagBeforeExecute = true; // bag validation will fail, gut useful to highlight the changes in compendium
 c.bagtainer.validateCompendiumBeforeExecute = true;
-c.bagtainer.failOnValidationError = false; // cannot validate before execute when saving image tarball but not updating the bag
+c.bagtainer.failOnValidationError = false; // muncher never updates the bag
 
 c.bagit = {};
 c.bagit.detectionFileName = 'bagit.txt';
