@@ -44,6 +44,10 @@ describe('Delete candidate', () => {
       });
     });
   });
+  
+  after(function () {
+    db.close();
+  });
 
   describe('as author', () => {
     before(function (done) {

@@ -34,7 +34,10 @@ describe('API job filtering', () => {
   before((done) => {
     var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
-      db.jobs.drop(function (err, doc) { done(); });
+      db.jobs.drop(function (err, doc) {
+        db.close();
+        done();
+      });
     });
   });
 
@@ -263,17 +266,25 @@ describe('API job filtering', () => {
     it('should find no jobs with the undefined status "foo"', (done) => {
       request(global.test_host + '/api/v1/job/?status=foo', (err, res, body) => {
         assert.ifError(err);
-        assert.notProperty(JSON.parse(body), 'results');
-        assert.propertyVal(JSON.parse(body), 'error', 'no jobs found');
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.property(response, 'results');
+        assert.notProperty(response, 'error');
+        assert.isArray(response.results);
+        assert.isEmpty(response.results);
         done();
       });
     });
 
-    it('should find no jobs of user 9999-9999-9999-9999', (done) => {
+    it('should find no jobs for user 9999-9999-9999-9999', (done) => {
       request(global.test_host + '/api/v1/job/?user=9999-9999-9999-9999', (err, res, body) => {
         assert.ifError(err);
-        assert.notProperty(JSON.parse(body), 'results');
-        assert.propertyVal(JSON.parse(body), 'error', 'no jobs found');
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.property(response, 'results');
+        assert.notProperty(response, 'error');
+        assert.isArray(response.results);
+        assert.isEmpty(response.results);
         done();
       });
     });

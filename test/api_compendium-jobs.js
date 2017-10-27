@@ -33,8 +33,11 @@ describe('API compendium / jobs', () => {
     before((done) => {
         var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
         db.compendia.drop(function (err, doc) {
-            db.jobs.drop(function (err, doc) { done(); });
+            db.jobs.drop(function (err, doc) {
+                db.close();
+                done();
         });
+    });
     });
 
     describe('GET /api/v1/compendium/ sub-endpoint /jobs', () => {

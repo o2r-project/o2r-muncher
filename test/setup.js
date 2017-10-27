@@ -203,6 +203,8 @@ before(function (done) {
         if (err) throw err;
     });
 
+    sleep.sleep(1);
+    db.close();
 
     if (env.LOADER_CONTAINER && !yn(env.LOADER_CONTAINER)) {
         debugContainer('Not starting container, found env var LOADER_CONTAINER="%s"', env.LOADER_CONTAINER);

@@ -34,7 +34,10 @@ describe.only('API job returned fields', () => {
   before(function (done) {
     var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
-      db.jobs.drop(function (err, doc) { done(); });
+      db.jobs.drop(function (err, doc) {
+        db.close();
+        done();
+      });
     });
   });
 
@@ -47,14 +50,13 @@ describe.only('API job returned fields', () => {
       this.timeout(60000);
 
       request(req, (err, res, body) => {
+        console.log('got response: ' + body);
+
         assert.equal(res.statusCode, 200);
         assert.property(JSON.parse(body), 'id');
         let compendium_id = JSON.parse(body).id;
-        sleep.sleep(10); // wait for loading
 
         publishCandidate(compendium_id, cookie_o2r, () => {
-          sleep.sleep(5); // wait for the brokering to finish
-
           let j = request.jar();
           let ck = request.cookie('connect.sid=' + cookie_o2r);
           j.setCookie(ck, global.test_host);
@@ -65,7 +67,8 @@ describe.only('API job returned fields', () => {
             jar: j,
             formData: {
               compendium_id: compendium_id
-            }
+            },
+            timeout: 10000
           }, (err, res, body) => {
             assert.ifError(err);
             let response = JSON.parse(body);
