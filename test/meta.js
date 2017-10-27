@@ -79,7 +79,9 @@ describe('Reading compendium metadata', () => {
       request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        metadata = response.metadata[config.meta.extract.targetElement];
+        assert.property(response, 'metadata');
+        assert.property(response.metadata, 'o2r');
+        metadata = response.metadata.o2r;
         assert.propertyVal(response, 'id', compendium_id);
         done();
       });
@@ -575,10 +577,14 @@ describe('Brokering compendium metadata', () => {
   let compendium_id = '';
   before(function (done) {
     let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-    this.timeout(10000);
+    this.timeout(20000);
 
     request(req, (err, res, body) => {
-      compendium_id = JSON.parse(body).id;
+      assert.ifError(err);
+      console.log(body);
+      let response = JSON.parse(body);
+      assert.notProperty(response, 'error');
+      compendium_id = response.id;
 
       let data = {
         'o2r': {
@@ -593,19 +599,21 @@ describe('Brokering compendium metadata', () => {
         method: 'PUT',
         jar: j2,
         json: data,
-        timeout: 10000
+        timeout: 20000
       };
 
       req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req_doc_o2r, (err, res, body) => {
         assert.ifError(err);
+        assert.notInclude(body, 'error');
+        console.log(body);
         done();
       });
     });
   });
 
   describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with author user', () => {
-    it('should have the brokered metadata in the respective section', (done) => {
+    it('should have the brokered metadata for zenodo', (done) => {
       request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);

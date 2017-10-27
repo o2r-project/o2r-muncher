@@ -30,9 +30,8 @@ const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9y
 const cookie_uploader = 's:lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO.0iapdV1c85wc5NO3d3h+svorp3Tm56cfqRhhpFJZBnk';
 
 
-describe('API job returned fields', () => {
+describe.only('API job returned fields', () => {
   before(function (done) {
-    this.timeout(10000);
     var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) { done(); });
@@ -45,11 +44,16 @@ describe('API job returned fields', () => {
     // upload 1st compendium with final job status "success"
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
-      this.timeout(20000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
+        assert.equal(res.statusCode, 200);
+        assert.property(JSON.parse(body), 'id');
         let compendium_id = JSON.parse(body).id;
+        sleep.sleep(10); // wait for loading
+
         publishCandidate(compendium_id, cookie_o2r, () => {
+          sleep.sleep(5); // wait for the brokering to finish
 
           let j = request.jar();
           let ck = request.cookie('connect.sid=' + cookie_o2r);
@@ -61,16 +65,16 @@ describe('API job returned fields', () => {
             jar: j,
             formData: {
               compendium_id: compendium_id
-            },
-            timeout: 5000
+            }
           }, (err, res, body) => {
             assert.ifError(err);
-            assert.equal(res.statusCode, 200);
             let response = JSON.parse(body);
+
+            assert.equal(res.statusCode, 200);
             assert.property(response, 'job_id');
             job_id = response.job_id;
 
-            sleep.sleep(10);
+            sleep.sleep(10); // wait for the job to finish
             done();
           });
         });

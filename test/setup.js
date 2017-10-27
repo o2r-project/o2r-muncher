@@ -52,6 +52,11 @@ before(function (done) {
     db.sessions.drop(function (err, doc) {
         //if (err) throw err;
     });
+    db.users.drop(function (err, doc) {
+        //if (err) throw err;
+    });
+    sleep.sleep(1);
+
     var session_o2r = {
         '_id': sessionId_o2r,
         'session': {

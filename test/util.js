@@ -79,10 +79,12 @@ module.exports.publishCandidate = function (compendium_id, cookie, done) {
   };
 
   request(getMetadata, (err, res, body) => {
+    let response = JSON.parse(body);
     if (err) {
       console.error('error publishing candidate: %s', err);
+    } else if(response.error) {
+      console.error('error publishing candidate: %s', JSON.stringify(response));
     } else {
-      let response = JSON.parse(body);
       updateMetadata.json = { o2r: response.metadata.o2r };
 
       request(updateMetadata, (err, res, body) => {

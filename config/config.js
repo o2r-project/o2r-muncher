@@ -89,16 +89,12 @@ c.bagtainer.docker.create_options = {
   //AttachStderr: true,
   //AttachStdin: false,
   //AttachStdout: true,
-  //Cmd: ['bash', '-c', 'cat /etc/resolv.conf'],
   CpuShares: 256,
-  //Cpuset: '',
-  //Domainname: '',
-  //Entrypoint: null,
   Env: ['O2RPLATFORM=true'],
-  //Hostname: 'b9ea983254ef',
   Memory: 1073741824, // 1G
   MemorySwap: 2147483648, // double of 1G
   NetworkMode: 'none',
+  User: 'o2r', // could be left away because of USER o2r command in o2r-meta's Dockerfile, but better safe than sorry.
   Rm: true
 };
 // https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#start-a-container
@@ -131,24 +127,39 @@ c.email.sender = env.MUNCHER_EMAIL_SENDER;
 
 // metadata extraction and brokering options
 c.meta = {};
-c.meta.cliPath = env.MUNCHER_META_TOOL_EXE || 'python3 ../o2r-meta/o2rmeta.py';
-c.meta.versionFile = 'version';
+c.meta.container = {};
+c.meta.container.image = env.MUNCHER_META_TOOL_CONTAINER || 'o2rproject/o2r-meta:latest';
+c.meta.container.default_create_options = {
+  CpuShares: 128,
+  Env: ['O2RPLATFORM=true'],
+  Memory: 1073741824, // 1G
+  MemorySwap: 2147483648, // double of 1G
+  User: 'o2r', // could be left away because of USER o2r command in o2r-meta's Dockerfile, but better safe than sorry.
+  AutoRemove: true
+};
+
 c.meta.normativeFile = 'metadata_o2r.json';
 c.meta.dir = '.erc';
 
-c.meta.extract = {};
-c.meta.extract.targetElement = 'o2r';
-
 c.meta.broker = {};
 c.meta.broker.module = 'broker';
-c.meta.broker.mappings = {
+c.meta.broker.mappings = { 
   zenodo: {
     targetElement: 'zenodo.metadata',
-    file: 'zenodo-map.json'
+    file: 'metadata_zenodo.json',
+    mappingFile: 'broker/mappings/zenodo-map.json'
   },
-  dir: env.MUNCHER_META_EXTRACT_MAPPINGS_DIR || '../o2r-meta/broker/mappings'
-};
-
+  zenodo_sandbox: {
+    targetElement: 'zenodo_sandbox.metadata',
+    file: 'metadata_zenodo_sandbox.json',
+    mappingFile: 'broker/mappings/zenodo_sandbox-map.json'
+  },
+  o2r: {
+    targetElement: 'o2r',
+    file: 'metadata_o2r.json',
+    mappingFile: 'broker/mappings/o2r-map.json'
+  } 
+}; 
 c.meta.doiPath = 'metadata.o2r.identifier.doi';
 
 c.payload = {};

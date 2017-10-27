@@ -31,8 +31,8 @@ const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2
 
 describe('API Compendium', () => {
   before(function (done) {
-    this.timeout(10000);
-    let db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
+    this.timeout(1000);
+    let db = mongojs('localhost/muncher', ['compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) {
         done();

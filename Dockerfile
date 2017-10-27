@@ -16,11 +16,12 @@ FROM node:8-alpine
 
 # Python, based on frolvlad/alpine-python3
 RUN apk add --no-cache \
-  python3 \
-  && python3 -m ensurepip \
+  python2 \
+  && python2 -m ensurepip \
   && rm -r /usr/lib/python*/ensurepip \
-  && pip3 install --upgrade pip setuptools \
-  && if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi \
+  && pip install --upgrade pip setuptools \
+  && if [ ! -e /usr/bin/pip ]; then ln -s pip /usr/bin/pip ; fi \
+  && if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python2 /usr/bin/python; fi \
   && rm -r /root/.cache
 
 # Add Alpine mirrors, replacing default repositories with edge ones, based on https://github.com/jfloff/alpine-python/blob/master/3.4/Dockerfile
@@ -34,28 +35,7 @@ RUN apk add --no-cache \
     icu-dev \
     dumb-init \
   && pip install --upgrade pip \
-  && pip install bagit
-
-# o2r-meta dependencies and installation
-RUN apk add --no-cache \
-    gcc \
-    g++ \
-    git \
-    gdal \
-    py-gdal \
-    gdal-dev \
-    python3-dev \
-    libxml2-dev \
-    libxslt-dev \
-  && git clone --depth 1 -b master https://github.com/o2r-project/o2r-meta.git /meta
-WORKDIR /meta
-RUN pip install -r requirements.txt
-ENV MUNCHER_META_TOOL_EXE="python3 /meta/o2rmeta.py"
-ENV MUNCHER_META_EXTRACT_MAPPINGS_DIR="/meta/broker/mappings"
-RUN echo $(git rev-parse --short HEAD) >> version
-
-RUN apk del \
-  git \
+  && pip install bagit \
   && rm -rf /var/cache
 
 # App installation

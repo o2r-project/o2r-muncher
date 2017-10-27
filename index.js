@@ -25,6 +25,7 @@ const exec = require('child_process').exec;
 const fs = require('fs');
 const colors = require('colors');
 const starwars = require('starwars');
+const Docker = require('dockerode');
 
 // handle unhandled rejections
 process.on('unhandledRejection', (reason) => {
@@ -80,19 +81,8 @@ var mongoStore = new MongoDBStore({
 });
 mongoStore.on('error', (err) => {
   debug('Error with MongoStore used for session authentication: %s', err);
-  process.exit(1);
+  //process.exit(1);
 });
-
-app.use(session({
-  secret: c.sessionsecret,
-  resave: true,
-  saveUninitialized: true,
-  maxAge: 60 * 60 * 24 * 7, // cookies become invalid after one week
-  store: mongoStore
-}));
-
-app.use(passport.initialize());
-app.use(passport.session());
 
 var controllers = {};
 controllers.compendium = require('./controllers/compendium');
@@ -116,8 +106,7 @@ passport.deserializeUser((user, cb) => {
 function initApp(callback) {
   debug('Initialize application...');
 
-  checkDocker = new Promise((fulfill, reject) => {
-    Docker = require('dockerode');
+  checkDockerAndPullMetaContainer = new Promise((fulfill, reject) => {
     docker = new Docker();
     docker.ping((err, data) => {
       if (err) {
@@ -125,15 +114,42 @@ function initApp(callback) {
         reject(err);
       } else {
         debug('Docker available? %s', data);
-        delete docker;
-        delete Docker;
+        debug('meta tools version: %s', c.meta.container.image);
+        
+        docker.pull(c.meta.container.image, function (err, stream) {
+          if (err) {
+            debug('error pulling meta image: %s', err);
+          } else {
+            function onFinished(err, output) {
+              if (err) {
+                debug('error pulling meta image: %s', JSON.stringify(err));
+              } else {
+                debug('pulled meta tools image: %s', JSON.stringify(output));
+              }
 
-        fulfill();
+              delete docker;
+              fulfill();
+            }
+    
+            docker.modem.followProgress(stream, onFinished);
+          }
+        });
       }
     });
   });
 
-  configureRoutesAndMiddlewares = new Promise((fulfill, reject) => {
+  configureExpressApp = new Promise((fulfill, reject) => {
+    app.use(session({
+      secret: c.sessionsecret,
+      resave: true,
+      saveUninitialized: true,
+      maxAge: 60 * 60 * 24 * 7, // cookies become invalid after one week
+      store: mongoStore
+    }));
+
+    app.use(passport.initialize());
+    app.use(passport.session());
+
     app.use('/', (req, res, next) => {
       var orcid = '';
       if (req.user && req.user.orcid) {
@@ -224,28 +240,14 @@ function initApp(callback) {
   });
 
   logVersions = new Promise((fulfill, reject) => {
-    let pythonVersionCmd = 'echo ';
-    if (c.meta.cliPath.toLowerCase().startsWith('python')) {
-      pythonVersionCmd = pythonVersionCmd.concat('$(', c.meta.cliPath.split(" ")[0], ' --version)');
-    } else {
-      pythonVersionCmd = pythonVersionCmd.concat('$(python --version)')
-    }
+    // Python version used for bagit.py
+    let pythonVersionCmd = 'echo $(python --version)';
     exec(pythonVersionCmd, (error, stdout, stderr) => {
       if (error) {
         debug('Error detecting python version: %s', error);
-        reject(error);
       } else {
         let version = stdout.concat(stderr);
-        debug('Using "%s" for meta tools at "%s"', version.trim(), c.meta.cliPath);
-        let metaVersionFile = c.meta.broker.mappings.dir.split('broker/')[0].concat(c.meta.versionFile);
-        try {
-          let metaVersionInfo = fs.readFileSync(metaVersionFile, 'utf8');
-          debug('meta tools version: %s', metaVersionInfo.trim());
-          fulfill();
-        } catch (err) {
-          debug('Error detecting meta tools version: %s', err);
-          reject(err);
-        }
+        debug('Using "%s" for bagit.py', version.trim());
       }
     });
   });
@@ -260,10 +262,10 @@ function initApp(callback) {
     });
   });
 
-  checkDocker
+  checkDockerAndPullMetaContainer
     .then(logVersions)
     .then(configureEmailTransporter)
-    .then(configureRoutesAndMiddlewares)
+    .then(configureExpressApp)
     .then(startListening)
     .then(() => {
       callback(null);

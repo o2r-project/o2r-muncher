@@ -27,6 +27,7 @@ const dirTree = require('directory-tree');
 const rewriteTree = require('../lib/rewrite-tree');
 const errorMessageHelper = require('../lib/error-message');
 const bagit = require('../lib/bagit');
+const meta = require('../lib/meta');
 
 var Compendium = require('../lib/model/compendium');
 var User = require('../lib/model/user');
@@ -162,7 +163,7 @@ exports.delete = (req, res) => {
       detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
         .then((passon) => {
           if (passon.user_has_rights) {
-            debug('[%s] single compendium found, going to remove it and its files at %s on behalf of user %s (has rights: )',
+            debug('[%s] single compendium found, going to remove it and its files at %s on behalf of user %s (has rights: %s)',
               compendium.id, compendium_path, passon.user_id, passon.user_has_rights);
             Compendium.findOneAndRemove({ id: compendium.id }).exec((err) => {
               if (err) {
@@ -379,6 +380,98 @@ exports.viewSingleMetadata = (req, res) => {
   });
 };
 
+// overwrite metadata file in compendium directory (which is then used for brokering)
+updateMetadataFile = function (id, file, metadata) {
+  return new Promise((fulfill, reject) => {
+    debug('[%s] Overwriting file %s', id, file);
+    fs.truncate(file, 0, function () {
+      fs.writeFile(file, JSON.stringify(metadata), function (err) {
+        if (err) {
+          debug('[%s] Error updating normative metadata file: %s', id, err);
+          err.message = 'Error updating normative metadata file';
+          reject(err);
+        } else {
+          fulfill({
+            id: id,
+            file: file
+          });
+        }
+      });
+    });
+  });
+}
+
+reloadMetadataFromFile = function (id, metadata_file, targetElement) {
+  return new Promise((fulfill, reject) => {
+    // read mapped metadata for saving to DB
+    fs.readFile(metadata_file, (err, data) => {
+      if (err) {
+        debug('[%s] Error reading mapping file: %s', id, err);
+        reject(err);
+      } else {
+        fulfill({
+          targetElement: targetElement,
+          metadata: JSON.parse(data),
+          file: metadata_file
+        });
+      }
+    });
+  });
+}
+
+brokerMetadata = function (compendium, metadata_dir, metadata_file, mappings) {
+  return new Promise((fulfill, reject) => {
+
+    let brokerings = [];
+    Object.keys(mappings).forEach(function (name) {
+      brokerPromise = meta.broker(compendium.id, metadata_dir, metadata_file, name);
+      brokerings.push(brokerPromise);
+    });
+
+    Promise.all(brokerings)
+      .then((brokerResults) => {
+        debug('[%s] Completed brokerings: %s', compendium.id, brokerResults.filter(obj => { return !obj.error }).map(obj => { return obj.name; }).join(', '));
+        debug('[%s] FAILED brokerings: %s', compendium.id, brokerResults.filter(obj => { return obj.error }).map(obj => { return obj.name; }).join(', '));
+
+        let reloads = [];
+        Object.keys(mappings).forEach((name) => {
+          mapping = mappings[name];
+          reloadPromise = reloadMetadataFromFile(compendium.id, path.join(metadata_dir, mapping.file), mapping.targetElement);
+          reloads.push(reloadPromise);
+        });
+
+        Promise.all(reloads)
+          .then((reloadResults) => {
+
+            reloadResults.forEach((result) => {
+              objectPath.set(compendium.metadata,
+                result.targetElement,
+                result.data);
+            });
+            debug('[%s] Reloaded metadata from %s files:', compendium.id, reloadResults.length, reloadResults.map(obj => { return obj.file }).join(', '));
+
+            // FINALLY persist the metadata update to the database
+            compendium.markModified('metadata');
+            compendium.save((err, doc) => {
+              if (err) {
+                debug('[%s] ERROR saving new compendium: %s', compendium.id, err);
+                reject(err);
+              } else {
+                debug('[%s] Updated compendium, now is:\n%s', compendium.id, JSON.stringify(doc));
+                fulfill();
+              }
+            });
+          });
+      })
+      .catch(err => {
+        debug('[%s] Problem during metadata brokering: %s', compendium.id, err);
+        let errors = err.message.split(':');
+        err.message = errorMessageHelper(errors[errors.length - 1]);
+        reject(err);
+      });
+  });
+}
+
 exports.updateMetadata = (req, res) => {
   let id = req.params.id;
   let answer = { id: id };
@@ -406,115 +499,40 @@ exports.updateMetadata = (req, res) => {
           // TODO check metadata conformance with profile
           if (passon.user_has_rights) {
             compendium.candidate = false;
+            compendium.markModified('candidate');
           }
-
-          let isBag = bagit.compendiumIsBag(id);
 
           compendium.metadata.o2r = req.body.o2r;
           answer.metadata = {};
           answer.metadata.o2r = compendium.metadata.o2r;
 
-          // TODO restructure following code, remove nested callbacks!
-
-          // overwrite metadata file in compendium directory (needed for brokering)
           let compendium_path = path.join(config.fs.compendium, id);
-          let metadata_file;
-          if (isBag) {
-            metadata_file = path.join(compendium_path, config.bagtainer.payloadDirectory, config.meta.dir, config.meta.normativeFile);
+          let metadata_dir;
+          if (bagit.compendiumIsBag(id)) {
+            metadata_dir = path.join(compendium_path, config.bagtainer.payloadDirectory, config.meta.dir);
           } else {
-            metadata_file = path.join(compendium_path, config.meta.dir, config.meta.normativeFile);
+            metadata_dir = path.join(compendium_path, config.meta.dir);
           }
 
-          debug('[%s] Overwriting file %s', id, metadata_file);
-          fs.truncate(metadata_file, 0, function () {
-            fs.writeFile(metadata_file, JSON.stringify(compendium.metadata.o2r), function (err) {
-              if (err) {
-                debug('[%s] Error updating normative metadata file: %s', id, err);
+          let metadata_file = path.join(metadata_dir, config.meta.normativeFile);
+
+          if (compendium.metadata && compendium.metadata.o2r) {
+
+            updateMetadataFile(id, metadata_file, compendium.metadata.o2r)
+              .then(brokerMetadata(compendium, metadata_dir, metadata_file, config.meta.broker.mappings))
+              .catch((err) => {
+                debug('[%s] Error during brokering, returning HTTP 500 response: %s', id, err);
                 res.status(500).send({ error: 'Error updating normative metadata file' });
-              } else {
-                // re-broker
-                let current_mapping = 'zenodo';
-                let mapping_file = path.join(config.meta.broker.mappings.dir, config.meta.broker.mappings[current_mapping].file);
-                let metabroker_dir;
-                if (isBag) {
-                  metabroker_dir = path.join(compendium_path, config.bagtainer.payloadDirectory, config.meta.dir);
-                } else {
-                  metabroker_dir = path.join(compendium_path, config.meta.dir);
-                }
+              })
+              .then(() => {
+                debug('[%s] completed metadata update, sending answer.', id);
+                res.status(201).send(answer);
+              });
 
-                let cmd = [
-                  config.meta.cliPath,
-                  '-debug',
-                  config.meta.broker.module,
-                  '--inputfile', metadata_file,
-                  '--map', mapping_file,
-                  '--outputdir', metabroker_dir
-                ].join(' ');
-
-                debug('Running metadata brokering with command "%s"', cmd);
-                exec(cmd, (error, stdout, stderr) => {
-                  if (error || stderr) {
-                    debug('Problem during metadata brokering of %s:\n\t%s\n\t%s',
-                      id, error.message, stderr.message);
-                    debug(error, stderr, stdout);
-                    let errors = error.message.split(':');
-                    let message = errorMessageHelper(errors[errors.length - 1]);
-                    res.status(500).send({ error: 'metadata brokering failed: ' + message });
-                  } else {
-                    debug('[%s] Completed metadata brokering:\n\n%s\n', id, stdout);
-
-                    fs.readdir(metabroker_dir, (err, files) => {
-                      if (err) {
-                        debug('Error reading brokered metadata directory %s:\n\t%s', metabroker_dir, err);
-                        res.status(500).send({ error: 'error reading brokered metadata directory' });
-                      } else {
-                        debug('[%s] Now have %s metadata files: %s', id, files.length, JSON.stringify(files));
-
-                        // get filename from mapping definition
-                        fs.readFile(mapping_file, (err, data) => {
-                          if (err) {
-                            debug('Error reading mapping file: %s', err.message);
-                            res.status(500).send({ error: 'Error reading mapping file' });
-                          } else {
-                            let mapping = JSON.parse(data);
-                            let mapping_output_file = path.join(metabroker_dir, mapping.Settings.outputfile);
-                            debug('Loading brokering output from file %s', mapping_output_file);
-
-                            // read mapped metadata for saving to DB
-                            fs.readFile(mapping_output_file, (err, data) => {
-                              if (err) {
-                                debug('Error reading brokering output file for %s: %s', id, err.message);
-                                res.status(500).send({ error: 'Error reading brokering output from file' });
-                              } else {
-                                let mapping_output = JSON.parse(data);
-                                // read mapped metadata and save it also to DB
-                                objectPath.set(compendium.metadata,
-                                  config.meta.broker.mappings[current_mapping].targetElement,
-                                  mapping_output);
-                                debug('Finished metadata brokering for %s !', id);
-
-                                // FINALLY persist the metadata update to the database
-                                compendium.markModified('metadata');
-                                compendium.save((err, doc) => {
-                                  if (err) {
-                                    debug('[%s] ERROR saving new compendium: %s', id, err);
-                                    res.status(500).send({ error: 'internal error' });
-                                  } else {
-                                    debug('[%s] Updated compendium, now is:\n%s', id, JSON.stringify(doc));
-                                    res.status(200).send(answer);
-                                  }
-                                });
-                              }
-                            });
-                          }
-                        });
-                      }
-                    });
-                  }
-                });
-              }
-            });
-          });
+          } else {
+            debug('[%s] No metadata provided that could be brokered!', id);
+            res.status(500).send({ error: 'Error updating metadata: no metadata found.' });
+          }
         }, function (passon) {
           res.status(401).send(passon);
         });
