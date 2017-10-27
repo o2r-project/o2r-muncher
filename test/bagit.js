@@ -35,6 +35,7 @@ tags('storage_access')
   before((done) => {
     db = mongojs('localhost/muncher', ['compendia']);
     db.compendia.drop(function (err, doc) {
+      db.close();
       done();
     });
   });

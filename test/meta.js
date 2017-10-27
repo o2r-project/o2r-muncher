@@ -581,7 +581,6 @@ describe('Brokering compendium metadata', () => {
 
     request(req, (err, res, body) => {
       assert.ifError(err);
-      console.log(body);
       let response = JSON.parse(body);
       assert.notProperty(response, 'error');
       compendium_id = response.id;
@@ -606,7 +605,6 @@ describe('Brokering compendium metadata', () => {
       request(req_doc_o2r, (err, res, body) => {
         assert.ifError(err);
         assert.notInclude(body, 'error');
-        console.log(body);
         done();
       });
     });

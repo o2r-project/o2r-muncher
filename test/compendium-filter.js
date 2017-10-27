@@ -32,6 +32,10 @@ const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPu
 describe('API compendium filter', () => {
   var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia']);
 
+  after(function () {
+    db.close();
+  });
+
   describe('compendium filtering with DOI', () => {
     let compendium_id = '';
     let test_doi = '10.5555/12345678';
@@ -66,8 +70,11 @@ describe('API compendium filter', () => {
     it('should find no compendia with an unused DOI', (done) => {
       request(global.test_host + '/api/v1/compendium/?doi=12.3456%2Fasdf', (err, res, body) => {
         assert.ifError(err);
-        assert.notProperty(JSON.parse(body), 'results');
-        assert.propertyVal(JSON.parse(body), 'error', 'no compendium found');
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.property(response, 'results');
+        assert.notProperty(response, 'error');
+        assert.isEmpty(response.results);
         done();
       });
     });
@@ -87,8 +94,11 @@ describe('API compendium filter', () => {
     it('should find no compendia with an unused DOI but valid user', (done) => {
       request(global.test_host + '/api/v1/compendium/?doi=12.3456/asdf' + '&user=' + test_user, (err, res, body) => {
         assert.ifError(err);
-        assert.notProperty(JSON.parse(body), 'results');
-        assert.propertyVal(JSON.parse(body), 'error', 'no compendium found');
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.property(response, 'results');
+        assert.notProperty(response, 'error');
+        assert.isEmpty(response.results);
         done();
       });
     });
@@ -96,8 +106,11 @@ describe('API compendium filter', () => {
     it('should find no compendia with an existing DOI but unknown user', (done) => {
       request(global.test_host + '/api/v1/compendium/?doi=' + test_doi + '&user=9989-9999-9989-9899', (err, res, body) => {
         assert.ifError(err);
-        assert.notProperty(JSON.parse(body), 'results');
-        assert.propertyVal(JSON.parse(body), 'error', 'no compendium found');
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.property(response, 'results');
+        assert.notProperty(response, 'error');
+        assert.isEmpty(response.results);
         done();
       });
     });

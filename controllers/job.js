@@ -30,7 +30,7 @@ const Executor = require('../lib/executor').Executor;
 const Compendium = require('../lib/model/compendium');
 const Job = require('../lib/model/job');
 
-exports.view = (req, res) => {
+exports.listJobs = (req, res) => {
   var answer = {};
   var filter = {};
   var limit = parseInt(req.query.limit || config.list_limit, 10);
@@ -60,27 +60,26 @@ exports.view = (req, res) => {
 
   Job.find(filter).select(fields).skip(start).limit(limit).exec((err, jobs) => {
     if (err) {
-      res.status(500).send({ error: 'query failed' });
+      res.status(500).send({ error: 'job query failed' });
     } else {
-      var count = jobs.length;
-      if (count <= 0) {
-        res.status(404).send({ error: 'no jobs found' });
-      } else {
-
-        switch (req.query.fields) { //return requested fields
-          case 'status':
-            answer.results = jobs.map((job) => { return { id: job.id, status: job.status }; });
-            break;
-          default:
-            answer.results = jobs.map((job) => { return job.id; });
-        }
-        res.status(200).send(answer);
+      if (jobs.length) {
+        debug('Search for jobs has empty result.');
       }
+
+      switch (req.query.fields) { //return requested fields
+        case 'status':
+          answer.results = jobs.map((job) => { return { id: job.id, status: job.status }; });
+          break;
+        default:
+          answer.results = jobs.map((job) => { return job.id; });
+      }
+      res.status(200).send(answer);
+
     }
   });
 };
 
-exports.viewSingle = (req, res) => {
+exports.viewJob = (req, res) => {
   var id = req.params.id;
   var answer = { id };
 
@@ -114,7 +113,7 @@ exports.viewSingle = (req, res) => {
   });
 };
 
-exports.create = (req, res) => {
+exports.createJob = (req, res) => {
   let compendium_id = '';
   let job_id = randomstring.generate(config.id_length);
 

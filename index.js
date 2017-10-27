@@ -211,17 +211,17 @@ function initApp(callback) {
       res.send(indexResponseV1);
     });
 
-    app.get('/api/v1/compendium', controllers.compendium.view);
-    app.get('/api/v1/compendium/:id', controllers.compendium.viewSingle);
-    app.delete('/api/v1/compendium/:id', controllers.compendium.delete);
-    app.get('/api/v1/compendium/:id/jobs', controllers.compendium.viewSingleJobs);
+    app.get('/api/v1/compendium', controllers.compendium.listCompendia);
+    app.get('/api/v1/compendium/:id', controllers.compendium.viewCompendium);
+    app.delete('/api/v1/compendium/:id', controllers.compendium.deleteCompendium);
+    app.get('/api/v1/compendium/:id/jobs', controllers.compendium.viewCompendiumJobs);
 
-    app.get('/api/v1/compendium/:id/metadata', controllers.compendium.viewSingleMetadata);
-    app.put('/api/v1/compendium/:id/metadata', upload.any(), controllers.compendium.updateMetadata);
+    app.get('/api/v1/compendium/:id/metadata', controllers.compendium.viewCompendiumMetadata);
+    app.put('/api/v1/compendium/:id/metadata', upload.any(), controllers.compendium.updateCompendiumMetadata);
 
-    app.get('/api/v1/job', controllers.job.view);
-    app.post('/api/v1/job', upload.any(), controllers.job.create);
-    app.get('/api/v1/job/:id', controllers.job.viewSingle);
+    app.get('/api/v1/job', controllers.job.listJobs);
+    app.post('/api/v1/job', upload.any(), controllers.job.createJob);
+    app.get('/api/v1/job/:id', controllers.job.viewJob);
 
     fulfill();
   });

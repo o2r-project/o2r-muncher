@@ -52,7 +52,7 @@ module.exports.createCompendiumPostRequest = function (path, cookie, type = 'com
     method: 'POST',
     jar: j,
     formData: formData,
-    timeout: 10000
+    timeout: 20000
   };
 
   return (reqParams);

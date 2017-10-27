@@ -111,23 +111,17 @@ docker run --rm --name o2r-platform -p 80:80 -v $(pwd)/test/nginx.conf:/etc/ngin
 # do work, restart respective apps as needed
 ```
 
-Alternatively, start the component under development from your IDE.
+Alternatively, start the component(s) under development from your IDE(s).
 
-Be aware that the different services run on their own port, so it might have to be changed manually when navigating through the API.
+### Authentication and upload with curl
 
-### Authentication and upload
+You can authenticate locally with OAuth via ORCID using the required configuration parameters (see project [reference-implementation](https://github.com/o2r-project/reference-implementation)).
 
-You can authenticate locally with OAuth as well.
-
-To upload compendia, the user must have the appropriate level. If you want to upload from the command line, get the session cookie out of the browser and use it in the curl request:
+If you want to upload from the command line, make sure the account has the required [level](http://o2r.info/o2r-web-api/user/#user-levels) (it should [by default](https://github.com/o2r-project/o2r-bouncer#available-environment-variables)), get the session cookie `connect.sid` content out of the browser and use it in the `curl` request:
 
 ```bash
 curl --cookie connect.sid=s:S1oH7... -F "compendium=@/<path to compendium.zip>;type=application/zip" -F "content_type=compendium"
 ```
-
-See `o2r-bagtainers/README.md` on using the much more convenient *uploader container*.
-
-See the [o2r Web API docs](http://o2r.info/o2r-web-api/user/#user-levels) for information on **user levels**.
 
 ### Create bags for testing
 
@@ -140,7 +134,7 @@ python -c "import bagit; bag = bagit.make_bag('success-validate');"
 # validate bag
 python -c "import bagit; bag = bagit.Bag('success-load-validate'); print('Is Bag valid?', bag.validate());"
 
-# update manifest and validate it with
+# update bag
 python -c "import bagit; bag = bagit.Bag('success-load-validate'); bag.save(manifests=True);"
 ```
 

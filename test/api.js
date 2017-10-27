@@ -27,6 +27,7 @@ const chai = require('chai');
 chai.use(require('chai-datetime'));
 
 require("./setup");
+
 const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 
 describe('API Compendium', () => {
@@ -42,27 +43,29 @@ describe('API Compendium', () => {
   });
 
   describe('GET /api/v1/compendium (no compendium loaded)', () => {
-    it('should respond with HTTP 404 Not Found', (done) => {
-      request(global.test_host + '/api/v1/compendium', (err, res) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 404);
-        done();
-      });
-    });
-    it('should respond with a JSON object', (done) => {
+    it('should respond with HTTP 200 and valid JSON', (done) => {
       request(global.test_host + '/api/v1/compendium', (err, res, body) => {
         assert.ifError(err);
+        assert.equal(res.statusCode, 200);
         assert.isObject(JSON.parse(body), 'returned JSON');
         done();
       });
     });
-    it('should not yet contain array of compendium ids', (done) => {
+
+    it('should respond with an empty results list and no error', (done) => {
       request(global.test_host + '/api/v1/compendium', (err, res, body) => {
         assert.ifError(err);
-        assert.isUndefined(JSON.parse(body).result, 'returned no results');
+        let response = JSON.parse(body);
+        assert.notProperty(response, 'error');
+        assert.property(response, 'results');
+        assert.isArray(response.results);
+        assert.isEmpty(response.results);
         done();
       });
     });
+  });
+
+  describe('GET /api/v1/compendium/1234 (no compendium loaded)', () => {
     it('should return an error message when asking for a non-existing compendium', (done) => {
       request(global.test_host + '/api/v1/compendium/1234', (err, res, body) => {
         assert.ifError(err);
@@ -88,7 +91,9 @@ describe('API Compendium', () => {
         assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
 
-        publishCandidate(compendium_id, cookie, done);
+        publishCandidate(compendium_id, cookie, () => {
+          done();
+        });
       });
     });
 
@@ -107,7 +112,7 @@ describe('API Compendium', () => {
     let compendium_id = '';
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);
-      this.timeout(10000);
+      this.timeout(30000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;

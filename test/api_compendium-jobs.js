@@ -36,18 +36,22 @@ describe('API compendium / jobs', () => {
             db.jobs.drop(function (err, doc) {
                 db.close();
                 done();
+            });
         });
-    });
     });
 
     describe('GET /api/v1/compendium/ sub-endpoint /jobs', () => {
         let compendium_id = '';
         before(function (done) {
+            this.timeout(30000);
             let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
-            this.timeout(10000);
 
             request(req, (err, res, body) => {
-                compendium_id = JSON.parse(body).id;
+                response = JSON.parse(body);
+                assert.ifError(err);
+                assert.notProperty(response, 'error');
+
+                compendium_id = response.id;
                 publishCandidate(compendium_id, cookie_o2r, () => {
                     done();
                 });
@@ -56,17 +60,17 @@ describe('API compendium / jobs', () => {
 
         let job_id;
 
-        it('should respond with HTTP 404 and an error message when there is no job for an existing compendium', (done) => {
+        it('should respond with HTTP 200 and an empty list when there is no job for an existing compendium', (done) => {
             request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
                 assert.ifError(err);
-                assert.equal(res.statusCode, 404);
+                assert.equal(res.statusCode, 200);
                 let response = JSON.parse(body);
-                assert.notProperty(response, 'results');
-                assert.property(response, 'error');
-                assert.include(response.error, 'no job found for');
+                assert.property(response, 'results');
+                assert.notProperty(response, 'error');
+                assert.isEmpty(response.results);
                 done();
             });
-        });
+        }).timeout(10000);
 
         it('should return job ID when starting job', (done) => {
             let j = request.jar();
@@ -91,7 +95,7 @@ describe('API compendium / jobs', () => {
             });
         }).timeout(10000);
 
-        it('should respond with HTTP 200 and one job when one is started', (done) => {
+        it('should respond with HTTP 200 and one job in the list of jobs when one is started', (done) => {
             request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
                 assert.ifError(err);
                 assert.equal(res.statusCode, 200);
@@ -106,7 +110,7 @@ describe('API compendium / jobs', () => {
                 assert.ifError(err);
                 assert.equal(res.statusCode, 404);
                 assert.isUndefined(JSON.parse(body).result, 'returned no results');
-                assert.propertyVal(JSON.parse(body), 'error', 'no compendium with this id');
+                assert.propertyVal(JSON.parse(body), 'error', 'no compendium with id 1234');
                 done();
             });
         });

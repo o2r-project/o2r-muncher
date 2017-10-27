@@ -28,6 +28,7 @@ const createCompendiumPostRequest = require('./util').createCompendiumPostReques
 const publishCandidate = require('./util').publishCandidate;
 
 require("./setup");
+
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 const cookie_admin = 's:hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i.IEPb0lmtGojn2cVk2edRuomIEanX6Ddz87egE5Pe8UM';
@@ -50,9 +51,11 @@ describe('Delete candidate', () => {
   });
 
   describe('as author', () => {
+    let compendium_id = null;
+
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(10000);
+      this.timeout(30000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -72,6 +75,7 @@ describe('Delete candidate', () => {
       }, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 204);
+        assert.notInclude(body, 'error');
         assert.isEmpty(body);
         done();
       });

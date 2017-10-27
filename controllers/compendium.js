@@ -60,7 +60,7 @@ detect_rights = function (user_id, compendium, level) {
   });
 }
 
-exports.viewSingle = (req, res) => {
+exports.viewCompendium = (req, res) => {
   let id = req.params.id;
   debug('[%s] view single compendium', id);
 
@@ -138,7 +138,7 @@ exports.viewSingle = (req, res) => {
     });
 };
 
-exports.delete = (req, res) => {
+exports.deleteCompendium = (req, res) => {
   let id = req.params.id;
   debug('[%s] DELETE compendium', id);
 
@@ -191,7 +191,7 @@ exports.delete = (req, res) => {
   });
 };
 
-exports.viewSingleJobs = (req, res) => {
+exports.viewCompendiumJobs = (req, res) => {
   var id = req.params.id;
   var answer = {};
   var filter = { compendium_id: id };
@@ -202,35 +202,33 @@ exports.viewSingleJobs = (req, res) => {
     if (err) {
       res.status(500).send({ error: 'query failed' });
     } else {
-      var count = jobs.length;
-      if (count <= 0) {
-        Compendium.find({ id }).limit(1).exec((err, compendium) => { // https://blog.serverdensity.com/checking-if-a-document-exists-mongodb-slow-findone-vs-find/
+
+      answer.results = jobs.map(job => {
+        return job.id;
+      });
+
+      if (jobs.length <= 0) {
+        Compendium.find({ id }).limit(1).exec((err, compendium) => {
           if (err) {
-            res.status(404).send({ error: 'no compendium found: ' + err.message });
-          }
-          else {
+            res.status(404).send({ error: 'error finding compendium: ' + err.message });
+          } else {
             if (compendium.length <= 0) {
-              res.status(404).send({ error: 'no compendium with this id' });
+              res.status(404).send({ error: 'no compendium with id ' + id });
             } else {
-              res.status(404).send({ error: 'no job found for compendium ' + id });
+              res.status(200).send(answer);
             }
           }
         });
       } else {
-
-        answer.results = jobs.map(job => {
-          return job.id;
-        });
         res.status(200).send(answer);
       }
     }
   });
 };
 
-exports.view = (req, res) => {
+exports.listCompendia = (req, res) => {
   let filter = {};
 
-  // add query element to filter (used in database search)
   // eslint-disable-next-line no-eq-null, eqeqeq
   if (req.query.job_id != null) {
     filter.job_id = req.query.job_id;
@@ -265,17 +263,14 @@ exports.view = (req, res) => {
         } else {
           var count = comps.length;
           if (count <= 0) {
-            let error = new Error('no compendium found');
-            error.status = 404;
-            reject(error);
-          } else {
-
-            passon.results = comps.map(comp => {
-              return comp.id;
-            });
-
-            resolve(passon);
+            debug('Search turned up empty, no compendium found.');
           }
+
+          passon.results = comps.map(comp => {
+            return comp.id;
+          });
+
+          resolve(passon);
         }
       })
     });
@@ -340,7 +335,7 @@ exports.view = (req, res) => {
 
 };
 
-exports.viewSingleMetadata = (req, res) => {
+exports.viewCompendiumMetadata = (req, res) => {
   let id = req.params.id;
   let answer = { id: id };
 
@@ -458,7 +453,7 @@ brokerMetadata = function (compendium, metadata_dir, metadata_file, mappings) {
                 reject(err);
               } else {
                 debug('[%s] Updated compendium, now is:\n%s', compendium.id, JSON.stringify(doc));
-                fulfill();
+                fulfill(doc);
               }
             });
           });
@@ -472,7 +467,7 @@ brokerMetadata = function (compendium, metadata_dir, metadata_file, mappings) {
   });
 }
 
-exports.updateMetadata = (req, res) => {
+exports.updateCompendiumMetadata = (req, res) => {
   let id = req.params.id;
   let answer = { id: id };
 
@@ -519,7 +514,9 @@ exports.updateMetadata = (req, res) => {
           if (compendium.metadata && compendium.metadata.o2r) {
 
             updateMetadataFile(id, metadata_file, compendium.metadata.o2r)
-              .then(brokerMetadata(compendium, metadata_dir, metadata_file, config.meta.broker.mappings))
+              .then(() => {
+                return brokerMetadata(compendium, metadata_dir, metadata_file, config.meta.broker.mappings);
+              })
               .catch((err) => {
                 debug('[%s] Error during brokering, returning HTTP 500 response: %s', id, err);
                 res.status(500).send({ error: 'Error updating normative metadata file' });

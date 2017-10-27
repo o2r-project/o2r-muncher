@@ -42,42 +42,37 @@ describe('API job steps', () => {
       db.jobs.drop(function (err, doc) {
         db.close;
         done();
+      });
     });
-  });
   });
 
   describe('GET /api/v1/job (with no job started)', () => {
-    it('should respond with HTTP 404 Not Found', (done) => {
-      request(global.test_host + '/api/v1/job', (err, res) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 404);
-        done();
-      });
-    });
-    it('should respond with a JSON object', (done) => {
+    it('should not yet contain array of job ids, but an empty list as valid JSON and HTTP 200', (done) => {
       request(global.test_host + '/api/v1/job', (err, res, body) => {
         assert.ifError(err);
+        assert.equal(res.statusCode, 200);
         assert.isObject(JSON.parse(body), 'returned JSON');
-        done();
-      });
-    });
-    it('should not yet contain array of job ids, but an error', (done) => {
-      request(global.test_host + '/api/v1/job', (err, res, body) => {
-        assert.ifError(err);
-        assert.notProperty(JSON.parse(body), 'results');
-        assert.propertyVal(JSON.parse(body), 'error', 'no jobs found');
+        let response = JSON.parse(body);
+        assert.property(response, 'results');
+        assert.notProperty(response, 'error');
+        assert.isArray(response.results);
+        assert.isEmpty(response.results);
         done();
       });
     });
   });
 
   describe('GET /api/v1/job?compendium_id for non-existing compendium', () => {
-    it('should respond with HTTP 404 and an error message', (done) => {
+    it('should respond with HTTP 200 and and an empty list in JSON', (done) => {
       request(global.test_host + '/api/v1/job?compendium_id=1234', (err, res, body) => {
         assert.ifError(err);
-        assert.equal(res.statusCode, 404);
-        assert.notProperty(JSON.parse(body), 'results');
-        assert.propertyVal(JSON.parse(body), 'error', 'no jobs found');
+        assert.equal(res.statusCode, 200);
+        assert.isObject(JSON.parse(body), 'returned JSON');
+        let response = JSON.parse(body);
+        assert.property(response, 'results');
+        assert.notProperty(response, 'error');
+        assert.isArray(response.results);
+        assert.isEmpty(response.results);
         done();
       });
     });
@@ -321,7 +316,7 @@ describe('API job steps', () => {
   });
 
   describe('GET /api/v1/job with multiple jobs overall', () => {
-    
+
     it('should contain fewer results if start is provided', (done) => {
       request(global.test_host + '/api/v1/job', (err, res, body) => {
         assert.ifError(err);
@@ -338,11 +333,16 @@ describe('API job steps', () => {
       });
     });
 
-    it('should contain no results but an error if too large start parameter is provided', (done) => {
+    it('should contain no results but an empty list (valid JSON, HTTP 200) if too large start parameter is provided', (done) => {
       request(global.test_host + '/api/v1/job?start=999', (err, res, body) => {
         assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        assert.isObject(JSON.parse(body), 'returned JSON');
         let response = JSON.parse(body);
-        assert.propertyVal(response, 'error', 'no jobs found');
+        assert.property(response, 'results');
+        assert.notProperty(response, 'error');
+        assert.isArray(response.results);
+        assert.isEmpty(response.results);
         done();
       });
     });

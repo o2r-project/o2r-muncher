@@ -30,7 +30,7 @@ const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9y
 const cookie_uploader = 's:lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO.0iapdV1c85wc5NO3d3h+svorp3Tm56cfqRhhpFJZBnk';
 
 
-describe.only('API job returned fields', () => {
+describe('API job returned fields', () => {
   before(function (done) {
     var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
@@ -47,11 +47,9 @@ describe.only('API job returned fields', () => {
     // upload 1st compendium with final job status "success"
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
-      this.timeout(60000);
+      this.timeout(30000);
 
       request(req, (err, res, body) => {
-        console.log('got response: ' + body);
-
         assert.equal(res.statusCode, 200);
         assert.property(JSON.parse(body), 'id');
         let compendium_id = JSON.parse(body).id;
