@@ -261,8 +261,8 @@ describe('API job steps', () => {
     let job_id = '';
 
     before(function (done) {
+      this.timeout(20000);
       let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
-      this.timeout(10000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -473,7 +473,9 @@ describe('API job steps', () => {
       });
     }).timeout(sleepSecs * 1000 * 2);
 
-    it('should fail step "image_execute" with a statuscode "1"', (done) => {
+    it('should fail step "image_execute" with a status code "1" __after some more waiting__', (done) => {
+      sleep.sleep(sleepSecs);
+
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
@@ -481,7 +483,7 @@ describe('API job steps', () => {
         assert.propertyVal(response.steps.image_execute, 'statuscode', 1);
         done();
       });
-    });
+    }).timeout(sleepSecs * 1000 * 2);
 
     it('should complete step "cleanup"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {

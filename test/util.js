@@ -52,7 +52,7 @@ module.exports.createCompendiumPostRequest = function (path, cookie, type = 'com
     method: 'POST',
     jar: j,
     formData: formData,
-    timeout: 20000
+    timeout: 30000
   };
 
   return (reqParams);
@@ -84,6 +84,7 @@ module.exports.publishCandidate = function (compendium_id, cookie, done) {
       console.error('error publishing candidate: %s', err);
     } else if(response.error) {
       console.error('error publishing candidate: %s', JSON.stringify(response));
+      throw new Error('Could not publish candidate, aborting test.');
     } else {
       updateMetadata.json = { o2r: response.metadata.o2r };
 

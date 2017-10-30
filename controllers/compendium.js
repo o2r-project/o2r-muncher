@@ -399,11 +399,13 @@ updateMetadataFile = function (id, file, metadata) {
 reloadMetadataFromFile = function (id, metadata_file, targetElement) {
   return new Promise((fulfill, reject) => {
     // read mapped metadata for saving to DB
+    debug('[%s] Reading mapping file: %s', id, metadata_file);
     fs.readFile(metadata_file, (err, data) => {
       if (err) {
         debug('[%s] Error reading mapping file: %s', id, err);
         reject(err);
       } else {
+        debug('[%s] Read file %s and stored contents to be saved at', id, metadata_file, targetElement);
         fulfill({
           targetElement: targetElement,
           metadata: JSON.parse(data),
@@ -441,7 +443,7 @@ brokerMetadata = function (compendium, metadata_dir, metadata_file, mappings) {
             reloadResults.forEach((result) => {
               objectPath.set(compendium.metadata,
                 result.targetElement,
-                result.data);
+                result.metadata);
             });
             debug('[%s] Reloaded metadata from %s files:', compendium.id, reloadResults.length, reloadResults.map(obj => { return obj.file }).join(', '));
 

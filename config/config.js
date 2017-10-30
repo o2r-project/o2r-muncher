@@ -94,7 +94,7 @@ c.bagtainer.docker.create_options = {
   Memory: 1073741824, // 1G
   MemorySwap: 2147483648, // double of 1G
   NetworkMode: 'none',
-  User: 'o2r', // could be left away because of USER o2r command in o2r-meta's Dockerfile, but better safe than sorry.
+  User: '1000',
   Rm: true
 };
 // https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#start-a-container
