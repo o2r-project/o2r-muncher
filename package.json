@@ -43,6 +43,7 @@
     "randomstring": "^1.1.5",
     "starwars": "1.0.0",
     "tar": "^4.0.2",
+    "write-yaml": "^1.0.0",
     "yamljs": "^0.3.0",
     "yn": "^2.0.0"
   },

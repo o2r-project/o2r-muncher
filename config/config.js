@@ -66,17 +66,20 @@ c.user.level.view_candidates = 500;
 
 // bagtainer configuration
 c.bagtainer = {};
-c.bagtainer.supportedVersions = ['0.1', '1'];
-c.bagtainer.payloadDirectory = '/data';
+c.bagtainer.spec_version = {};
+c.bagtainer.spec_version.supported = ['0.1', '1'];
+c.bagtainer.spec_version.default = '1';
 c.bagtainer.configFile = 'erc.yml';
 c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
 c.bagtainer.keepImages = true; // required for image download!
 c.bagtainer.validateBagBeforeExecute = true; // bag validation will fail, gut useful to highlight the changes in compendium
 c.bagtainer.validateCompendiumBeforeExecute = true;
 c.bagtainer.failOnValidationError = false; // muncher never updates the bag
+c.bagtainer.manifestFile = 'Dockerfile';
 
 c.bagit = {};
 c.bagit.detectionFileName = 'bagit.txt';
+c.bagit.payloadDirectory = '/data';
 c.bagit.validateFast = false;
 c.bagit.failOnValidationError = {};
 c.bagit.failOnValidationError.execute = false;

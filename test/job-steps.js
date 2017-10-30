@@ -35,15 +35,21 @@ const sleepSecs = 10;
 let Docker = require('dockerode');
 let docker = new Docker();
 
-describe('API job steps', () => {
+describe.only('API job steps', () => {
+  var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
+
   before((done) => {
-    var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) {
-        db.close;
         done();
       });
     });
+  });
+
+  after((done) => {
+    db.close;
+    console.log('closed');
+    done();
   });
 
   describe('GET /api/v1/job (with no job started)', () => {
@@ -245,8 +251,7 @@ describe('API job steps', () => {
           jar: j,
           formData: {
             compendium_id: compendium_id
-          },
-          timeout: 1000
+          }
         }, (err, res, body) => {
           assert.ifError(err);
           let response = JSON.parse(body);
@@ -254,7 +259,7 @@ describe('API job steps', () => {
           done();
         });
       });
-    });
+    }).timeout(20000);
   });
 
   describe('EXECUTION step_validate_compendium', () => {
@@ -358,6 +363,140 @@ describe('API job steps', () => {
     });
   });
 
+  describe.only('EXECUTION configuration file generation', () => {
+
+    it('should skip step (and previous step) for rmd-configuration-file, but complete following steps', (done) => {
+      let req = createCompendiumPostRequest('./test/workspace/rmd-configuration-file', cookie_o2r, 'workspace');
+      request(req, (err, res, body) => {
+        assert.ifError(err);
+        let compendium_id = JSON.parse(body).id;
+
+        publishCandidate(compendium_id, cookie_o2r, () => {
+          startJob(compendium_id, id => {
+            let job_id = id;
+            sleep.sleep(sleepSecs);
+
+            request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+              assert.ifError(err);
+              let response = JSON.parse(body);
+
+              assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
+              assert.propertyVal(response.steps.generate_configuration, 'status', 'skipped');
+              assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
+              assert.propertyVal(response.steps.image_prepare, 'status', 'success');
+              assert.propertyVal(response.steps.image_build, 'status', 'success');
+              assert.propertyVal(response.steps.image_execute, 'status', 'success');
+              assert.propertyVal(response.steps.cleanup, 'status', 'success');
+
+              done();
+            });
+          });
+        });
+      });
+    }).timeout(sleepSecs * 1000 * 3);
+
+    it('should complete step "generate_configuration" and skip previous steps for minimal-rmd-data', (done) => {
+      let req = createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace');
+      request(req, (err, res, body) => {
+        assert.ifError(err);
+        let compendium_id = JSON.parse(body).id;
+
+        publishCandidate(compendium_id, cookie_o2r, () => {
+          startJob(compendium_id, id => {
+            let job_id = id;
+
+            sleep.sleep(sleepSecs);
+
+            request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+              assert.ifError(err);
+              let response = JSON.parse(body);
+
+              assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
+              assert.propertyVal(response.steps.validate_compendium, 'status', 'skipped');
+              assert.propertyVal(response.steps.generate_configuration, 'status', 'success');
+
+              done();
+            });
+          });
+        });
+      });
+    }).timeout(sleepSecs * 1000 * 2);
+
+  });
+
+  describe('EXECUTION Dockerfile generation for workspace minimal-rmd-data', () => {
+    let job_id = '';
+    let compendium_id = '';
+
+    before(function (done) {
+      this.timeout(20000);
+      let req = createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace');
+
+      request(req, (err, res, body) => {
+        compendium_id = JSON.parse(body).id;
+        publishCandidate(compendium_id, cookie_o2r, () => {
+          startJob(compendium_id, id => {
+            job_id = id;
+            done();
+          });
+        });
+      });
+    });
+
+    it('should skip previous steps __after some waiting__', (done) => {
+      sleep.sleep(sleepSecs * 2);
+
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
+        assert.propertyVal(response.steps.validate_compendium, 'status', 'skipped');
+        done();
+      });
+    }).timeout(sleepSecs * 1000 * 3);
+
+    it('should complete step "generate_manifest"', (done) => {
+      sleep.sleep(sleepSecs);
+
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.generate_manifest, 'status', 'success');
+        done();
+      });
+    }).timeout(sleepSecs * 1000 * 2);
+
+    it('file listing should include manifest file', (done) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.include(body, 'Dockerfile');
+        done();
+      });
+    });
+
+    it('manifest file should include proper content', function (done) {
+      this.skip();
+    });
+
+    it('should complete build, execute, and cleanup after some time', function (done) {
+      sleep.sleep(sleepSecs);
+
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.image_build, 'status', 'success');
+        assert.propertyVal(response.steps.image_execute, 'status', 'success');
+        assert.propertyVal(response.steps.cleanup, 'status', 'success');
+        done();
+      });
+    }).timeout(sleepSecs * 1000 * 2);
+
+  });
+
   describe('EXECUTION step_image_prepare', () => {
     let job_id = '';
 
@@ -444,7 +583,7 @@ describe('API job steps', () => {
       });
     });
 
-    it('should complete step all previous steps __after some waiting__', (done) => {
+    it('should complete all previous steps __after some waiting__', (done) => {
       sleep.sleep(sleepSecs * 2);
 
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
@@ -452,7 +591,7 @@ describe('API job steps', () => {
         let response = JSON.parse(body);
 
         if (config.bagtainer.validateBagBeforeExecute)
-          assert.propertyVal(response.steps.validate_bag, 'status', 'success');
+          assert.propertyVal(response.steps.validate_bag, 'status', 'failure', 'bag validation should fail because of added metadata files');
         else
           assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
 
@@ -522,8 +661,8 @@ describe('API job steps', () => {
     let job_id = '';
 
     before(function (done) {
+      this.timeout(20000);
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
-      this.timeout(10000);
 
       request(req, (err, res, body) => {
         let compendium_id = JSON.parse(body).id;
@@ -536,7 +675,7 @@ describe('API job steps', () => {
       });
     });
 
-    it('should complete step all previous steps __after some waiting__', (done) => {
+    it('should complete step all previous steps (except bag validation) __after some waiting__', (done) => {
       sleep.sleep(sleepSecs);
 
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
@@ -544,7 +683,7 @@ describe('API job steps', () => {
         let response = JSON.parse(body);
 
         if (config.bagtainer.validateBagBeforeExecute)
-          assert.propertyVal(response.steps.validate_bag, 'status', 'success');
+          assert.propertyVal(response.steps.validate_bag, 'status', 'failure', 'bag validation should fail because of added metadata files');
         else
           assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
 

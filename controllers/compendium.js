@@ -506,7 +506,7 @@ exports.updateCompendiumMetadata = (req, res) => {
           let compendium_path = path.join(config.fs.compendium, id);
           let metadata_dir;
           if (bagit.compendiumIsBag(id)) {
-            metadata_dir = path.join(compendium_path, config.bagtainer.payloadDirectory, config.meta.dir);
+            metadata_dir = path.join(compendium_path, config.bagit.payloadDirectory, config.meta.dir);
           } else {
             metadata_dir = path.join(compendium_path, config.meta.dir);
           }

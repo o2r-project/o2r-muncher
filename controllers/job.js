@@ -19,7 +19,6 @@ const config = require('../config/config');
 const debug = require('debug')('job');
 const randomstring = require('randomstring');
 const fs = require('fs');
-const fse = require('fs-extra');
 const path = require('path');
 
 const dirTree = require('directory-tree');
@@ -135,8 +134,8 @@ exports.createJob = (req, res) => {
     res.status(400).send({ error: 'compendium_id required' });
   }
 
-  // check compendium existence
-  Compendium.findOne({ id: compendium_id }).select('id candidate').exec((err, compendium) => {
+  // check compendium existence and load its metadata
+  Compendium.findOne({ id: compendium_id }).select('id candidate metadata bag compendium').exec((err, compendium) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (err || compendium == null) {
       debug('[%s] compendium "%s" not found, cannot create job', job_id, compendium_id);
@@ -159,21 +158,10 @@ exports.createJob = (req, res) => {
             debug('[%s] error starting job for compendium %s and user %s', job_id, compendium.id, req.user.orcid);
             throw new Error('error creating job');
           } else {
-            var job_path = path.join(config.fs.job, job_id);
-            var compendium_path = path.join(config.fs.compendium, compendium.id);
-            try {
-              fse.copySync(compendium_path, job_path); // throws error if it does not exist
-            } catch (err) {
-              debug('[%s] error copying compendium files for job: %s', err);
-              res.status(500).send({ error: 'internal error' });
-              return;
-            }
-
-            var execution = new Executor(job_id, config.fs.job);
+            var execution = new Executor(job_id, compendium);
             execution.execute();
             res.status(200).send({ job_id });
-            debug("[%s] Request complete and response sent; job executes compendium %s and is saved to database; job files are at %s",
-              job_id, compendium_id, job_path);
+            debug("[%s] Request complete and response sent; job for compendium %s started.", job_id, compendium_id);
           }
         });
       }
