@@ -25,7 +25,7 @@ const startJob = require('./util').startJob;
 const mongojs = require('mongojs');
 const fs = require('fs');
 const sleep = require('sleep');
-const unamecall = require('node-uname');
+const unameCall = require('node-uname');
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
@@ -719,7 +719,7 @@ describe.only('API job steps', () => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
-        let uname = unamecall();
+        let uname = unameCall();
         assert.include(response.steps.image_execute.text, uname.machine);
         assert.include(response.steps.image_execute.text, uname.release);
         assert.include(response.steps.image_execute.text, uname.sysname);
