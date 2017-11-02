@@ -35,7 +35,7 @@ const sleepSecs = 10;
 let Docker = require('dockerode');
 let docker = new Docker();
 
-describe.only('API job steps', () => {
+describe('API job steps', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
   before((done) => {
@@ -363,7 +363,7 @@ describe.only('API job steps', () => {
     });
   });
 
-  describe.only('EXECUTION configuration file generation', () => {
+  describe('EXECUTION configuration file generation', () => {
 
     it('should skip step (and previous step) for rmd-configuration-file, but complete following steps', (done) => {
       let req = createCompendiumPostRequest('./test/workspace/rmd-configuration-file', cookie_o2r, 'workspace');
@@ -380,13 +380,13 @@ describe.only('API job steps', () => {
               assert.ifError(err);
               let response = JSON.parse(body);
 
-              assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
-              assert.propertyVal(response.steps.generate_configuration, 'status', 'skipped');
-              assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
-              assert.propertyVal(response.steps.image_prepare, 'status', 'success');
-              assert.propertyVal(response.steps.image_build, 'status', 'success');
-              assert.propertyVal(response.steps.image_execute, 'status', 'success');
-              assert.propertyVal(response.steps.cleanup, 'status', 'success');
+              assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'skip validate bag');
+              assert.propertyVal(response.steps.generate_configuration, 'status', 'skipped', 'skip generate configuration because there is one');
+              assert.propertyVal(response.steps.validate_compendium, 'status', 'success', 'succeed validate compendium');
+              assert.propertyVal(response.steps.image_prepare, 'status', 'success', 'succeed image prepare');
+              assert.propertyVal(response.steps.image_build, 'status', 'success', 'succeed image build');
+              assert.propertyVal(response.steps.image_execute, 'status', 'success', 'succeed image execute');
+              assert.propertyVal(response.steps.cleanup, 'status', 'success', 'succeed cleanup');
 
               done();
             });
@@ -411,9 +411,10 @@ describe.only('API job steps', () => {
               assert.ifError(err);
               let response = JSON.parse(body);
 
-              assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
-              assert.propertyVal(response.steps.validate_compendium, 'status', 'skipped');
-              assert.propertyVal(response.steps.generate_configuration, 'status', 'success');
+              assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'skip validate bag');
+              assert.propertyVal(response.steps.validate_compendium, 'status', 'success', 'succeed validate compendium');
+              assert.propertyVal(response.steps.generate_configuration, 'status', 'success', 'succeed generate configuration');
+              assert.propertyVal(response.steps.check, 'status', 'success', 'succeed check');
 
               done();
             });
@@ -444,21 +445,19 @@ describe.only('API job steps', () => {
     });
 
     it('should skip previous steps __after some waiting__', (done) => {
-      sleep.sleep(sleepSecs * 2);
+      sleep.sleep(sleepSecs);
 
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
         assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
-        assert.propertyVal(response.steps.validate_compendium, 'status', 'skipped');
+        assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
         done();
       });
     }).timeout(sleepSecs * 1000 * 3);
 
     it('should complete step "generate_manifest"', (done) => {
-      sleep.sleep(sleepSecs);
-
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
@@ -467,23 +466,33 @@ describe.only('API job steps', () => {
       });
     }).timeout(sleepSecs * 1000 * 2);
 
-    it('file listing should include manifest file', (done) => {
-      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+    it('show have the manifest file in the job files', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
-        assert.include(body, 'Dockerfile');
+        filePaths = response.files.children.map(elem => { return elem.path; });
+        assert.include(filePaths, '/api/v1/job/' + job_id + '/data/Dockerfile');
         done();
       });
     });
 
-    it('manifest file should include proper content', function (done) {
+    it('should have the manifest file in the compendium files', (done) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        filePaths = response.files.children.map(elem => { return elem.path; });
+        assert.include(filePaths, '/api/v1/compendium/' + compendium_id + '/data/Dockerfile');
+        done();
+      });
+    });
+
+    it('should have the expected content in the manifest file', function (done) {
       this.skip();
     });
 
-    it('should complete build, execute, and cleanup after some time', function (done) {
-      sleep.sleep(sleepSecs);
-
+    it('should complete build, execute, and cleanup', function (done) {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);

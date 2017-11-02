@@ -76,6 +76,8 @@ c.bagtainer.validateBagBeforeExecute = true; // bag validation will fail, gut us
 c.bagtainer.validateCompendiumBeforeExecute = true;
 c.bagtainer.failOnValidationError = false; // muncher never updates the bag
 c.bagtainer.manifestFile = 'Dockerfile';
+c.bagtainer.mainFilePath = 'metadata.o2r.mainfile';
+c.bagtainer.displayFilePath = 'metadata.o2r.displayfile';
 
 c.bagit = {};
 c.bagit.detectionFileName = 'bagit.txt';

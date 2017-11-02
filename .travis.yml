@@ -13,6 +13,7 @@ install:
 before_script:
   - docker run --name mongodb -d -p 27017:27017 mongo:3.4
   - docker run --name testloader -d -p 8088:8088 --link mongodb:mongodb -v $HOME:/tmp/o2r -e LOADER_MONGODB=mongodb://mongodb:27017 -e DEBUG=* o2rproject/o2r-loader:latest
+  - docker run --name testtransporter -d -p 8081:8081 -v $HOME:/tmp/o2r -e TRANSPORTER_MONGODB=mongodb://mongodb:27017 -e DEBUG=* o2rproject/o2r-transporter:latest
   - docker build --tag muncher .
   - docker run --name testmuncher -d -p 8080:8080 --link mongodb:mongodb -v $HOME:/tmp/o2r -v /var/run/docker.sock:/var/run/docker.sock -e MUNCHER_MONGODB=mongodb://mongodb:27017 -e DEBUG=muncher,muncher:* muncher
   - sleep 10

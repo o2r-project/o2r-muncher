@@ -84,7 +84,7 @@ exports.viewJob = (req, res) => {
 
   Job.findOne({ id }).exec((err, job) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
-    if (err || job == null) { // intentially loose comparison
+    if (err || job == null) { // intentionally loose comparison
       res.status(404).send({ error: 'no job with this id' });
     } else {
       debug(job);

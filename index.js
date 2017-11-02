@@ -29,7 +29,7 @@ const Docker = require('dockerode');
 
 // handle unhandled rejections
 process.on('unhandledRejection', (reason) => {
-  debug('Unhandled rejection: %s'.red, reason);
+  debug('Unhandled rejection: %s\n%s'.red, reason, reason.stack);
 });
 
 // mongo connection
