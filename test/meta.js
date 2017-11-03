@@ -34,7 +34,7 @@ describe('Reading compendium metadata', () => {
   let compendium_id = '';
   before(function (done) {
     let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-    this.timeout(10000);
+    this.timeout(20000);
 
     request(req, (err, res, body) => {
       compendium_id = JSON.parse(body).id;
@@ -100,9 +100,9 @@ describe('Reading compendium metadata', () => {
       done();
     });
 
-    it('should contain non-empty paperSource', (done) => {
-      assert.property(metadata, 'paperSource');
-      assert.propertyVal(metadata, 'paperSource', main_file);
+    it('should contain non-empty main file', (done) => {
+      assert.property(metadata, 'mainfile');
+      assert.propertyVal(metadata, 'mainfile', main_file);
       done();
     });
 
@@ -144,7 +144,7 @@ describe('Reading compendium metadata', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(10000);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         metadata_uri = global.test_host + '/api/v1/compendium/' + JSON.parse(body).id + '/metadata';
@@ -233,7 +233,7 @@ describe('Updating compendium metadata', () => {
     let compendium_id = '';
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(10000);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -292,7 +292,7 @@ describe('Updating compendium metadata', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(10000);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -336,7 +336,7 @@ describe('Updating compendium metadata', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(10000);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -400,7 +400,7 @@ describe('Updating compendium metadata', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(10000);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -449,7 +449,7 @@ describe('Updating compendium metadata', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(10000);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -496,7 +496,7 @@ describe('Updating compendium metadata', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(10000);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -549,7 +549,7 @@ describe('Updating workspace metadata', () => {
 
   before(function (done) {
     let req = createCompendiumPostRequest('./test/erc/metatainer/data', cookie_o2r, 'workspace');
-    this.timeout(10000);
+    this.timeout(20000);
 
     request(req, (err, res, body) => {
       compendium_id = JSON.parse(body).id;

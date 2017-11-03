@@ -50,30 +50,55 @@ exports.listJobs = (req, res) => {
     filter.status = req.query.status;
   }
 
-  switch (req.query.fields) { //add requested fields (status, ...) to db query
-    case null:
-      break;
-    case 'status': // select id and status in query
-      fields += ' status';
+  let requestedFields = [];
+  if (req.query.fields != null) {
+    requestedFields = req.query.fields.split(',').map(f => { return f.trim(); });
+
+    try {
+      requestedFields.forEach((elem) => {
+        switch (elem) { // add requested fields (status, ...) to db query
+          case null:
+            break;
+          case 'status': // select id and status in query
+            fields += ' status';
+            break;
+          case 'user':
+            fields += ' user';
+            break;
+          case '':
+            break;
+          default:
+            e = new Error('unsupported field');
+            e.field = elem;
+            throw e;
+        }
+      });
+    } catch (e) {
+      res.status(400).send({ error: 'unsupported field requested: ' + e.field });
+      return;
+    }
+
+    fields = fields.trim();
   }
 
   Job.find(filter).select(fields).skip(start).limit(limit).exec((err, jobs) => {
     if (err) {
       res.status(500).send({ error: 'job query failed' });
     } else {
-      if (jobs.length) {
+      if (jobs.length < 1) {
         debug('Search for jobs has empty result.');
       }
 
-      switch (req.query.fields) { //return requested fields
-        case 'status':
-          answer.results = jobs.map((job) => { return { id: job.id, status: job.status }; });
-          break;
-        default:
-          answer.results = jobs.map((job) => { return job.id; });
-      }
-      res.status(200).send(answer);
+      answer.results = jobs.map((job) => {
+        jobItem = { id: job.id };
+        requestedFields.forEach((elem) => {
+          jobItem[elem] = job[elem];
+        });
 
+        return jobItem;
+      });
+
+      res.status(200).send(answer);
     }
   });
 };

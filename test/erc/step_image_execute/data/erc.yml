@@ -1,3 +1,5 @@
 ---
 id: KIbebWnPlx
 spec_version: "1"
+display: "test.txt"
+main: "doc.Rmd"

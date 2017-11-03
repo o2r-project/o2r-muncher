@@ -114,7 +114,7 @@ describe('API job steps', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
-      this.timeout(10000);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -511,7 +511,7 @@ describe('API job steps', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_prepare', cookie_o2r);
-      this.timeout(10000);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         let compendium_id = JSON.parse(body).id;
@@ -579,7 +579,7 @@ describe('API job steps', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_build', cookie_o2r);
-      this.timeout(10000);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         let compendium_id = JSON.parse(body).id;

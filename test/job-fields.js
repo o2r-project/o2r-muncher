@@ -30,7 +30,7 @@ const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9y
 const cookie_uploader = 's:lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO.0iapdV1c85wc5NO3d3h+svorp3Tm56cfqRhhpFJZBnk';
 
 
-describe('API job returned fields', () => {
+describe('returned fields in job listing', () => {
   before(function (done) {
     var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
@@ -41,7 +41,7 @@ describe('API job returned fields', () => {
     });
   });
 
-  describe('job listing additional fields', () => {
+  describe('status and user fields', () => {
     let job_id = '';
 
     // upload 1st compendium with final job status "success"
@@ -75,32 +75,118 @@ describe('API job returned fields', () => {
             assert.property(response, 'job_id');
             job_id = response.job_id;
 
-            sleep.sleep(10); // wait for the job to finish
+            sleep.sleep(15); // wait for the job to finish
             done();
           });
         });
       });
+
+      it('should show the status of a job in the list view', (done) => {
+        request(global.test_host + '/api/v1/job/?fields=status', (err, res, body) => {
+          assert.ifError(err);
+          let response = JSON.parse(body);
+          assert.equal(res.statusCode, 200);
+          assert.isArray(response.results);
+          assert.property(response.results[0], 'id');
+          assert.property(response.results[0], 'status');
+          assert.notProperty(response.results[0], 'user');
+          assert.propertyVal(response.results[0], 'status', 'success');
+          done();
+        });
+      }).timeout(5000);
+
+      it('should show the user of a job in the list view', (done) => {
+        request(global.test_host + '/api/v1/job/?fields=user', (err, res, body) => {
+          assert.ifError(err);
+          let response = JSON.parse(body);
+          assert.equal(res.statusCode, 200);
+          assert.isArray(response.results);
+          assert.property(response.results[0], 'id');
+          assert.property(response.results[0], 'user');
+          assert.propertyVal(response.results[0], 'status', 'success');
+          done();
+        });
+      }).timeout(5000);
+
+      it('should show both user and status of a job in the list view', (done) => {
+        request(global.test_host + '/api/v1/job/?fields=user,status', (err, res, body) => {
+          assert.ifError(err);
+          let response = JSON.parse(body);
+          assert.equal(res.statusCode, 200);
+          assert.isArray(response.results);
+          assert.property(response.results[0], 'id');
+          assert.property(response.results[0], 'user');
+          assert.property(response.results[0], 'status');
+          assert.propertyVal(response.results[0], 'status', 'success');
+          done();
+        });
+      }).timeout(5000);
+
+      it('should show both status and user of a job in the list view', (done) => {
+        request(global.test_host + '/api/v1/job/?fields=status,user', (err, res, body) => {
+          assert.ifError(err);
+          let response = JSON.parse(body);
+          assert.equal(res.statusCode, 200);
+          assert.isArray(response.results);
+          assert.property(response.results[0], 'id');
+          assert.property(response.results[0], 'status');
+          assert.property(response.results[0], 'user');
+          assert.propertyVal(response.results[0], 'status', 'success');
+          done();
+        });
+      }).timeout(5000);
     });
 
-    it('should show the status of a job already in the list view', (done) => {
-      request(global.test_host + '/api/v1/job/?fields=status', (err, res, body) => {
+    it('should handle spaces in the fields list', (done) => {
+      request(global.test_host + '/api/v1/job/?fields= status , user', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.equal(res.statusCode, 200);
         assert.isArray(response.results);
         assert.property(response.results[0], 'id');
         assert.property(response.results[0], 'status');
+        assert.property(response.results[0], 'user');
         assert.propertyVal(response.results[0], 'status', 'success');
         done();
       });
     }).timeout(5000);
+  });
 
-    it('should not return a field "foo"', (done) => {
+  describe('unsupported field requests', () => {
+    it('should return error when asking for an unsupported field "foo"', (done) => {
       request(global.test_host + '/api/v1/job/?fields=foo', (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 400);
+        let response = JSON.parse(body);
+        assert.property(response, 'error');
+        assert.notProperty(response, 'results');
+        done();
+      });
+    });
+
+    it('should ignore empty fields filter', (done) => {
+      request(global.test_host + '/api/v1/job/?fields=', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
         let response = JSON.parse(body);
-        assert.isArray(response.results);
+        assert.notProperty(response, 'error');
+        assert.property(response, 'results');
+        assert.property(response.results[0], 'id');
+        assert.notProperty(response.results[0], 'user');
+        assert.notProperty(response.results[0], 'status');
+        done();
+      });
+    });
+
+    it('should ignore empty list in fields filter', (done) => {
+      request(global.test_host + '/api/v1/job/?fields=, ,', (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.notProperty(response, 'error');
+        assert.property(response, 'results');
+        assert.property(response.results[0], 'id');
+        assert.notProperty(response.results[0], 'user');
         assert.notProperty(response.results[0], 'status');
         done();
       });
