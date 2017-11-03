@@ -35,20 +35,17 @@ const sleepSecs = 10;
 let Docker = require('dockerode');
 let docker = new Docker();
 
-describe.only('API job steps', () => {
+describe('API job steps', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
   before((done) => {
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) {
+        sleep.sleep(1)
+        db.close;
         done();
       });
     });
-  });
-
-  after((done) => {
-    db.close;
-    done();
   });
 
   describe('GET /api/v1/job (with no job started)', () => {
@@ -261,6 +258,75 @@ describe.only('API job steps', () => {
     }).timeout(20000);
   });
 
+  describe('EXECUTION step_validate_bag', () => {
+    let job_id = '';
+
+    before(function (done) {
+      this.timeout(20000);
+      let req = createCompendiumPostRequest('./test/erc/step_validate_bag', cookie_o2r);
+
+      request(req, (err, res, body) => {
+        compendium_id = JSON.parse(body).id;
+        publishCandidate(compendium_id, cookie_o2r, () => {
+          startJob(compendium_id, id => {
+            job_id = id;
+            sleep.sleep(sleepSecs);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should skip step "validate_bag"', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
+        done();
+      });
+    });
+
+    it('should fail step "validate_compendium"', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.validate_compendium, 'status', 'failure');
+        done();
+      });
+    });
+
+    it('should have remaining steps "queued"', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.generate_configuration, 'status', 'queued');
+        assert.propertyVal(response.steps.image_prepare, 'status', 'queued');
+        assert.propertyVal(response.steps.image_build, 'status', 'queued');
+        assert.propertyVal(response.steps.image_execute, 'status', 'queued');
+        assert.propertyVal(response.steps.check, 'status', 'queued');
+        done();
+      });
+    });
+
+    it('should complete step "cleanup"', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.cleanup, 'status', 'success');
+        done();
+      });
+    });
+
+    it('should have overall status "failure"', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response, 'status', 'failure');
+        done();
+      });
+    });
+  });
+
   describe('EXECUTION step_validate_compendium', () => {
     let job_id = '';
 
@@ -273,38 +339,40 @@ describe.only('API job steps', () => {
         publishCandidate(compendium_id, cookie_o2r, () => {
           startJob(compendium_id, id => {
             job_id = id;
+            sleep.sleep(sleepSecs);
             done();
           });
         });
       });
     });
 
-    it('should complete step "validate_compendium" __after some waiting__', (done) => {
-      sleep.sleep(sleepSecs);
-
+    it('should complete step "validate_compendium"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
         done();
       });
-    }).timeout(sleepSecs * 1000 * 2);
+    });
 
-    it('should fail step "image_prepare"', (done) => {
+    it('should skip steps "validate_bag" and "generate_configuration"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.propertyVal(response.steps.image_prepare, 'status', 'failure');
+        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
+        assert.propertyVal(response.steps.generate_configuration, 'status', 'skipped');
         done();
       });
     });
 
-    it('should list other image steps as queued', (done) => {
+    it('should complete step "image_prepare", "image_build", "image_execute", and "check"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.propertyVal(response.steps.image_build, 'status', 'queued');
-        assert.propertyVal(response.steps.image_execute, 'status', 'queued');
+        assert.propertyVal(response.steps.image_prepare, 'status', 'success');
+        assert.propertyVal(response.steps.image_build, 'status', 'success');
+        assert.propertyVal(response.steps.image_execute, 'status', 'success');
+        assert.propertyVal(response.steps.check, 'status', 'success');
         done();
       });
     });
@@ -314,6 +382,15 @@ describe.only('API job steps', () => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.cleanup, 'status', 'success');
+        done();
+      });
+    });
+
+    it('should complete overall', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response, 'status', 'success');
         done();
       });
     });
@@ -578,51 +655,52 @@ describe.only('API job steps', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_build', cookie_o2r);
-      this.timeout(20000);
+      this.timeout(30000);
 
       request(req, (err, res, body) => {
         let compendium_id = JSON.parse(body).id;
         publishCandidate(compendium_id, cookie_o2r, () => {
           startJob(compendium_id, id => {
             job_id = id;
+            sleep.sleep(sleepSecs);
             done();
           });
         });
       });
     });
 
-    it('should complete all previous steps __after some waiting__', (done) => {
-      sleep.sleep(sleepSecs * 2);
-
+    it('should complete all previous steps', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
-        if (config.bagtainer.validateBagBeforeExecute)
-          assert.propertyVal(response.steps.validate_bag, 'status', 'failure', 'bag validation should fail because of added metadata files');
-        else
-          assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
-
+        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'bag validation should fail with "skipped" because of added metadata files');
         assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
         assert.propertyVal(response.steps.image_prepare, 'status', 'success');
         done();
       });
     }).timeout(sleepSecs * 1000 * 3);
 
-    it('should complete step "image_build" __after some more waiting__', (done) => {
-      sleep.sleep(sleepSecs);
+    it('should skip steps "generate_configuration" and "generate_manifest"', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.generate_configuration, 'status', 'skipped');
+        assert.propertyVal(response.steps.generate_manifest, 'status', 'skipped');
+        done();
+      });
+    });
 
+    it('should complete step "image_build"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.image_build, 'status', 'success');
         done();
       });
-    }).timeout(sleepSecs * 1000 * 2);
+    });
 
-    it('should fail step "image_execute" with a status code "1" __after some more waiting__', (done) => {
-      sleep.sleep(sleepSecs);
-
+    it('should fail step "image_execute" with a status code "1"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
@@ -691,7 +769,7 @@ describe.only('API job steps', () => {
         let response = JSON.parse(body);
 
         if (config.bagtainer.validateBagBeforeExecute)
-          assert.propertyVal(response.steps.validate_bag, 'status', 'failure', 'bag validation should fail because of added metadata files');
+          assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'skipped bag validation because of added metadata files');
         else
           assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
 
