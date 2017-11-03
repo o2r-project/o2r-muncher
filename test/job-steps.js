@@ -299,11 +299,11 @@ describe('API job steps', () => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.propertyVal(response.steps.generate_configuration, 'status', 'queued');
-        assert.propertyVal(response.steps.image_prepare, 'status', 'queued');
-        assert.propertyVal(response.steps.image_build, 'status', 'queued');
-        assert.propertyVal(response.steps.image_execute, 'status', 'queued');
-        assert.propertyVal(response.steps.check, 'status', 'queued');
+        assert.propertyVal(response.steps.generate_configuration, 'status', 'queued', 'generate configuration should be queued');
+        assert.propertyVal(response.steps.image_prepare, 'status', 'queued', 'image prepare should be queued');
+        assert.propertyVal(response.steps.image_build, 'status', 'queued', 'image build should be queued');
+        assert.propertyVal(response.steps.image_execute, 'status', 'queued', 'image execute should be queued');
+        assert.propertyVal(response.steps.check, 'status', 'queued', 'check should be queued');
         done();
       });
     });

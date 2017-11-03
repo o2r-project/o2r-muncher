@@ -138,7 +138,7 @@ describe('Delete candidate', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(10000);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -176,7 +176,7 @@ describe('Delete candidate', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(10000);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -220,7 +220,7 @@ describe('Delete candidate', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_admin);
-      this.timeout(10000);
+      this.timeout(20000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
