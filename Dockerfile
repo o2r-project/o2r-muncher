@@ -31,12 +31,13 @@ RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" > /etc/apk/reposito
 
 # App system dependencies
 RUN apk add --no-cache \
+    # git needed during dependency installation only:
+    git \
     unzip \
     icu-dev \
     dumb-init \
   && pip install --upgrade pip \
-  && pip install bagit \
-  && rm -rf /var/cache
+  && pip install bagit
 
 # App installation
 WORKDIR /muncher
@@ -49,6 +50,10 @@ COPY config config
 COPY controllers controllers
 COPY lib lib
 COPY index.js index.js
+
+# Clean up
+RUN apk del git \
+  && rm -rf /var/cache
 
 # Metadata params provided with docker build command
 ARG VERSION=dev
