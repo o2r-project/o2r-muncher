@@ -30,7 +30,8 @@ const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9y
 const cookie_admin = 's:hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i.IEPb0lmtGojn2cVk2edRuomIEanX6Ddz87egE5Pe8UM';
 const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
 
-describe('Reading compendium metadata', () => {
+
+describe('compendium metadata', () => {
   let compendium_id = '';
   before(function (done) {
     let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
@@ -139,7 +140,7 @@ describe('Reading compendium metadata', () => {
     });
   });
 
-  describe('with candidate compendium', () => {
+  describe('reading from candidate compendium', () => {
     let metadata_uri = '';
 
     before(function (done) {
@@ -219,9 +220,7 @@ describe('Reading compendium metadata', () => {
       });
     });
   });
-});
 
-describe('Updating compendium metadata', () => {
   let newMetadata = {
     'o2r': {
       'title': 'New title on the block',
@@ -229,7 +228,7 @@ describe('Updating compendium metadata', () => {
     }
   };
 
-  describe('GET /api/v1/compendium/<id>/metadata', () => {
+  describe('Updating compendium metadata - read test', () => {
     let compendium_id = '';
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
@@ -276,7 +275,7 @@ describe('Updating compendium metadata', () => {
     });
   });
 
-  describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with wrong user', () => {
+  describe('Updating compendium metadata with wrong user', () => {
     let compendium_id = '';
 
     let j = request.jar();
@@ -322,7 +321,7 @@ describe('Updating compendium metadata', () => {
     }).timeout(20000);
   });
 
-  describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with *author* user', () => {
+  describe('Updating compendium metadata with *author* user', () => {
     let j2 = request.jar();
     let ck2 = request.cookie('connect.sid=' + cookie_o2r);
     j2.setCookie(ck2, global.test_host);
@@ -381,7 +380,7 @@ describe('Updating compendium metadata', () => {
     }).timeout(20000);
   });
 
-  describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with *editor* user', () => {
+  describe('Updating compendium metadata with *editor* user', () => {
     let j3 = request.jar();
     let ck3 = request.cookie('connect.sid=' + cookie_editor);
     j3.setCookie(ck3, global.test_host);
@@ -429,7 +428,7 @@ describe('Updating compendium metadata', () => {
     }).timeout(20000);
   });
 
-  describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with invalid payload', () => {
+  describe('Updating compendium metadata with invalid payload', () => {
     let data = "{ \
       'o2r': { \
         [] \
@@ -477,7 +476,7 @@ describe('Updating compendium metadata', () => {
     }).timeout(20000);
   });
 
-  describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with invalid payload structure', () => {
+  describe('Updating compendium metadata with invalid payload structure', () => {
     let data = {
       'not_o2r': {
         'title': 'New title on the block (NTOTB)'
@@ -527,102 +526,3 @@ describe('Updating compendium metadata', () => {
   });
 });
 
-describe('Updating workspace metadata', () => {
-  let compendium_id = '';
-  let newMetadata = {
-    'o2r': {
-      'title': 'New title on the block for a workspace upload',
-      'author': 'npm test!'
-    }
-  };
-
-  let j5 = request.jar();
-  let ck5 = request.cookie('connect.sid=' + cookie_o2r);
-  j5.setCookie(ck5, global.test_host);
-
-  let req_doc_workspace = {
-    method: 'PUT',
-    jar: j5,
-    json: newMetadata,
-    timeout: 10000
-  };
-
-  before(function (done) {
-    let req = createCompendiumPostRequest('./test/erc/metatainer/data', cookie_o2r, 'workspace');
-    this.timeout(20000);
-
-    request(req, (err, res, body) => {
-      compendium_id = JSON.parse(body).id;
-      publishCandidate(compendium_id, cookie_o2r, () => {
-        done();
-      });
-    });
-  });
-
-  describe('metadata update as the authoring user', () => {
-    it('should respond with HTTP 200 OK and a valid JSON document with the new title', (done) => {
-      req_doc_workspace.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
-      request(req_doc_workspace, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.isObject(body);
-        assert.propertyVal(body.metadata.o2r, 'title', newMetadata.o2r.title);
-        done();
-      });
-    });
-  });
-});
-
-describe('Brokering compendium metadata', () => {
-  let compendium_id = '';
-  before(function (done) {
-    let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-    this.timeout(20000);
-
-    request(req, (err, res, body) => {
-      assert.ifError(err);
-      let response = JSON.parse(body);
-      assert.notProperty(response, 'error');
-      compendium_id = response.id;
-
-      let data = {
-        'o2r': {
-          'title': 'New brokered title on the block'
-        }
-      };
-      let j2 = request.jar();
-      let ck2 = request.cookie('connect.sid=' + cookie_o2r);
-      j2.setCookie(ck2, global.test_host);
-
-      let req_doc_o2r = {
-        method: 'PUT',
-        jar: j2,
-        json: data,
-        timeout: 20000
-      };
-
-      req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
-      request(req_doc_o2r, (err, res, body) => {
-        assert.ifError(err);
-        assert.notInclude(body, 'error');
-        done();
-      });
-    });
-  });
-
-  describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with author user', () => {
-    it('should have the brokered metadata for zenodo', (done) => {
-      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.property(response, 'metadata');
-        assert.property(response.metadata, 'zenodo');
-        assert.property(response.metadata.zenodo, 'metadata');
-        assert.property(response.metadata.zenodo.metadata, 'title');
-        assert.propertyVal(response.metadata.zenodo.metadata, 'title', 'New brokered title on the block');
-        done();
-      });
-    }).timeout(20000);
-  });
-
-});

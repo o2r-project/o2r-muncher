@@ -35,7 +35,7 @@ const sleepSecs = 10;
 let Docker = require('dockerode');
 let docker = new Docker();
 
-describe('API job steps', () => {
+describe.only('API job steps', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
   before((done) => {
@@ -48,7 +48,6 @@ describe('API job steps', () => {
 
   after((done) => {
     db.close;
-    console.log('closed');
     done();
   });
 
