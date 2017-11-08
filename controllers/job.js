@@ -89,14 +89,20 @@ exports.listJobs = (req, res) => {
         debug('Search for jobs has empty result.');
       }
 
-      answer.results = jobs.map((job) => {
-        jobItem = { id: job.id };
-        requestedFields.forEach((elem) => {
-          jobItem[elem] = job[elem];
+      if (requestedFields.length < 1) {
+        answer.results = jobs.map((job) => {
+          return job.id;
         });
+      } else {
+        answer.results = jobs.map((job) => {
+          jobItem = { id: job.id };
+          requestedFields.forEach((elem) => {
+            jobItem[elem] = job[elem];
+          });
 
-        return jobItem;
-      });
+          return jobItem;
+        });
+      }
 
       res.status(200).send(answer);
     }
