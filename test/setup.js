@@ -46,6 +46,8 @@ global.test_host = env.TEST_HOST || 'http://localhost:' + config.net.port;
 global.test_host_loader = 'http://localhost:8088';
 console.log('Testing endpoint at ' + global.test_host);
 
+docker = new Docker();
+
 before(function (done) {
     this.timeout(20000);
 
@@ -238,20 +240,60 @@ before(function (done) {
         cb(null, {});
     };
 
+    pullBaseImageForManifestGeneration = (cb) => {
+        docker.pull(config.containerit.baseImage, function (err, stream) {
+            if (err) {
+                cb(err);
+            } else {
+                function onFinished(err, output) {
+                    if (err) cb(err);
+                    else {
+                        debug('Pulled image %s', config.containerit.baseImage);
+                        cb(null, output);
+                    }
+                }
+
+                docker.modem.followProgress(stream, onFinished);
+            }
+        });
+    }
+
+    // otherwise tests might time out
+    // create Dockerfile.tar with "tar -cf Dockerfile.tar Dockerfile"
+    buildDockerfileSimilarToTestDockerfile = (cb) => {
+        tar = './test/Dockerfile.tar';
+        debug('Building image at %s', tar);
+        docker.buildImage(tar, { t: 'muncher_testing_base_image' }, function (err, stream) {
+            if (err) {
+                console.log(err);
+                cb(err);
+            }
+            stream.pipe(process.stdout, {
+                end: true
+              });
+            
+              stream.on('end', function() {
+                cb(null, 'built image using ' + tar);
+            });
+        });
+    }
+
     async.series([
         loadUserO2r,
         loadUserUploader,
         loadUserPlain,
         loadUserAdmin,
         loadUserEditor,
-        close
+        close,
+        pullBaseImageForManifestGeneration,
+        buildDockerfileSimilarToTestDockerfile
     ],
         function (err, results) {
             if (err) {
-                debug('Error loading data: %s', err);
+                debug('Error during test setup: %s', JSON.stringify(err));
                 process.exit(1);
             } else {
-                debug('Loaded data: %s', results);
+                debug('Test setup result: %s', JSON.stringify(results));
                 if (env.LOADER_CONTAINER && !yn(env.LOADER_CONTAINER)) {
                     debugContainer('Not starting container, found env var LOADER_CONTAINER="%s"', env.LOADER_CONTAINER);
                     done();
@@ -306,6 +348,8 @@ before(function (done) {
 });
 
 after(function (done) {
+    delete docker;
+
     if (env.LOADER_CONTAINER && yn(env.LOADER_CONTAINER)) {
         exec('docker rm -f loader_for_testing', (error, stdout, stderr) => {
             if (error || stderr) {

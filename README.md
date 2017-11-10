@@ -44,6 +44,8 @@ You can override these environment variables (configured in `config/config.js`) 
   Email configuration settings for sending emails when critical events in the server occure, based on [nodemailer](https://www.npmjs.com/package/nodemailer). `_TRANSPORT` ist the mail transport string, see nodemailer documented, `_RECEIVERS` is a comma-seperated list, and `_SENDER` is the mails sender. All three must be set. Mail notification can also be disabled completely via `config.js`.
 - `MUNCHER_META_TOOL_CONTAINER`
   Docker image name and tag for metadata tools, defaults to running latest [o2r-meta in a container](https://github.com/o2r-project/o2r-meta#using-docker), i.e. `o2rproject/o2r-meta:latest`.
+- `MUNCHER_CONTAINERIT_TOOL_CONTAINER`
+  Docker image name and tag for containerit tool, defaults to running Rocker's [geospatial](https://github.com/rocker-org/geospatial/) image with [containerit](https://github.com/o2r-project/containerit/) pre-installed, i.e. `o2rproject/containerit:geospatial`.
 - `MUNCHER_FAIL_ON_NO_FILES`
   Should an error be thrown when files for a compendium that exists in the database are _not found_? Defaults to `false` (useful for testing).
 

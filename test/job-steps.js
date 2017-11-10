@@ -859,4 +859,109 @@ describe('API job steps', () => {
     });
   });
 
+  describe.only('EXECUTION check with random result in HTML', () => {
+    let job_id = '';
+    let compendium_id = '';
+
+    before(function (done) {
+      this.timeout(20000);
+      let req = createCompendiumPostRequest('./test/workspace/rmd-data-random', cookie_o2r, 'workspace');
+
+      request(req, (err, res, body) => {
+        compendium_id = JSON.parse(body).id;
+        publishCandidate(compendium_id, cookie_o2r, () => {
+          startJob(compendium_id, id => {
+            job_id = id;
+            done();
+          });
+        });
+      });
+    });
+
+    it('should skip validation steps __after some waiting__', (done) => {
+      sleep.sleep(sleepSecs * 2);
+
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
+        assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
+        done();
+      });
+    }).timeout(sleepSecs * 1000 * 3);
+
+    it('should have same start and end date for skipped steps', (done) => {
+      sleep.sleep(sleepSecs);
+
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.property(response.steps.validate_bag, 'start');
+        assert.property(response.steps.validate_bag, 'end');
+        assert.equal(response.steps.validate_bag.start, response.steps.validate_bag.end, 'skipped step validate bag has same date for start and end');
+
+        assert.property(response.steps.validate_compendium, 'start');
+        assert.property(response.steps.validate_compendium, 'end');
+        assert.equal(response.steps.validate_compendium.start, response.steps.validate_bag.end, 'skipped step validate bag has same date for start and end');
+
+        done();
+      });
+    }).timeout(sleepSecs * 1000 * 3);
+
+    it('should complete build, execute, and cleanup', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.image_build, 'status', 'success');
+        assert.propertyVal(response.steps.image_execute, 'status', 'success');
+        assert.propertyVal(response.steps.cleanup, 'status', 'success');
+        done();
+      });
+    }).timeout(sleepSecs * 1000 * 2);
+
+    it('should fail the step check', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.check, 'status', 'failure');
+        done();
+      });
+
+      it('should not have any errors in the step check', function (done) {
+        request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+          assert.ifError(err);
+          let response = JSON.parse(body);
+
+          assert.isEmpty(response.steps.check.errors);
+          done();
+        });
+      });
+
+      it('should have a reference to a diff file step check', function (done) {
+        request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+          assert.ifError(err);
+          let response = JSON.parse(body);
+
+          assert.property(response.steps.check, 'display');
+          assert.property(response.steps.check.display, 'diff');
+          done();
+        });
+      });
+
+      it('should not have an HTML file in the files list named as the main document (output_file naming works)', function (done) {
+        request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+          assert.ifError(err);
+          let response = JSON.parse(body);
+
+          assert.notInclude(body, 'main.html');
+          done();
+        });
+      });
+    });
+  });
+
 });

@@ -172,3 +172,91 @@ describe('API Compendium', () => {
     });
   });
 });
+
+describe('API Compendium sub-resource /jobs', () => {
+  before((done) => {
+      var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
+      db.compendia.drop(function (err, doc) {
+          db.jobs.drop(function (err, doc) {
+              db.close();
+              done();
+          });
+      });
+  });
+
+  describe('GET /api/v1/compendium/ sub-endpoint /jobs', () => {
+      let compendium_id = '';
+      before(function (done) {
+          this.timeout(30000);
+          let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
+
+          request(req, (err, res, body) => {
+              response = JSON.parse(body);
+              assert.ifError(err);
+              assert.notProperty(response, 'error');
+
+              compendium_id = response.id;
+              publishCandidate(compendium_id, cookie_o2r, () => {
+                  done();
+              });
+          });
+      });
+
+      let job_id;
+
+      it('should respond with HTTP 200 and an empty list when there is no job for an existing compendium', (done) => {
+          request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
+              assert.ifError(err);
+              assert.equal(res.statusCode, 200);
+              let response = JSON.parse(body);
+              assert.property(response, 'results');
+              assert.notProperty(response, 'error');
+              assert.isEmpty(response.results);
+              done();
+          });
+      }).timeout(10000);
+
+      it('should return job ID when starting job', (done) => {
+          let j = request.jar();
+          let ck = request.cookie('connect.sid=' + cookie_o2r);
+          j.setCookie(ck, global.test_host);
+
+          request({
+              uri: global.test_host + '/api/v1/job',
+              method: 'POST',
+              jar: j,
+              formData: {
+                  compendium_id: compendium_id
+              },
+              timeout: 5000
+          }, (err, res, body) => {
+              assert.ifError(err);
+              assert.equal(res.statusCode, 200);
+              let response = JSON.parse(body);
+              assert.property(response, 'job_id');
+              job_id = response.job_id;
+              done();
+          });
+      }).timeout(10000);
+
+      it('should respond with HTTP 200 and one job in the list of jobs when one is started', (done) => {
+          request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
+              assert.ifError(err);
+              assert.equal(res.statusCode, 200);
+              assert.isDefined(JSON.parse(body).results, 'results returned');
+              assert.include(JSON.parse(body).results, job_id, 'job id is in results');
+              done();
+          });
+      });
+
+      it('should respond with HTTP 404 and error message when that compendium does not exist', (done) => {
+          request(global.test_host + '/api/v1/compendium/1234/jobs', (err, res, body) => {
+              assert.ifError(err);
+              assert.equal(res.statusCode, 404);
+              assert.isUndefined(JSON.parse(body).result, 'returned no results');
+              assert.propertyVal(JSON.parse(body), 'error', 'no compendium with id 1234');
+              done();
+          });
+      });
+  });
+});

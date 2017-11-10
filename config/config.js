@@ -55,6 +55,14 @@ c.id_length = 5;   // length of job & compendium ids [0-9,a-z,A-Z]
 // session secret
 c.sessionsecret = env.SESSION_SECRET || 'o2r';
 
+// API paths
+c.api = {};
+c.api.resource = {};
+c.api.resource.compendium = '/api/v1/compendium/';
+c.api.resource.job = '/api/v1/job/';
+c.api.sub_resource = {};
+c.api.sub_resource.data = '/data';
+
 // user levels
 c.user = {};
 c.user.level = {};
@@ -70,6 +78,7 @@ c.bagtainer.spec_version = {};
 c.bagtainer.spec_version.supported = ['0.1', '1'];
 c.bagtainer.spec_version.default = '1';
 c.bagtainer.configFile = 'erc.yml';
+c.bagtainer.mountLocationInContainer = '/erc';
 c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
 c.bagtainer.keepImages = true; // required for image download!
 c.bagtainer.validateBagBeforeExecute = true; // bag validation will fail, gut useful to highlight the changes in compendium
@@ -92,16 +101,13 @@ c.bagtainer.forceImageRemoval = true;
 c.bagtainer.docker = {};
 // See https://docs.docker.com/engine/reference/commandline/create/ and https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#create-a-container
 c.bagtainer.docker.create_options = {
-  //AttachStderr: true,
-  //AttachStdin: false,
-  //AttachStdout: true,
   CpuShares: 256,
-  Env: ['O2RPLATFORM=true'],
+  Env: ['O2R_MUNCHER=true'],
   Memory: 1073741824, // 1G
   MemorySwap: 2147483648, // double of 1G
   NetworkMode: 'none',
-  User: '1000',
-  Rm: true
+  User: '1000', // user name depends on image, use id to be save
+  Rm: !c.bagtainer.keepContainers
 };
 // https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#start-a-container
 c.bagtainer.docker.start_options = {
@@ -137,7 +143,7 @@ c.meta.container = {};
 c.meta.container.image = env.MUNCHER_META_TOOL_CONTAINER || 'o2rproject/o2r-meta:latest';
 c.meta.container.default_create_options = {
   CpuShares: 128,
-  Env: ['O2RPLATFORM=true'],
+  Env: ['O2R_MUNCHER=true'],
   Memory: 1073741824, // 1G
   MemorySwap: 2147483648, // double of 1G
   User: 'o2r', // could be left away because of USER o2r command in o2r-meta's Dockerfile, but better safe than sorry.
@@ -167,6 +173,22 @@ c.meta.broker.mappings = {
   } 
 }; 
 c.meta.doiPath = 'metadata.o2r.identifier.doi';
+
+c.checker = {};
+c.checker.display_file_name_html = 'diffHTML.html';
+
+c.containerit = {};
+c.containerit.image = env.MUNCHER_CONTAINERIT_TOOL_CONTAINER || 'o2rproject/containerit:geospatial';
+c.containerit.default_create_options = {
+  CpuShares: 256,
+  Env: ['O2R_MUNCHER=true'],
+  Memory: 1073741824 * 2, // 2G
+  MemorySwap: 1073741824 * 4,
+  User: 'rstudio', // IMPORTANT: this must fit the used image!
+  AutoRemove: true
+};
+c.containerit.baseImage = 'rocker/r-ver:3.4.2';
+c.containerit.maintainer = 'o2r';
 
 c.payload = {};
 c.payload.tarball = {};

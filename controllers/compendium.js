@@ -85,18 +85,9 @@ exports.viewCompendium = (req, res) => {
 
         try {
           fs.accessSync(path.join(config.fs.compendium, id)); // throws if does not exist
-          /*
-           *  Rewrite file URLs with api path. directory-tree creates path like
-           *  config.fs.compendium + id + filepath
-           *
-           *  We are only interested in the filepath itself and want to create a
-           *  url like
-           *  host/api/v1/compendium/id/data/filepath
-           *
-           */
           answer.files = rewriteTree(dirTree(path.join(config.fs.compendium, id)),
             config.fs.compendium.length + config.id_length, // remove local fs path and id
-            '/api/v1/compendium/' + id + '/data' // prepend proper location
+            c.api.resource.compendium + id + c.api.sub_resource.data // prepend proper location
           );
         } catch (err) {
           debug('[%s] Error: No data files found. Fail? %s\n%s', id, config.fs.fail_on_no_files, err);

@@ -127,7 +127,7 @@ exports.viewJob = (req, res) => {
 
         answer.files = rewriteTree(dirTree(config.fs.job + id),
           config.fs.job.length + config.id_length, // remove local fs path and id
-          '/api/v1/job/' + id + '/data' // prepend proper location
+          config.api.resource.job + id + config.api.sub_resource.data // prepend proper location
         );
       } catch (e) {
         debug('ERROR: No data files found for job %s. Fail? %s', id, config.fs.fail_on_no_files);

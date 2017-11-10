@@ -115,25 +115,51 @@ function initApp(callback) {
       } else {
         debug('Docker available? %s', data);
         debug('meta tools version: %s', c.meta.container.image);
-        
+
         docker.pull(c.meta.container.image, function (err, stream) {
           if (err) {
             debug('error pulling meta image: %s', err);
+            reject(err);
           } else {
             function onFinished(err, output) {
               if (err) {
                 debug('error pulling meta image: %s', JSON.stringify(err));
+                reject(err);
               } else {
                 debug('pulled meta tools image: %s', JSON.stringify(output));
+                fulfill();
               }
 
               delete docker;
-              fulfill();
             }
-    
+
             docker.modem.followProgress(stream, onFinished);
           }
         });
+      }
+    });
+  });
+
+  pullContaineritContainer = new Promise((fulfill, reject) => {
+    docker2 = new Docker();
+    docker2.pull(c.containerit.image, function (err, stream) {
+      if (err) {
+        debug('error pulling containerit image: %s', err);
+        reject(err);
+      } else {
+        function onFinished(err, output) {
+          if (err) {
+            debug('error pulling containerit image: %s', JSON.stringify(err));
+            reject(err);
+          } else {
+            debug('pulled containerit tools image: %s', JSON.stringify(output));
+            fulfill();
+          }
+
+          delete docker2;
+        }
+
+        docker2.modem.followProgress(stream, onFinished);
       }
     });
   });
@@ -263,6 +289,7 @@ function initApp(callback) {
   });
 
   checkDockerAndPullMetaContainer
+    .then(pullContaineritContainer)
     .then(logVersions)
     .then(configureEmailTransporter)
     .then(configureExpressApp)
