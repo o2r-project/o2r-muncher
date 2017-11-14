@@ -7,14 +7,8 @@ Node.js implementation of the endpoints `/api/v1/compendium` (reading and metada
 
 Requirements:
 
-- Node.js `>= 6.2`
-- npm
-- Python `>= 3.x`
-- bagit-python (`bagit.py`)
-- o2r-meta (`o2rmeta.py`)
-- unzip
-- tar
-- mongodb
+- Docker
+- MongoDB
 
 ## Run
 
@@ -53,7 +47,6 @@ You can override these environment variables (configured in `config/config.js`) 
 
 The connection to the Docker API is build on [dockerode](https://www.npmjs.com/package/dockerode) which allows execution on any Docker host that exposes the port.
 Most commonly, the default configuration will be used, i.e. the local Docker socket is mounted at the default location into the container running muncher (see [above](#run))
-
 
 ## Testing
 
