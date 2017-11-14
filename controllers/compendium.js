@@ -87,10 +87,10 @@ exports.viewCompendium = (req, res) => {
           fs.accessSync(path.join(config.fs.compendium, id)); // throws if does not exist
           answer.files = rewriteTree(dirTree(path.join(config.fs.compendium, id)),
             config.fs.compendium.length + config.id_length, // remove local fs path and id
-            c.api.resource.compendium + id + c.api.sub_resource.data // prepend proper location
+            config.api.resource.compendium + id + config.api.sub_resource.data // prepend proper location
           );
         } catch (err) {
-          debug('[%s] Error: No data files found. Fail? %s\n%s', id, config.fs.fail_on_no_files, err);
+          debug('[%s] Error: No data files found (Fail? %s): %s', id, config.fs.fail_on_no_files, err);
           if (config.fs.fail_on_no_files) {
             res.status(500).send({ error: 'internal error: could not read compendium contents from storage' });
             return;
