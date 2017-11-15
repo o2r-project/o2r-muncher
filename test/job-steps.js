@@ -878,7 +878,7 @@ describe('API job steps', () => {
       });
     });
 
-    it('should skip validation steps __after some waiting__', (done) => {
+    it('should skip validate bag step __after some waiting__', (done) => {
       sleep.sleep(sleepSecs * 2);
 
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
@@ -886,12 +886,11 @@ describe('API job steps', () => {
         let response = JSON.parse(body);
 
         assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
-        assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
         done();
       });
     }).timeout(sleepSecs * 1000 * 3);
 
-    it('should have same start and end date for skipped steps', (done) => {
+    it('should have same start and end date for skipped step', (done) => {
       sleep.sleep(sleepSecs);
 
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
@@ -901,23 +900,33 @@ describe('API job steps', () => {
         assert.property(response.steps.validate_bag, 'start');
         assert.property(response.steps.validate_bag, 'end');
         assert.equal(response.steps.validate_bag.start, response.steps.validate_bag.end, 'skipped step validate bag has same date for start and end');
-
-        assert.property(response.steps.validate_compendium, 'start');
-        assert.property(response.steps.validate_compendium, 'end');
-        assert.equal(response.steps.validate_compendium.start, response.steps.validate_bag.end, 'skipped step validate bag has same date for start and end');
-
         done();
       });
     }).timeout(sleepSecs * 1000 * 3);
 
-    it('should complete build, execute, and cleanup', function (done) {
+    it('should complete generate configuration, validate compendium, image build, image execute, and cleanup', function (done) {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
+        assert.propertyVal(response.steps.generate_configuration, 'status', 'success');
+        assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
         assert.propertyVal(response.steps.image_build, 'status', 'success');
         assert.propertyVal(response.steps.image_execute, 'status', 'success');
         assert.propertyVal(response.steps.cleanup, 'status', 'success');
+        done();
+      });
+    }).timeout(sleepSecs * 1000 * 2);
+
+    it('should complete generate manifest and have the correct manifest file path in the step details', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.generate_manifest, 'status', 'success');
+        assert.property(response.steps.generate_manifest, 'manifest');
+        assert.propertyVal(response.steps.generate_manifest, 'manifest', 'Dockerfile');
+        assert.notInclude(response.steps.generate_manifest.manifest, config.fs.base);
         done();
       });
     }).timeout(sleepSecs * 1000 * 2);
@@ -930,38 +939,39 @@ describe('API job steps', () => {
         assert.propertyVal(response.steps.check, 'status', 'failure');
         done();
       });
+    });
 
-      it('should not have any errors in the step check', function (done) {
-        request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-          assert.ifError(err);
-          let response = JSON.parse(body);
+    it('should have empty errors array in the step check', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
 
-          assert.isEmpty(response.steps.check.errors);
-          done();
-        });
+        assert.property(response.steps.check, 'errors');
+        assert.isAbove(response.steps.check.errors)
+        assert.isEmpty(response.steps.check.errors);
+        done();
       });
+    });
 
-      it('should have a reference to a diff file step check', function (done) {
-        request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-          assert.ifError(err);
-          let response = JSON.parse(body);
+    it('should have a reference to a diff file step check', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
 
-          assert.property(response.steps.check, 'display');
-          assert.property(response.steps.check.display, 'diff');
-          done();
-        });
+        assert.property(response.steps.check, 'display');
+        assert.property(response.steps.check.display, 'diff');
+        done();
       });
+    });
 
-      it('should not have an HTML file in the files list named as the main document (output_file naming works)', function (done) {
-        request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-          assert.ifError(err);
-          let response = JSON.parse(body);
+    it('should not have an HTML file in the files list named as the main document (output_file naming works)', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
 
-          assert.notInclude(body, 'main.html');
-          done();
-        });
+        assert.notInclude(body, 'main.html');
+        done();
       });
     });
   });
-
 });

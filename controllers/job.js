@@ -123,9 +123,9 @@ exports.viewJob = (req, res) => {
       answer.steps = job.steps;
       answer.status = job.status;
       try {
-        fs.accessSync(config.fs.job + id); // throws if directory does not exist
+        fs.accessSync(path.join(config.fs.job, id)); // throws if directory does not exist
 
-        answer.files = rewriteTree(dirTree(config.fs.job + id),
+        answer.files = rewriteTree(dirTree(path.join(config.fs.job, id)),
           config.fs.job.length + config.id_length, // remove local fs path and id
           config.api.resource.job + id + config.api.sub_resource.data // prepend proper location
         );

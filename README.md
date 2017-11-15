@@ -40,8 +40,10 @@ You can override these environment variables (configured in `config/config.js`) 
   Docker image name and tag for metadata tools, defaults to running latest [o2r-meta in a container](https://github.com/o2r-project/o2r-meta#using-docker), i.e. `o2rproject/o2r-meta:latest`.
 - `MUNCHER_META_TOOL_CONTAINER_USER`
   User name or id for the [user running the container](https://docs.docker.com/engine/reference/run/#user), defaults to `o2r`.
-- `MUNCHER_CONTAINERIT_TOOL_CONTAINER`
+- `MUNCHER_CONTAINERIT_IMAGE`
   Docker image name and tag for containerit tool, defaults to running Rocker's [geospatial](https://github.com/rocker-org/geospatial/) image with [containerit](https://github.com/o2r-project/containerit/) pre-installed, i.e. `o2rproject/containerit:geospatial`.
+- `MUNCHER_CONTAINERIT_USER`
+  The user within the container, which must match the used image (see previous setting), defaults to `rstudio`, which is suitable for images in the `rocker/verse` stack of images.
 - `MUNCHER_FAIL_ON_NO_FILES`
   Should an error be thrown when files for a compendium that exists in the database are _not found_? Defaults to `false` (useful for testing).
 
@@ -94,17 +96,20 @@ The following steps assume that you have all the required projects (`o2r-content
 ```bash
 mkdir /tmp/o2r-mongodb-data
 mongod --dbpath /tmp/o2r-mongodb-data
-# new terminal: start contentbutler (default port 8081)
-cd ../o2r-contentbutler
-DEBUG=* npm start
+
+# new termine: start loader (default port 8088)
+
 # new terminal: start muncher (default port 8080)
 cd ../o2r-muncher
 DEBUG=* npm start
+
 # new terminal: run tests to add test data
 npm test
+
 # new terminal: run a webservice container in daemon mode on port 80 with (a) a proxy in front of the microservices and (b) the client project at / (must change app constant manually!)
 cd ../o2r-platform
 docker run --rm --name o2r-platform -p 80:80 -v $(pwd)/test/nginx.conf:/etc/nginx/nginx.conf -v $(pwd):/etc/nginx/html nginx
+
 # do work, restart respective apps as needed
 ```
 

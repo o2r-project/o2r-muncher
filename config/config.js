@@ -178,13 +178,13 @@ c.checker = {};
 c.checker.display_file_name_html = 'diffHTML.html';
 
 c.containerit = {};
-c.containerit.image = env.MUNCHER_CONTAINERIT_TOOL_CONTAINER || 'o2rproject/containerit:geospatial';
+c.containerit.image = env.MUNCHER_CONTAINERIT_IMAGE || 'o2rproject/containerit:geospatial';
 c.containerit.default_create_options = {
   CpuShares: 256,
   Env: ['O2R_MUNCHER=true'],
   Memory: 1073741824 * 2, // 2G
   MemorySwap: 1073741824 * 4,
-  User: 'rstudio', // IMPORTANT: this must fit the used image!
+  User: env.MUNCHER_CONTAINERIT_USER || 'rstudio', // IMPORTANT: this must fit the used image!
   AutoRemove: true
 };
 c.containerit.baseImage = 'rocker/r-ver:3.4.2';
