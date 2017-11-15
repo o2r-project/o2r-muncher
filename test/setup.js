@@ -43,8 +43,8 @@ var loader_container = null;
 var env = process.env;
 const config = require('../config/config');
 global.test_host = env.TEST_HOST || 'http://localhost:' + config.net.port;
-global.test_host_loader = 'http://localhost:8088';
-console.log('Testing endpoint at ' + global.test_host);
+global.test_host_loader = env.TEST_HOST_UPLOAD || 'http://localhost:8088';
+debug('Testing endpoint at %s using %s for upload', global.test_host, global.test_host_loader);
 
 docker = new Docker();
 
@@ -265,7 +265,7 @@ before(function (done) {
         debug('Building image at %s', tar);
         docker.buildImage(tar, { t: 'muncher_testing_base_image' }, function (err, stream) {
             if (err) {
-                console.log(err);
+                debug(err);
                 cb(err);
             }
             stream.pipe(process.stdout, {
