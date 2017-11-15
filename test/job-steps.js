@@ -859,7 +859,7 @@ describe('API job steps', () => {
     });
   });
 
-  describe.only('EXECUTION check with random result in HTML', () => {
+  describe('EXECUTION check with random result in HTML', () => {
     let job_id = '';
     let compendium_id = '';
 
@@ -947,7 +947,7 @@ describe('API job steps', () => {
         let response = JSON.parse(body);
 
         assert.property(response.steps.check, 'errors');
-        assert.isAbove(response.steps.check.errors)
+        assert.isArray(response.steps.check.errors)
         assert.isEmpty(response.steps.check.errors);
         done();
       });
@@ -969,7 +969,7 @@ describe('API job steps', () => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
-        assert.notInclude(body, 'main.html');
+        assert.notInclude(JSON.stringify(response.files), 'main.html');
         done();
       });
     });
