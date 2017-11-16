@@ -30,12 +30,12 @@ const unameCall = require('node-uname');
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
-const sleepSecs = 10;
+const sleepSecs = 30;
 
 let Docker = require('dockerode');
 let docker = new Docker();
 
-describe('API job steps', () => {
+describe.only('API job steps', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
   before((done) => {
@@ -295,11 +295,20 @@ describe('API job steps', () => {
       });
     });
 
+    it('should skip configuration generation steps', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.generate_configuration, 'status', 'skipped', 'generate configuration should be skipped');
+        done();
+      });
+    });
+
     it('should have remaining steps "queued"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.propertyVal(response.steps.generate_configuration, 'status', 'queued', 'generate configuration should be queued');
+        assert.propertyVal(response.steps.generate_manifest, 'status', 'queued', 'generate manifest should be queued');
         assert.propertyVal(response.steps.image_prepare, 'status', 'queued', 'image prepare should be queued');
         assert.propertyVal(response.steps.image_build, 'status', 'queued', 'image build should be queued');
         assert.propertyVal(response.steps.image_execute, 'status', 'queued', 'image execute should be queued');
@@ -365,32 +374,32 @@ describe('API job steps', () => {
       });
     });
 
-    it('should complete step "image_prepare", "image_build", "image_execute", and "check"', (done) => {
+    it('should have steps "image_prepare", "image_build", "image_execute", and "check" queued', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.propertyVal(response.steps.image_prepare, 'status', 'success');
-        assert.propertyVal(response.steps.image_build, 'status', 'success');
-        assert.propertyVal(response.steps.image_execute, 'status', 'success');
-        assert.propertyVal(response.steps.check, 'status', 'success');
+        assert.propertyVal(response.steps.image_prepare, 'status', 'queued', 'image prepare is queued');
+        assert.propertyVal(response.steps.image_build, 'status', 'queued', 'image build is queued');
+        assert.propertyVal(response.steps.image_execute, 'status', 'queued', 'image execute is queued');
+        assert.propertyVal(response.steps.check, 'status', 'queued', 'check is queued');
         done();
       });
     });
 
-    it('should complete step "cleanup"', (done) => {
+    it('should fail step "generate_manifest"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.propertyVal(response.steps.cleanup, 'status', 'success');
+        assert.propertyVal(response.steps.generate_manifest, 'status', 'failure');
         done();
       });
     });
 
-    it('should complete overall', (done) => {
+    it('should fail overall', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.propertyVal(response, 'status', 'success');
+        assert.propertyVal(response, 'status', 'failure');
         done();
       });
     });
@@ -440,7 +449,6 @@ describe('API job steps', () => {
   });
 
   describe('EXECUTION configuration file generation', () => {
-
     it('should skip step (and previous step) for rmd-configuration-file, but complete following steps', (done) => {
       let req = createCompendiumPostRequest('./test/workspace/rmd-configuration-file', cookie_o2r, 'workspace');
       request(req, (err, res, body) => {
@@ -490,7 +498,8 @@ describe('API job steps', () => {
               assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'skip validate bag');
               assert.propertyVal(response.steps.validate_compendium, 'status', 'success', 'succeed validate compendium');
               assert.propertyVal(response.steps.generate_configuration, 'status', 'success', 'succeed generate configuration');
-              assert.propertyVal(response.steps.check, 'status', 'success', 'succeed check');
+              assert.propertyVal(response.steps.check, 'status', 'failure', 'fail check');
+              assert.isBelow(response.steps.check.images[0].compareResults.differences, 3200, 'fail check because of slight differences in image');
 
               done();
             });
@@ -743,7 +752,7 @@ describe('API job steps', () => {
     }).timeout(sleepSecs * 1000);
   });
 
-  describe('EXECUTION step_image_execute', () => {
+  describe.only('EXECUTION step_image_execute', () => {
     let job_id = '';
 
     before(function (done) {
@@ -790,6 +799,19 @@ describe('API job steps', () => {
         done();
       });
     }).timeout(sleepSecs * 1000 * 2);
+
+
+    it('should complete step "check" but not have a display diff nor images', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.check, 'status', 'success');
+        assert.propertyVal(response.steps.check, 'checkSuccessful', true);
+        assert.notProperty(response.steps.check, 'display');
+        assert.notProperty(response.steps.check, 'images');
+        done();
+      });
+    });
 
     it('should complete step "cleanup"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
@@ -872,15 +894,14 @@ describe('API job steps', () => {
         publishCandidate(compendium_id, cookie_o2r, () => {
           startJob(compendium_id, id => {
             job_id = id;
+            sleep.sleep(sleepSecs);
             done();
           });
         });
       });
     });
 
-    it('should skip validate bag step __after some waiting__', (done) => {
-      sleep.sleep(sleepSecs * 2);
-
+    it('should skip validate bag step', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
@@ -888,11 +909,9 @@ describe('API job steps', () => {
         assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
         done();
       });
-    }).timeout(sleepSecs * 1000 * 3);
+    });
 
     it('should have same start and end date for skipped step', (done) => {
-      sleep.sleep(sleepSecs);
-
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
@@ -902,7 +921,7 @@ describe('API job steps', () => {
         assert.equal(response.steps.validate_bag.start, response.steps.validate_bag.end, 'skipped step validate bag has same date for start and end');
         done();
       });
-    }).timeout(sleepSecs * 1000 * 3);
+    });
 
     it('should complete generate configuration, validate compendium, image build, image execute, and cleanup', function (done) {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
@@ -916,7 +935,7 @@ describe('API job steps', () => {
         assert.propertyVal(response.steps.cleanup, 'status', 'success');
         done();
       });
-    }).timeout(sleepSecs * 1000 * 2);
+    });
 
     it('should complete generate manifest and have the correct manifest file path in the step details', function (done) {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
@@ -929,7 +948,7 @@ describe('API job steps', () => {
         assert.notInclude(response.steps.generate_manifest.manifest, config.fs.base);
         done();
       });
-    }).timeout(sleepSecs * 1000 * 2);
+    });
 
     it('should fail the step check', function (done) {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {

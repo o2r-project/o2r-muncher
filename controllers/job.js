@@ -20,6 +20,7 @@ const debug = require('debug')('job');
 const randomstring = require('randomstring');
 const fs = require('fs');
 const path = require('path');
+const urlJoin = require('url-join');
 
 const dirTree = require('directory-tree');
 const rewriteTree = require('../lib/rewrite-tree');
@@ -127,7 +128,7 @@ exports.viewJob = (req, res) => {
 
         answer.files = rewriteTree(dirTree(path.join(config.fs.job, id)),
           config.fs.job.length + config.id_length, // remove local fs path and id
-          config.api.resource.job + id + config.api.sub_resource.data // prepend proper location
+          urlJoin(config.api.resource.job, id, config.api.sub_resource.data)
         );
       } catch (e) {
         debug('ERROR: No data files found for job %s. Fail? %s', id, config.fs.fail_on_no_files);

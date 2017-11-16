@@ -56,6 +56,26 @@ describe('API compendium filter', () => {
       });
     });
 
+    it('should have the DOI in raw metadata', (done) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.include(JSON.stringify(response.metadata.raw), test_doi);
+        done();
+      });
+    });
+
+    it('should have the DOI in brokered o2r metadata (needed for the filter)', (done) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.include(JSON.stringify(response.metadata.o2r), test_doi);
+        done();
+      });
+    });
+
     it('should find 1 compendium with the DOI test doi', (done) => {
       request(global.test_host + '/api/v1/compendium/?doi=' + test_doi, (err, res, body) => {
         assert.ifError(err);

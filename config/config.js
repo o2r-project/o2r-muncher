@@ -58,10 +58,10 @@ c.sessionsecret = env.SESSION_SECRET || 'o2r';
 // API paths
 c.api = {};
 c.api.resource = {};
-c.api.resource.compendium = '/api/v1/compendium/';
-c.api.resource.job = '/api/v1/job/';
+c.api.resource.compendium = '/api/v1/compendium';
+c.api.resource.job = '/api/v1/job';
 c.api.sub_resource = {};
-c.api.sub_resource.data = '/data';
+c.api.sub_resource.data = 'data';
 
 // user levels
 c.user = {};

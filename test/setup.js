@@ -52,7 +52,7 @@ debug('Testing endpoint at %s using %s for upload', global.test_host, global.tes
 docker = new Docker();
 
 before(function (done) {
-    this.timeout(60000);
+    this.timeout(60000 * 15); // 15 minutes, to pre-build a Docker base image
 
     var db = mongojs('localhost/muncher', ['sessions', 'users']);
 
