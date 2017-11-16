@@ -81,7 +81,7 @@ describe('API Compendium', () => {
     let compendium_id = '';
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);
-      this.timeout(30000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         assert.ifError(err);
@@ -112,12 +112,14 @@ describe('API Compendium', () => {
     let compendium_id = '';
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);
-      this.timeout(30000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
 
-        publishCandidate(compendium_id, cookie, done);
+        publishCandidate(compendium_id, cookie, () => {
+          done();
+        });
       });
     });
 
@@ -187,8 +189,8 @@ describe('API Compendium sub-resource /jobs', () => {
   describe('GET /api/v1/compendium/ sub-endpoint /jobs', () => {
       let compendium_id = '';
       before(function (done) {
-          this.timeout(30000);
-          let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
+          this.timeout(60000);
+          let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);
 
           request(req, (err, res, body) => {
               response = JSON.parse(body);
@@ -196,7 +198,7 @@ describe('API Compendium sub-resource /jobs', () => {
               assert.notProperty(response, 'error');
 
               compendium_id = response.id;
-              publishCandidate(compendium_id, cookie_o2r, () => {
+              publishCandidate(compendium_id, cookie, () => {
                   done();
               });
           });
@@ -218,7 +220,7 @@ describe('API Compendium sub-resource /jobs', () => {
 
       it('should return job ID when starting job', (done) => {
           let j = request.jar();
-          let ck = request.cookie('connect.sid=' + cookie_o2r);
+          let ck = request.cookie('connect.sid=' + cookie);
           j.setCookie(ck, global.test_host);
 
           request({

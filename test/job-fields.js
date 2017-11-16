@@ -47,7 +47,7 @@ describe('returned fields in job listing', () => {
     // upload 1st compendium with final job status "success"
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
-      this.timeout(30000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         assert.equal(res.statusCode, 200);

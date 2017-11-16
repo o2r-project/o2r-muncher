@@ -23,6 +23,9 @@ const sleep = require('sleep');
 const exec = require('child_process').exec;
 const yn = require('yn');
 const async = require('async');
+const tar = require('tar');
+const path = require('path');
+const fs = require('fs');
 const debug = require('debug')('test:setup');
 var debugContainer = require('debug')('loader_container');
 
@@ -49,7 +52,7 @@ debug('Testing endpoint at %s using %s for upload', global.test_host, global.tes
 docker = new Docker();
 
 before(function (done) {
-    this.timeout(20000);
+    this.timeout(60000);
 
     var db = mongojs('localhost/muncher', ['sessions', 'users']);
 
@@ -258,21 +261,25 @@ before(function (done) {
         });
     }
 
-    // otherwise tests might time out
-    // create Dockerfile.tar with "tar -cf Dockerfile.tar Dockerfile"
+    // otherwise tests time out
     buildDockerfileSimilarToTestDockerfile = (cb) => {
-        tar = './test/Dockerfile.tar';
-        debug('Building image at %s', tar);
-        docker.buildImage(tar, { t: 'muncher_testing_base_image' }, function (err, stream) {
+        dockerFile = 'Dockerfile';
+        debug('Building image using %s', dockerFile);
+
+        docker.buildImage({
+            context: __dirname,
+            src: [dockerFile]
+        }, { t: 'muncher_testing_base_image' }, function (err, stream) {
             if (err) {
                 debug(err);
                 cb(err);
+                return;
             }
             stream.pipe(process.stdout, {
                 end: true
-              });
-            
-              stream.on('end', function() {
+            });
+
+            stream.on('end', function () {
                 cb(null, 'built image using ' + tar);
             });
         });
@@ -347,7 +354,7 @@ before(function (done) {
 
 });
 
-after(function (done) {
+after((done) => {
     delete docker;
 
     if (env.LOADER_CONTAINER && yn(env.LOADER_CONTAINER)) {

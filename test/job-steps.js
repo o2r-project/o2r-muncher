@@ -42,7 +42,7 @@ describe('API job steps', () => {
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) {
         sleep.sleep(1)
-        db.close;
+        db.close();
         done();
       });
     });
@@ -110,7 +110,7 @@ describe('API job steps', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
-      this.timeout(20000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -262,7 +262,7 @@ describe('API job steps', () => {
     let job_id = '';
 
     before(function (done) {
-      this.timeout(20000);
+      this.timeout(60000);
       let req = createCompendiumPostRequest('./test/erc/step_validate_bag', cookie_o2r);
 
       request(req, (err, res, body) => {
@@ -331,7 +331,7 @@ describe('API job steps', () => {
     let job_id = '';
 
     before(function (done) {
-      this.timeout(20000);
+      this.timeout(60000);
       let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
 
       request(req, (err, res, body) => {
@@ -506,7 +506,7 @@ describe('API job steps', () => {
     let compendium_id = '';
 
     before(function (done) {
-      this.timeout(20000);
+      this.timeout(60000);
       let req = createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace');
 
       request(req, (err, res, body) => {
@@ -587,7 +587,7 @@ describe('API job steps', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_prepare', cookie_o2r);
-      this.timeout(20000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         let compendium_id = JSON.parse(body).id;
@@ -655,7 +655,7 @@ describe('API job steps', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_build', cookie_o2r);
-      this.timeout(30000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         let compendium_id = JSON.parse(body).id;
@@ -747,7 +747,7 @@ describe('API job steps', () => {
     let job_id = '';
 
     before(function (done) {
-      this.timeout(20000);
+      this.timeout(60000);
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
 
       request(req, (err, res, body) => {
@@ -864,7 +864,7 @@ describe('API job steps', () => {
     let compendium_id = '';
 
     before(function (done) {
-      this.timeout(20000);
+      this.timeout(60000);
       let req = createCompendiumPostRequest('./test/workspace/rmd-data-random', cookie_o2r, 'workspace');
 
       request(req, (err, res, body) => {

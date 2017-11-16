@@ -46,8 +46,9 @@ describe('Delete candidate', () => {
     });
   });
   
-  after(function () {
+  after((done) => {
     db.close();
+    done();
   });
 
   describe('as author', () => {
@@ -55,7 +56,7 @@ describe('Delete candidate', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(30000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -138,7 +139,7 @@ describe('Delete candidate', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(20000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -176,7 +177,7 @@ describe('Delete candidate', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(20000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -220,7 +221,7 @@ describe('Delete candidate', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_admin);
-      this.timeout(20000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;

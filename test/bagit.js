@@ -43,7 +43,7 @@ tags('storage_access')
   describe('bag detection for ERC compendium', function () {
     let compendium_id = null;
     before(function (done) {
-      this.timeout(20000);
+      this.timeout(60000);
       let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
 
       request(req, (err, res, body) => {
@@ -65,7 +65,7 @@ tags('storage_access')
     let compendium_id = null;
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_validate_bag/data', cookie_o2r, 'workspace');
-      this.timeout(20000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -86,7 +86,7 @@ tags('storage_access')
     let job_id = null;
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute/data', cookie_o2r, 'workspace');
-      this.timeout(20000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         let compendium_id = JSON.parse(body).id;
@@ -110,7 +110,7 @@ tags('storage_access')
     let job_id = null;
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
-      this.timeout(20000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         let compendium_id = JSON.parse(body).id;

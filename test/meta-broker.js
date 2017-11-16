@@ -34,7 +34,7 @@ describe('Brokering compendium metadata', () => {
   let compendium_id = '';
   before(function (done) {
     let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-    this.timeout(20000);
+    this.timeout(60000);
 
     request(req, (err, res, body) => {
       assert.ifError(err);

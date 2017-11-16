@@ -53,7 +53,7 @@ describe('API job filtering', () => {
     // upload 1st compendium with final job status "success"
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
-      this.timeout(20000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         compendium_id_success = JSON.parse(body).id;

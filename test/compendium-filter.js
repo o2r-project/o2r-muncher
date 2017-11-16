@@ -33,8 +33,9 @@ const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPu
 describe('API compendium filter', () => {
   var db = mongojs('localhost/muncher', ['compendia']);
 
-  after(function () {
+  after((done) => {
     db.close();
+    done();
   });
 
   describe('compendium filtering with DOI', () => {
@@ -43,7 +44,7 @@ describe('API compendium filter', () => {
     var test_user = '0000-0001-6021-1617';
 
     before(function (done) {
-      this.timeout(30000);
+      this.timeout(60000);
       db.compendia.drop(function (err, doc) { // start without any compendia
         let req = createCompendiumPostRequest('./test/erc/metatainer-doi', cookie_o2r);
         request(req, (err, res, body) => {
@@ -122,7 +123,7 @@ describe('API compendium filter', () => {
     var test_user = '0000-0001-6021-1617';
 
     before(function (done) {
-      this.timeout(30000);
+      this.timeout(60000);
       db.compendia.drop(function (err, doc) { // start without any compendia
 
         let req = createCompendiumPostRequest('./test/erc/metatainer-doi', cookie_o2r);
