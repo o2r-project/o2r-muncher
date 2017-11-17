@@ -22,6 +22,7 @@ const fse = require('fs-extra');
 const path = require('path');
 const exec = require('child_process').exec;
 const objectPath = require('object-path');
+const urlJoin = require('url-join');
 
 const dirTree = require('directory-tree');
 const rewriteTree = require('../lib/rewrite-tree');
@@ -87,7 +88,7 @@ exports.viewCompendium = (req, res) => {
           fs.accessSync(path.join(config.fs.compendium, id)); // throws if does not exist
           answer.files = rewriteTree(dirTree(path.join(config.fs.compendium, id)),
             config.fs.compendium.length + config.id_length, // remove local fs path and id
-            config.api.resource.compendium + id + config.api.sub_resource.data // prepend proper location
+            urlJoin(config.api.resource.compendium, id, config.api.sub_resource.data) // prepend proper location
           );
         } catch (err) {
           debug('[%s] Error: No data files found (Fail? %s): %s', id, config.fs.fail_on_no_files, err);

@@ -35,7 +35,7 @@ const sleepSecs = 30;
 let Docker = require('dockerode');
 let docker = new Docker();
 
-describe.only('API job steps', () => {
+describe('API job steps', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
   before((done) => {
@@ -477,7 +477,7 @@ describe.only('API job steps', () => {
           });
         });
       });
-    }).timeout(sleepSecs * 1000 * 3);
+    }).timeout(sleepSecs * 1000 * 2);;
 
     it('should complete step "generate_configuration" and skip previous steps for minimal-rmd-data', (done) => {
       let req = createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace');
@@ -523,15 +523,14 @@ describe.only('API job steps', () => {
         publishCandidate(compendium_id, cookie_o2r, () => {
           startJob(compendium_id, id => {
             job_id = id;
+            sleep.sleep(sleepSecs);
             done();
           });
         });
       });
     });
 
-    it('should skip previous steps __after some waiting__', (done) => {
-      sleep.sleep(sleepSecs);
-
+    it('should skip previous steps', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
@@ -540,7 +539,7 @@ describe.only('API job steps', () => {
         assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
         done();
       });
-    }).timeout(sleepSecs * 1000 * 3);
+    });
 
     it('should complete step "generate_manifest"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
@@ -549,7 +548,7 @@ describe.only('API job steps', () => {
         assert.propertyVal(response.steps.generate_manifest, 'status', 'success');
         done();
       });
-    }).timeout(sleepSecs * 1000 * 2);
+    });
 
     it('show have the manifest file in the job files', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
@@ -573,8 +572,24 @@ describe.only('API job steps', () => {
       });
     });
 
-    it('should have the expected content in the manifest file', function (done) {
-      this.skip();
+    it('should have the expected content in the manifest file via the job', function (done) {
+      request(global.test_host_transporter + '/api/v1/job/' + job_id + '/data/Dockerfile', (err, res, body) => {
+        assert.ifError(err);
+        assert.isNotObject(body, 'response is not JSON');
+        assert.include(body, 'FROM rocker/r-ver:3.4.2');
+        assert.include(body, 'rmarkdown::render(input = \\"/erc/main.Rmd\\"');
+        done();
+      });
+    });
+
+    it('should have the expected content in the manifest file via the compendium', function (done) {
+      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/Dockerfile', (err, res, body) => {
+        assert.ifError(err);
+        assert.isNotObject(body, 'response is not JSON');
+        assert.include(body, 'FROM rocker/r-ver:3.4.2');
+        assert.include(body, 'rmarkdown::render(input = \\"/erc/main.Rmd\\"');
+        done();
+      });
     });
 
     it('should complete build, execute, and cleanup', function (done) {
@@ -587,7 +602,7 @@ describe.only('API job steps', () => {
         assert.propertyVal(response.steps.cleanup, 'status', 'success');
         done();
       });
-    }).timeout(sleepSecs * 1000 * 2);
+    });
 
   });
 
@@ -603,22 +618,21 @@ describe.only('API job steps', () => {
         publishCandidate(compendium_id, cookie_o2r, () => {
           startJob(compendium_id, id => {
             job_id = id;
+            sleep.sleep(sleepSecs);
             done();
           });
         });
       });
     });
 
-    it('should complete step "image_prepare" __after some waiting__', (done) => {
-      sleep.sleep(sleepSecs);
-
+    it('should complete step "image_prepare"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.image_prepare, 'status', 'success');
         done();
       });
-    }).timeout(sleepSecs * 1000 * 2);
+    });
 
     it('should fail step "image_build"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
@@ -688,7 +702,7 @@ describe.only('API job steps', () => {
         assert.propertyVal(response.steps.image_prepare, 'status', 'success');
         done();
       });
-    }).timeout(sleepSecs * 1000 * 3);
+    });
 
     it('should skip steps "generate_configuration" and "generate_manifest"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
@@ -717,7 +731,7 @@ describe.only('API job steps', () => {
         assert.propertyVal(response.steps.image_execute, 'statuscode', 1);
         done();
       });
-    }).timeout(sleepSecs * 1000 * 2);
+    });
 
     it('should complete step "cleanup"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
@@ -752,7 +766,7 @@ describe.only('API job steps', () => {
     }).timeout(sleepSecs * 1000);
   });
 
-  describe.only('EXECUTION step_image_execute', () => {
+  describe('EXECUTION step_image_execute', () => {
     let job_id = '';
 
     before(function (done) {
@@ -764,51 +778,66 @@ describe.only('API job steps', () => {
         publishCandidate(compendium_id, cookie_o2r, () => {
           startJob(compendium_id, id => {
             job_id = id;
+            sleep.sleep(sleepSecs);
             done();
           });
         });
       });
     });
 
-    it('should complete step all previous steps (except bag validation) __after some waiting__', (done) => {
-      sleep.sleep(sleepSecs);
-
+    it('should complete step all previous steps (and skip bag validation)', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
-        if (config.bagtainer.validateBagBeforeExecute)
-          assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'skipped bag validation because of added metadata files');
-        else
-          assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
-
+        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
         assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
         assert.propertyVal(response.steps.image_prepare, 'status', 'success');
         assert.propertyVal(response.steps.image_build, 'status', 'success');
-        done();
-      });
-    }).timeout(sleepSecs * 1000 * 2);
-
-    it('should complete step "image_execute"', (done) => {
-      sleep.sleep(sleepSecs);
-
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
         assert.propertyVal(response.steps.image_execute, 'status', 'success');
         done();
       });
-    }).timeout(sleepSecs * 1000 * 2);
+    });
 
-
-    it('should complete step "check" but not have a display diff nor images', (done) => {
+    it('should complete step "image_execute"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.propertyVal(response.steps.check, 'status', 'success');
-        assert.propertyVal(response.steps.check, 'checkSuccessful', true);
-        assert.notProperty(response.steps.check, 'display');
+        done();
+      });
+    });
+
+    it('should fail step "check" (depends on https://github.com/o2r-project/erc-checker/issues/8)', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.check, 'status', 'failure');
+        assert.propertyVal(response.steps.check, 'checkSuccessful', false);
+        assert.property(response.steps.check, 'display');
         assert.notProperty(response.steps.check, 'images');
+        done();
+      });
+    });
+
+    it('should have a diff HTML but no images (depends on https://github.com/o2r-project/erc-checker/issues/8)', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.property(response.steps.check, 'display');
+        assert.property(response.steps.check, 'images');
+        assert.isArray(response.steps.check.images);
+        assert.isEmpty(response.steps.check.images);
+        done();
+      });
+    });
+
+    it('should have a non-empty errors array', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.property(response.steps.check, 'errors');
+        assert.isArray(response.steps.check.errors);
+        assert.isNotEmpty(response.steps.check.errors);
         done();
       });
     });
@@ -826,12 +855,14 @@ describe.only('API job steps', () => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
+        assert.property(response.steps.image_execute, 'text');
 
         let uname = unameCall();
-        assert.include(response.steps.image_execute.text, uname.machine);
-        assert.include(response.steps.image_execute.text, uname.release);
-        assert.include(response.steps.image_execute.text, uname.sysname);
-        assert.include(response.steps.image_execute.text, uname.version);
+        log = JSON.stringify(response.steps.image_execute.text);
+        assert.include(log, uname.machine);
+        assert.include(log, uname.release);
+        assert.include(log, uname.sysname);
+        assert.include(log, uname.version);
         done();
       });
     });
@@ -850,7 +881,7 @@ describe.only('API job steps', () => {
       }
     });
 
-    it('should have deleted image during cleanup after some time (skipped if images are kept)', function (done) {
+    it('should have deleted image during cleanup (skipped if images are kept)', function (done) {
       if (!config.bagtainer.keepImages) {
         docker.listImages(function (err, images) {
           assert.ifError(err);
@@ -878,6 +909,54 @@ describe.only('API job steps', () => {
         assert.include(error.message, 'no such file or directory');
         done();
       }
+    });
+  });
+
+  describe('EXECUTION step_check', () => {
+    let job_id = '';
+
+    before(function (done) {
+      this.timeout(60000);
+      let req = createCompendiumPostRequest('./test/erc/step_image_check', cookie_o2r);
+
+      request(req, (err, res, body) => {
+        let compendium_id = JSON.parse(body).id;
+        publishCandidate(compendium_id, cookie_o2r, () => {
+          startJob(compendium_id, id => {
+            job_id = id;
+            sleep.sleep(sleepSecs);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should complete step all other steps (and skip bag validation)', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
+        assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
+        assert.propertyVal(response.steps.image_prepare, 'status', 'success');
+        assert.propertyVal(response.steps.image_build, 'status', 'success');
+        assert.propertyVal(response.steps.image_execute, 'status', 'success');
+        assert.propertyVal(response.steps.cleanup, 'status', 'success');
+        done();
+      });
+    });
+
+    it('should complete step "check" but not have a display diff nor images', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.check, 'status', 'success');
+        assert.propertyVal(response.steps.check, 'checkSuccessful', true);
+        assert.property(response.steps.check, 'display');
+        assert.propertyVal(response.steps.check, 'display', {});
+        assert.propertyVal(response.steps.check, 'images', []);
+        done();
+      });
     });
   });
 

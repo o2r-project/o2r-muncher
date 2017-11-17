@@ -166,7 +166,7 @@ function initApp(callback) {
 
   configureExpressApp = new Promise((fulfill, reject) => {
     app.use(session({
-      secret: c.sessionsecret,
+      secret: c.sessionSecret,
       resave: true,
       saveUninitialized: true,
       maxAge: 60 * 60 * 24 * 7, // cookies become invalid after one week
@@ -181,8 +181,7 @@ function initApp(callback) {
       if (req.user && req.user.orcid) {
         orcid = ' | orcid: ' + req.user.orcid;
       }
-      debug('REQUEST %s %s authenticated user: %s | session: %s',
-        req.method, req.path, req.isAuthenticated(), req.session.id, orcid);
+      debug('REQUEST %s %s authenticated user: %s | session: %s', req.method, req.path, req.isAuthenticated(), req.session.id, orcid);
       next();
     });
 

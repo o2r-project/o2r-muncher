@@ -4,8 +4,6 @@ author:
     affiliation: ifgi
     orcid: https://orcid.org/0000-0001-6021-1617
 title: 'test: step image execute'
-date: "2017"
-output: html_document
 ---
 
-Nothing to see here at `r date()`.
+Nothing to see here.

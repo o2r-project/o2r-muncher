@@ -170,7 +170,7 @@ describe('API job filtering', () => {
       });
     }).timeout(10000);
 
-    it('5th job (failing compendium, orcid_uploader user): should return job ID when starting job execution', (done) => {
+    it('5th job (failing compendium, orcid_uploader user): should return job ID when starting job execution (now wait for jobs to finish!)', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_uploader);
       j.setCookie(ck, global.test_host);
@@ -191,13 +191,13 @@ describe('API job filtering', () => {
         job_id = response.job_id;
         job_count_failure++;
         job_count_user_uploader++;
+
+        sleep.sleep(waitSecs);
         done();
       });
-    }).timeout(10000);
+    }).timeout(waitSecs * 1000 * 2);
 
-    it('should list 2 jobs for successful compendium _after some waiting_', (done) => {
-      sleep.sleep(waitSecs);
-
+    it('should list 2 jobs for successful compendium', (done) => {
       request(global.test_host + '/api/v1/job/?compendium_id=' + compendium_id_success, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
@@ -206,7 +206,7 @@ describe('API job filtering', () => {
         assert.equal(response.results.length, 2);
         done();
       });
-    }).timeout(waitSecs * 1000 * 2);
+    });
 
     it('should list 3 jobs for failing compendium', (done) => {
       request(global.test_host + '/api/v1/job/?compendium_id=' + compendium_id_failure, (err, res, body) => {

@@ -1,4 +1,4 @@
 a48f626014a144f1cf4a9b3b8cac955e  data/Dockerfile
-44f98d4a3640815a0c976b8b964dd116  data/doc.Rmd
-8d0181c7a1d5e6801ac7a6d84c49a550  data/erc.yml
-eadd49d3a3facebd5baa60d519505662  data/test.txt
+82c5b2b792c5d4b89a449ccaba6bc082  data/doc.Rmd
+6febbd159700b9a878756fb0ca389c91  data/doc.html
+5e01614e64e230679eb2dc86f79633ab  data/erc.yml
