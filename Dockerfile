@@ -54,7 +54,7 @@ COPY package.json package.json
 RUN npm install --production
 
 # Clean up
-RUN apk del git vips-dev fftw-dev make binutils g++ \
+RUN apk del git make binutils g++ \
   && rm -rf /var/cache
 
 # Copy files after npm install to utilize build caching
