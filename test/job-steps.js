@@ -953,7 +953,6 @@ describe('API job steps', () => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        console.log(response);
         assert.propertyVal(response.steps.check, 'status', 'success');
         assert.propertyVal(response.steps.check, 'checkSuccessful', true);
         assert.property(response.steps.check, 'display');

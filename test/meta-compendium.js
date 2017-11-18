@@ -342,7 +342,6 @@ describe('compendium metadata', () => {
       req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req_doc_o2r, (err, res, body) => {
         assert.ifError(err);
-        console.log(body);
         assert.equal(res.statusCode, 200);
         done();
       });

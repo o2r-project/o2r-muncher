@@ -20,10 +20,11 @@ const tmp = require('tmp');
 const AdmZip = require('adm-zip');
 const fs = require('fs');
 const tags = require('mocha-tags');
-console.log('Test filter: ', tags.filter);
+const debug = require('debug')('test:util');
+debug('Test filter: ', tags.filter);
 
 require("./setup");
-console.log('Using loader at ' + global.test_host_loader);
+debug('Using loader at ' + global.test_host_loader);
 
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 
