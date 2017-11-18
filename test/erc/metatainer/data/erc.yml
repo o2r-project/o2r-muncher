@@ -1,3 +1,5 @@
 ---
 id: 66b173cb682d6
 spec_version: 1
+main: document.Rmd
+display: document.html

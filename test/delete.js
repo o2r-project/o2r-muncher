@@ -34,7 +34,7 @@ const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9y
 const cookie_admin = 's:hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i.IEPb0lmtGojn2cVk2edRuomIEanX6Ddz87egE5Pe8UM';
 const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
 
-describe('Delete candidate', () => {
+describe('Delete candidate (using metatainer)', () => {
   var db = null;
 
   before((done) => {
@@ -287,8 +287,7 @@ describe('Delete candidate', () => {
           request({
             uri: global.test_host + '/api/v1/compendium/' + compendium_id,
             method: 'DELETE',
-            jar: j,
-            timeout: 1000
+            jar: j
           }, (err, res, body) => {
             assert.ifError(err);
             assert.equal(res.statusCode, 400);
@@ -299,7 +298,7 @@ describe('Delete candidate', () => {
           });
         });
       });
-    }).timeout(10000);
+    }).timeout(30000);
   });
 
 });

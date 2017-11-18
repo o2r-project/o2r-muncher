@@ -216,7 +216,7 @@ describe('API Compendium sub-resource /jobs', () => {
               assert.isEmpty(response.results);
               done();
           });
-      }).timeout(10000);
+      });
 
       it('should return job ID when starting job', (done) => {
           let j = request.jar();
@@ -229,8 +229,7 @@ describe('API Compendium sub-resource /jobs', () => {
               jar: j,
               formData: {
                   compendium_id: compendium_id
-              },
-              timeout: 5000
+              }
           }, (err, res, body) => {
               assert.ifError(err);
               assert.equal(res.statusCode, 200);
@@ -239,7 +238,7 @@ describe('API Compendium sub-resource /jobs', () => {
               job_id = response.job_id;
               done();
           });
-      }).timeout(10000);
+      });
 
       it('should respond with HTTP 200 and one job in the list of jobs when one is started', (done) => {
           request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {

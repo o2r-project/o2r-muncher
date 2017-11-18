@@ -90,7 +90,7 @@ c.bagtainer.displayFilePath = 'metadata.o2r.displayfile';
 
 c.bagit = {};
 c.bagit.detectionFileName = 'bagit.txt';
-c.bagit.payloadDirectory = '/data';
+c.bagit.payloadDirectory = 'data';
 c.bagit.validateFast = false;
 c.bagit.failOnValidationError = {};
 c.bagit.failOnValidationError.execute = false; // muncher never updates the bag

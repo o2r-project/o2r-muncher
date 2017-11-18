@@ -807,14 +807,17 @@ describe('API job steps', () => {
       });
     });
 
-    it('should fail step "check" (depends on https://github.com/o2r-project/erc-checker/issues/8)', (done) => {
+    it('should fail step "check" and have empty images and display properties (depends on https://github.com/o2r-project/erc-checker/issues/8)', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.check, 'status', 'failure');
         assert.propertyVal(response.steps.check, 'checkSuccessful', false);
         assert.property(response.steps.check, 'display');
-        assert.notProperty(response.steps.check, 'images');
+        assert.isNotNull(response.steps.check.display);
+        assert.property(response.steps.check, 'images');
+        assert.isArray(response.steps.check.images);
+        assert.isEmpty(response.steps.check.images);
         done();
       });
     });
@@ -917,7 +920,7 @@ describe('API job steps', () => {
 
     before(function (done) {
       this.timeout(60000);
-      let req = createCompendiumPostRequest('./test/erc/step_image_check', cookie_o2r);
+      let req = createCompendiumPostRequest('./test/erc/step_check', cookie_o2r);
 
       request(req, (err, res, body) => {
         let compendium_id = JSON.parse(body).id;
@@ -950,11 +953,14 @@ describe('API job steps', () => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
+        console.log(response);
         assert.propertyVal(response.steps.check, 'status', 'success');
         assert.propertyVal(response.steps.check, 'checkSuccessful', true);
         assert.property(response.steps.check, 'display');
-        assert.propertyVal(response.steps.check, 'display', {});
-        assert.propertyVal(response.steps.check, 'images', []);
+        assert.isNotNull(response.steps.check.display);
+        assert.property(response.steps.check, 'images');
+        assert.isArray(response.steps.check.images);
+        assert.isEmpty(response.steps.check.images);
         done();
       });
     });

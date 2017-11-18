@@ -43,8 +43,8 @@ describe('Brokering compendium metadata', () => {
       compendium_id = response.id;
 
       let data = {
-        'o2r': {
-          'title': 'New brokered title on the block'
+        o2r: {
+          title: 'New brokered title on the block'
         }
       };
       let j2 = request.jar();
@@ -61,7 +61,6 @@ describe('Brokering compendium metadata', () => {
       req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req_doc_o2r, (err, res, body) => {
         assert.ifError(err);
-        assert.notInclude(body, 'error');
         done();
       });
     });

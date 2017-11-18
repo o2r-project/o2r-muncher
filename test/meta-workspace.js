@@ -30,6 +30,7 @@ const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9y
 const cookie_admin = 's:hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i.IEPb0lmtGojn2cVk2edRuomIEanX6Ddz87egE5Pe8UM';
 const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
 
+var metadataRequestTimeout = 30000;
 
 describe('Updating workspace metadata', () => {
   let compendium_id = '';
@@ -48,7 +49,7 @@ describe('Updating workspace metadata', () => {
     method: 'PUT',
     jar: j5,
     json: newMetadata,
-    timeout: 10000
+    timeout: metadataRequestTimeout
   };
 
   before(function (done) {
@@ -73,6 +74,6 @@ describe('Updating workspace metadata', () => {
         assert.propertyVal(body.metadata.o2r, 'title', newMetadata.o2r.title);
         done();
       });
-    });
+    }).timeout(metadataRequestTimeout * 2);
   });
 });

@@ -517,7 +517,7 @@ exports.updateCompendiumMetadata = (req, res) => {
               })
               .then(() => {
                 debug('[%s] completed metadata update, sending answer.', id);
-                res.status(201).send(answer);
+                res.status(200).send(answer);
               });
 
           } else {

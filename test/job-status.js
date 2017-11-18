@@ -188,8 +188,47 @@ describe('API job overall status', () => {
       });
     });
 
-    it('should end with overall status "success"', (done) => {
+    it('should end with overall status "failure"', (done) => {
       sleep.sleep(waitSecs);
+
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response, 'status', 'failure');
+        done();
+      });
+    }).timeout(waitSecs * 1000 * 2);
+  });
+
+  describe('EXECUTION step_check', () => {
+    let job_id = '';
+
+    before(function (done) {
+      let req = createCompendiumPostRequest('./test/erc/step_check', cookie_o2r);
+      this.timeout(60000);
+
+      request(req, (err, res, body) => {
+        let compendium_id = JSON.parse(body).id;
+        publishCandidate(compendium_id, cookie_o2r, () => {
+          startJob(compendium_id, id => {
+            job_id = id;
+            done();
+          });
+        });
+      });
+    });
+
+    it('should have overall status "running" right away', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response, 'status', 'running');
+        done();
+      });
+    });
+
+    it('should end with overall status "success"', (done) => {
+      sleep.sleep(waitSecs * 10);
 
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
@@ -197,7 +236,7 @@ describe('API job overall status', () => {
         assert.propertyVal(response, 'status', 'success');
         done();
       });
-    }).timeout(waitSecs * 1000 * 2);
+    }).timeout(waitSecs * 1000 * 20);
   });
 
 });

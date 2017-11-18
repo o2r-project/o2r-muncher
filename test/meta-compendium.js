@@ -19,6 +19,8 @@
 const assert = require('chai').assert;
 const request = require('request');
 const config = require('../config/config');
+const path = require('path');
+const sleep = require('sleep');
 const chai = require('chai');
 chai.use(require('chai-datetime'));
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
@@ -75,6 +77,7 @@ describe('compendium metadata', () => {
   describe('checking contents of compendium metadata', () => {
     let metadata = {};
     let main_file = 'document.Rmd';
+    let display_file = 'document.html';
 
     it('should response with document', (done) => {
       request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
@@ -101,26 +104,15 @@ describe('compendium metadata', () => {
       done();
     });
 
-    it('should contain non-empty main file', (done) => {
+    it('should contain correct main file', (done) => {
       assert.property(metadata, 'mainfile');
-      assert.propertyVal(metadata, 'mainfile', main_file);
+      assert.propertyVal(metadata, 'mainfile', path.join(config.bagit.payloadDirectory, main_file));
       done();
     });
 
-    it('should contain file path information', (done) => {
-      assert.property(metadata, 'file');
-      done();
-    });
-
-    it('should contain correct file path', (done) => {
-      assert.property(metadata.file, 'filepath');
-      assert.propertyVal(metadata.file, 'filepath', compendium_id + '/data/' + main_file);
-      done();
-    });
-
-    it('should contain correct file', (done) => {
-      assert.property(metadata.file, 'filename');
-      assert.propertyVal(metadata.file, 'filename', main_file);
+    it('should contain correct display file', (done) => {
+      assert.property(metadata, 'displayfile');
+      assert.propertyVal(metadata, 'displayfile', path.join(config.bagit.payloadDirectory, display_file));
       done();
     });
 
@@ -130,10 +122,10 @@ describe('compendium metadata', () => {
       done();
     });
 
-    it('should contain author array with all author names', (done) => {
-      assert.property(metadata, 'author');
-      assert.isArray(metadata.author);
-      let authorNames = metadata.author.map(function (author) { return author.name; });
+    it('should contain creators array with all author names', (done) => {
+      assert.property(metadata, 'creators');
+      assert.isArray(metadata.creators);
+      let authorNames = metadata.creators.map(function (author) { return author.name; });
       assert.include(authorNames, 'Ted Tester');
       assert.include(authorNames, 'Carl Connauthora');
       done();
@@ -340,6 +332,7 @@ describe('compendium metadata', () => {
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
         publishCandidate(compendium_id, cookie_o2r, () => {
+          sleep.sleep(30);
           done();
         });
       });
@@ -349,10 +342,12 @@ describe('compendium metadata', () => {
       req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req_doc_o2r, (err, res, body) => {
         assert.ifError(err);
+        console.log(body);
         assert.equal(res.statusCode, 200);
         done();
       });
     }).timeout(20000);
+
     it('should respond with a valid JSON document with the updated metadata', (done) => {
       req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req_doc_o2r, (err, res, body) => {
@@ -362,6 +357,7 @@ describe('compendium metadata', () => {
         done();
       });
     }).timeout(20000);
+
     it('should have the updated metadata in the metadata section', (done) => {
       request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
@@ -370,14 +366,13 @@ describe('compendium metadata', () => {
         assert.property(response.metadata, 'o2r');
         assert.property(response.metadata, 'raw');
         assert.property(response.metadata.o2r, 'title');
-        assert.property(response.metadata.o2r, 'author');
+        //assert.property(response.metadata.o2r, 'author');
         assert.propertyVal(response.metadata.o2r, 'title', 'New title on the block');
-        assert.propertyVal(response.metadata.o2r, 'author', 'npm test!');
+        //assert.propertyVal(response.metadata.o2r, 'author', 'npm test!');
         assert.notProperty(response.metadata.o2r, 'abstract');
-        assert.notProperty(response.metadata.o2r, 'file');
         done();
       });
-    }).timeout(20000);
+    });
   });
 
   describe('Updating compendium metadata with *editor* user', () => {
