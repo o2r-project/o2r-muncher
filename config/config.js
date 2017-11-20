@@ -139,6 +139,8 @@ c.email.sender = env.MUNCHER_EMAIL_SENDER;
 
 // metadata extraction and brokering options
 c.meta = {};
+c.meta.dir = '.erc';
+c.meta.normativeFile = 'metadata_o2r.json';
 c.meta.container = {};
 c.meta.container.image = env.MUNCHER_META_TOOL_CONTAINER || 'o2rproject/o2r-meta:latest';
 c.meta.container.default_create_options = {
@@ -149,9 +151,6 @@ c.meta.container.default_create_options = {
   User: env.MUNCHER_META_TOOL_CONTAINER_USER || 'o2r', // or '1000', could be left away because of USER o2r command in o2r-meta's Dockerfile, but better safe than sorry.
   AutoRemove: true
 };
-
-c.meta.normativeFile = 'metadata_o2r.json';
-c.meta.dir = '.erc';
 
 c.meta.broker = {};
 c.meta.broker.module = 'broker';
@@ -166,11 +165,11 @@ c.meta.broker.mappings = {
     file: 'metadata_zenodo_sandbox.json',
     mappingFile: 'broker/mappings/zenodo_sandbox-map.json'
   },
-  o2r: {
-    targetElement: 'o2r',
-    file: 'metadata_o2r.json',
-    mappingFile: 'broker/mappings/o2r-map.json'
-  } 
+  //o2r: {
+  //  targetElement: 'o2r',
+  //  file: 'metadata_o2r.json',
+  //  mappingFile: 'broker/mappings/o2r-map.json'
+  //} 
 }; 
 c.meta.doiPath = 'metadata.o2r.identifier.doi';
 

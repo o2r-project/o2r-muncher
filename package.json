@@ -4,12 +4,11 @@
   "description": "Node.js implementation of parts of the [o2r web api](http://o2r.info/o2r-web-api).",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "DEBUG=muncher,muncher:*,executor:* node index.js",
     "test_loader": "DEBUG=*,-modem,-mocha:* mocha",
     "test_port80": "LOADER_CONTAINER=no TEST_HOST=http://localhost DEBUG=*,-modem,-mocha:* mocha",
     "test": "LOADER_CONTAINER=no DEBUG=*,-modem,-mocha:* mocha",
-    "test_ci": "LOADER_CONTAINER=no DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access\"",
-    "debug": "DEBUG=muncher,executor node index.js"
+    "test_ci": "LOADER_CONTAINER=no DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access\""
   },
   "author": "o2r-project (http://o2r.info)",
   "license": "Apache-2.0",

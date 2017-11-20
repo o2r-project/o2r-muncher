@@ -503,13 +503,13 @@ exports.updateCompendiumMetadata = (req, res) => {
             metadata_dir = path.join(compendium_path, config.meta.dir);
           }
 
-          let metadata_file = path.join(metadata_dir, config.meta.normativeFile);
+          let normative_metadata_file = path.join(metadata_dir, config.meta.normativeFile);
 
           if (compendium.metadata && compendium.metadata.o2r) {
 
-            updateMetadataFile(id, metadata_file, compendium.metadata.o2r)
+            updateMetadataFile(id, normative_metadata_file, compendium.metadata.o2r)
               .then(() => {
-                return brokerMetadata(compendium, metadata_dir, metadata_file, config.meta.broker.mappings);
+                return brokerMetadata(compendium, metadata_dir, normative_metadata_file, config.meta.broker.mappings);
               })
               .catch((err) => {
                 debug('[%s] Error during brokering, returning HTTP 500 response: %s', id, err);
