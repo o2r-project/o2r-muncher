@@ -65,8 +65,10 @@ exports.viewCompendium = (req, res) => {
   let id = req.params.id;
   debug('[%s] view single compendium', id);
 
-  Compendium.findOne({ id })
+  Compendium
+    .findOne({ id })
     .select('id user metadata created candidate bag compendium')
+    .lean()
     .exec((err, compendium) => {
       // eslint-disable-next-line no-eq-null, eqeqeq
       if (err || compendium == null) {
@@ -190,32 +192,38 @@ exports.viewCompendiumJobs = (req, res) => {
   var limit = parseInt(req.query.limit || config.list_limit, 10);
   var start = parseInt(req.query.start || 1, 10) - 1;
 
-  Job.find(filter).select('id').skip(start).limit(limit).exec((err, jobs) => {
-    if (err) {
-      res.status(500).send({ error: 'query failed' });
-    } else {
-
-      answer.results = jobs.map(job => {
-        return job.id;
-      });
-
-      if (jobs.length <= 0) {
-        Compendium.find({ id }).limit(1).exec((err, compendium) => {
-          if (err) {
-            res.status(404).send({ error: 'error finding compendium: ' + err.message });
-          } else {
-            if (compendium.length <= 0) {
-              res.status(404).send({ error: 'no compendium with id ' + id });
-            } else {
-              res.status(200).send(answer);
-            }
-          }
-        });
+  Job
+    .find(filter)
+    .select('id')
+    .skip(start)
+    .limit(limit)
+    .lean()
+    .exec((err, jobs) => {
+      if (err) {
+        res.status(500).send({ error: 'query failed' });
       } else {
-        res.status(200).send(answer);
+
+        answer.results = jobs.map(job => {
+          return job.id;
+        });
+
+        if (jobs.length <= 0) {
+          Compendium.find({ id }).limit(1).exec((err, compendium) => {
+            if (err) {
+              res.status(404).send({ error: 'error finding compendium: ' + err.message });
+            } else {
+              if (compendium.length <= 0) {
+                res.status(404).send({ error: 'no compendium with id ' + id });
+              } else {
+                res.status(200).send(answer);
+              }
+            }
+          });
+        } else {
+          res.status(200).send(answer);
+        }
       }
-    }
-  });
+    });
 };
 
 exports.listCompendia = (req, res) => {
@@ -246,25 +254,31 @@ exports.listCompendia = (req, res) => {
     passon.filter.candidate = false;
 
     return new Promise(function (resolve, reject) {
-      Compendium.find(passon.filter).select('id').skip(passon.start).limit(passon.limit).exec((err, comps) => {
-        if (err) {
-          debug('Error querying candidates for user %s: %s', req.user.orcid, err);
-          let error = new Error('query failed');
-          error.status = 500;
-          reject(error);
-        } else {
-          var count = comps.length;
-          if (count <= 0) {
-            debug('Search turned up empty, no compendium found.');
+      Compendium
+        .find(passon.filter)
+        .select('id')
+        .skip(passon.start)
+        .limit(passon.limit)
+        .lean()
+        .exec((err, comps) => {
+          if (err) {
+            debug('Error querying candidates for user %s: %s', req.user.orcid, err);
+            let error = new Error('query failed');
+            error.status = 500;
+            reject(error);
+          } else {
+            var count = comps.length;
+            if (count <= 0) {
+              debug('Search turned up empty, no compendium found.');
+            }
+
+            passon.results = comps.map(comp => {
+              return comp.id;
+            });
+
+            resolve(passon);
           }
-
-          passon.results = comps.map(comp => {
-            return comp.id;
-          });
-
-          resolve(passon);
-        }
-      })
+        })
     });
   };
 
@@ -331,40 +345,44 @@ exports.viewCompendiumMetadata = (req, res) => {
   let id = req.params.id;
   let answer = { id: id };
 
-  Compendium.findOne({ id }).select('id metadata candidate user').exec((err, compendium) => {
-    // eslint-disable-next-line no-eq-null, eqeqeq
-    if (err || compendium == null) {
-      res.status(404).send({ error: 'no compendium with this id' });
-    } else {
-      answer.metadata = {};
-      answer.metadata.o2r = compendium.metadata.o2r;
-
-      // check if user is allowed to view the candidate (easier to check async if done after answer creation)
-      if (compendium.candidate) {
-        debug('[%s] Compendium is a candidate, need to make some checks.', id);
-
-        if (!req.isAuthenticated()) {
-          debug('[%s] User is not authenticated, cannot view candidate.', id);
-          res.status(401).send({ error: 'user is not authenticated' });
-          return;
-        }
-        detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
-          .then((passon) => {
-            if (passon.user_has_rights) {
-              debug('[%s] User %s may see candidate metadata.', id, req.user.orcid);
-              res.status(200).send(answer);
-            } else {
-              debug('[%s] Error: user does not have rights but promise fulfilled', id);
-            }
-          }, function (passon) {
-            debug('[%s] User %s may NOT see candidate metadata.', id, req.user.orcid);
-            res.status(403).send(passon);
-          });
+  Compendium
+    .findOne({ id })
+    .select('id metadata candidate user')
+    .lean()
+    .exec((err, compendium) => {
+      // eslint-disable-next-line no-eq-null, eqeqeq
+      if (err || compendium == null) {
+        res.status(404).send({ error: 'no compendium with this id' });
       } else {
-        res.status(200).send(answer);
+        answer.metadata = {};
+        answer.metadata.o2r = compendium.metadata.o2r;
+
+        // check if user is allowed to view the candidate (easier to check async if done after answer creation)
+        if (compendium.candidate) {
+          debug('[%s] Compendium is a candidate, need to make some checks.', id);
+
+          if (!req.isAuthenticated()) {
+            debug('[%s] User is not authenticated, cannot view candidate.', id);
+            res.status(401).send({ error: 'user is not authenticated' });
+            return;
+          }
+          detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
+            .then((passon) => {
+              if (passon.user_has_rights) {
+                debug('[%s] User %s may see candidate metadata.', id, req.user.orcid);
+                res.status(200).send(answer);
+              } else {
+                debug('[%s] Error: user does not have rights but promise fulfilled', id);
+              }
+            }, function (passon) {
+              debug('[%s] User %s may NOT see candidate metadata.', id, req.user.orcid);
+              res.status(403).send(passon);
+            });
+        } else {
+          res.status(200).send(answer);
+        }
       }
-    }
-  });
+    });
 };
 
 // overwrite metadata file in compendium directory (which is then used for brokering)

@@ -41,7 +41,6 @@ describe('API job steps', () => {
   before((done) => {
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) {
-        sleep.sleep(1)
         db.close();
         done();
       });
@@ -1073,6 +1072,185 @@ describe('API job steps', () => {
         let response = JSON.parse(body);
 
         assert.notInclude(JSON.stringify(response.files), 'main.html');
+        done();
+      });
+    });
+  });
+});
+
+describe.only('API job details filtering', () => {
+  var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
+  var job_id;
+
+  before(function (done) {
+    this.timeout(60000);
+    db.compendia.drop(function (err, doc) {
+      db.jobs.drop(function (err, doc) {
+        let req = createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace');
+
+        request(req, (err, res, body) => {
+          let compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              sleep.sleep(sleepSecs);
+              db.close();
+              done();
+            });
+          });
+        });
+      });
+    });
+  });
+
+  describe('GET /api/v1/job', () => {
+    it('should return only status, start and end when "steps" is missing', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200, 'status code OK');
+        assert.isObject(JSON.parse(body), 'returned JSON');
+        let response = JSON.parse(body);
+
+        assert.property(response, 'steps');
+        Object.entries(response.steps).forEach(([step, value], index, array) => {
+          assert.property(value, 'status', step + ' has status');
+          assert.property(value, 'start', step + ' has start');
+          assert.property(value, 'end', step + ' has end');
+          assert.notProperty(value, 'text', step + ' does not have text');
+          assert.notProperty(value, 'statuscode', step + ' does not have statuscode');
+          assert.notProperty(value, 'images', step + ' does not have images');
+          assert.notProperty(value, 'manifest', step + ' does not have manifest');
+        });
+
+        done();
+      });
+    });
+  });
+
+  describe('GET /api/v1/job', () => {
+    it('should return all details when "steps=all"', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        assert.isObject(JSON.parse(body), 'returned JSON');
+        let response = JSON.parse(body);
+
+        assert.property(response, 'steps');
+        Object.entries(response.steps).forEach(([step, value], index, array) => {
+          assert.property(value, 'status', step + ' has status');
+          assert.property(value, 'start', step + ' has start');
+          assert.property(value, 'end'), step + ' has end';
+          assert.property(value, 'text', step + ' has text');
+        });
+
+        assert.property(response.steps.generate_manifest, 'manifest');
+        assert.property(response.steps.image_execute, 'statuscode');
+        assert.property(response.steps.check, 'images');
+        assert.property(response.steps.check, 'display');
+
+        done();
+      });
+    });
+  });
+
+  describe('GET /api/v1/job', () => {
+    it('should give status, start and end but full details for one selected step', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=generate_manifest', (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        assert.isObject(JSON.parse(body), 'returned JSON');
+        let response = JSON.parse(body);
+
+        assert.property(response, 'steps');
+        Object.entries(response.steps).forEach(([step, value], index, array) => {
+          assert.property(value, 'status', step + ' has status');
+          assert.property(value, 'start', step + ' has start');
+          assert.property(value, 'end'), step + ' has end';
+          if (name != 'generate_manifest') assert.notProperty(value, 'text', step + ' does not have text');
+        });
+
+        assert.property(response.steps.generate_manifest, 'manifest');
+        assert.property(response.steps.generate_manifest, 'text');
+
+        done();
+      });
+    });
+  });
+
+  describe('GET /api/v1/job', () => {
+    it('should work with trailing slash and without', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '/?steps=validate_bag', (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        assert.isObject(JSON.parse(body), 'returned JSON');
+        let responseWith = JSON.parse(body);
+
+        request(global.test_host + '/api/v1/job/' + job_id + '?steps=validate_bag', (err, res, body) => {
+          assert.ifError(err);
+          assert.equal(res.statusCode, 200);
+          assert.isObject(JSON.parse(body), 'returned JSON');
+          let responseWithout = JSON.parse(body);
+
+          assert.property(responseWith.steps.validate_bag, 'status');
+          assert.property(responseWithout.steps.validate_bag, 'status');
+          assert.property(responseWith.steps.validate_bag, 'text');
+          assert.property(responseWithout.steps.validate_bag, 'text');
+
+          assert.notProperty(responseWith.steps.validate_compendium, 'text');
+          assert.notProperty(responseWithout.steps.validate_compendium, 'text');
+
+          done();
+        });
+      });
+    });
+  });
+
+  describe('GET /api/v1/job', () => {
+    it('should give status, start and end for all steps, but full details for two selected steps', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=check,cleanup', (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        assert.isObject(JSON.parse(body), 'returned JSON');
+        let response = JSON.parse(body);
+
+        assert.property(response, 'steps');
+        Object.entries(response.steps).forEach(([step, value], index, array) => {
+          assert.property(value, 'status', step + ' has status');
+          assert.property(value, 'start', step + ' has start');
+          assert.property(value, 'end'), step + ' has end';
+          if (!['check', 'cleanup'].includes(step)) {
+            assert.notProperty(value, 'text', step + ' does not have text');
+          }
+        });
+
+        assert.property(response.steps.check, 'text');
+        assert.property(response.steps.cleanup, 'text');
+        assert.property(response.steps.check, 'images');
+
+        done();
+      });
+    });
+  });
+
+  describe('GET /api/v1/job', () => {
+    it('should have the default behaviour for unknown steps parameter', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=none', (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200, 'status code OK');
+        assert.isObject(JSON.parse(body), 'returned JSON');
+        let response = JSON.parse(body);
+
+        assert.property(response, 'steps');
+        Object.entries(response.steps).forEach(([step, value], index, array) => {
+          assert.property(value, 'status', step + ' has status');
+          assert.property(value, 'start', step + ' has start');
+          assert.property(value, 'end'), step + ' has end';
+          assert.notProperty(value, 'text', step + ' does not have text');
+          assert.notProperty(value, 'statuscode', step + ' does not have statuscode');
+          assert.notProperty(value, 'images', step + ' does not have images');
+          assert.notProperty(value, 'manifest', step + ' does not have manifest');
+        });
+
         done();
       });
     });

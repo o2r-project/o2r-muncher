@@ -21,6 +21,7 @@ const randomstring = require('randomstring');
 const fs = require('fs');
 const path = require('path');
 const urlJoin = require('url-join');
+const pick = require('lodash.pick');
 
 const dirTree = require('directory-tree');
 const rewriteTree = require('../lib/rewrite-tree');
@@ -29,6 +30,8 @@ const Executor = require('../lib/executor').Executor;
 
 const Compendium = require('../lib/model/compendium');
 const Job = require('../lib/model/job');
+
+const alwaysStepFields = ["start", "end", "status"];
 
 exports.listJobs = (req, res) => {
   var answer = {};
@@ -82,7 +85,7 @@ exports.listJobs = (req, res) => {
     fields = fields.trim();
   }
 
-  Job.find(filter).select(fields).skip(start).limit(limit).exec((err, jobs) => {
+  Job.find(filter).select(fields).skip(start).limit(limit).lean().exec((err, jobs) => {
     if (err) {
       res.status(500).send({ error: 'job query failed' });
     } else {
@@ -111,18 +114,30 @@ exports.listJobs = (req, res) => {
 };
 
 exports.viewJob = (req, res) => {
-  var id = req.params.id;
-  var answer = { id };
+  let id = req.params.id;
+  let steps = [];
+  if (req.query.steps) {
+    steps = req.query.steps.split(',').map(f => { return f.trim(); });
+  }
+  let answer = { id };
 
-  Job.findOne({ id }).exec((err, job) => {
+  Job.findOne({ id }).select("compendium_id status steps").lean().exec((err, job) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (err || job == null) { // intentionally loose comparison
+      debug('[%s] error retrieving job %s: %s', id, err);
       res.status(404).send({ error: 'no job with this id' });
     } else {
-      debug(job);
+      debug('[%s] Found job, returning it with steps %s', id, JSON.stringify(steps));
       answer.compendium_id = job.compendium_id;
-      answer.steps = job.steps;
       answer.status = job.status;
+
+      answer.steps = {};
+      for (var step in job.steps) {
+        if (job.steps.hasOwnProperty(step)) {
+          answer.steps[step] = pick(job.steps[step], alwaysStepFields);
+        }
+      }
+
       try {
         fs.accessSync(path.join(config.fs.job, id)); // throws if directory does not exist
 

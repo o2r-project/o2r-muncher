@@ -5,7 +5,6 @@
   "main": "index.js",
   "scripts": {
     "start": "DEBUG=muncher,muncher:*,executor:* node index.js",
-    "test_loader": "DEBUG=*,-modem,-mocha:* mocha",
     "test_port80": "LOADER_CONTAINER=no TEST_HOST=http://localhost DEBUG=*,-modem,-mocha:* mocha",
     "test": "LOADER_CONTAINER=no DEBUG=*,-modem,-mocha:* mocha",
     "test_ci": "LOADER_CONTAINER=no DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access\""
@@ -35,6 +34,7 @@
     "fs-extra": "^4.0.2",
     "lodash.get": "^4.4.2",
     "lodash.isstring": "^4.0.1",
+    "lodash.pick": "^4.4.0",
     "mimos": "^4.0.0",
     "mongoose": "^4.13.0",
     "mongoose-timestamp": "^0.6.0",
