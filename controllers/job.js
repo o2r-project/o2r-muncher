@@ -19,8 +19,9 @@ const config = require('../config/config');
 const debug = require('debug')('job');
 const randomstring = require('randomstring');
 const fs = require('fs');
-const fse = require('fs-extra');
 const path = require('path');
+const urlJoin = require('url-join');
+const pick = require('lodash.pick');
 
 const dirTree = require('directory-tree');
 const rewriteTree = require('../lib/rewrite-tree');
@@ -30,7 +31,10 @@ const Executor = require('../lib/executor').Executor;
 const Compendium = require('../lib/model/compendium');
 const Job = require('../lib/model/job');
 
-exports.view = (req, res) => {
+const alwaysStepFields = ["start", "end", "status"];
+const allStepsValue = "all";
+
+exports.listJobs = (req, res) => {
   var answer = {};
   var filter = {};
   var limit = parseInt(req.query.limit || config.list_limit, 10);
@@ -51,54 +55,106 @@ exports.view = (req, res) => {
     filter.status = req.query.status;
   }
 
-  switch (req.query.fields) { //add requested fields (status, ...) to db query
-    case null:
-      break;
-    case 'status': // select id and status in query
-      fields += ' status';
-  }
+  let requestedFields = [];
+  if (req.query.fields != null) {
+    requestedFields = req.query.fields.split(',').map(f => { return f.trim(); });
 
-  Job.find(filter).select(fields).skip(start).limit(limit).exec((err, jobs) => {
-    if (err) {
-      res.status(500).send({ error: 'query failed' });
-    } else {
-      var count = jobs.length;
-      if (count <= 0) {
-        res.status(404).send({ error: 'no jobs found' });
-      } else {
-
-        switch (req.query.fields) { //return requested fields
-          case 'status':
-            answer.results = jobs.map((job) => { return { id: job.id, status: job.status }; });
+    try {
+      requestedFields.forEach((elem) => {
+        switch (elem) { // add requested fields (status, ...) to db query
+          case null:
+            break;
+          case 'status': // select id and status in query
+            fields += ' status';
+            break;
+          case 'user':
+            fields += ' user';
+            break;
+          case '':
             break;
           default:
-            answer.results = jobs.map((job) => { return job.id; });
+            e = new Error('unsupported field');
+            e.field = elem;
+            throw e;
         }
-        res.status(200).send(answer);
+      });
+    } catch (e) {
+      res.status(400).send({ error: 'unsupported field requested: ' + e.field });
+      return;
+    }
+
+    fields = fields.trim();
+  }
+
+  Job.find(filter).select(fields).skip(start).limit(limit).lean().exec((err, jobs) => {
+    if (err) {
+      res.status(500).send({ error: 'job query failed' });
+    } else {
+      if (jobs.length < 1) {
+        debug('Search for jobs has empty result.');
       }
+
+      if (requestedFields.length < 1) {
+        answer.results = jobs.map((job) => {
+          return job.id;
+        });
+      } else {
+        answer.results = jobs.map((job) => {
+          jobItem = { id: job.id };
+          requestedFields.forEach((elem) => {
+            jobItem[elem] = job[elem];
+          });
+
+          return jobItem;
+        });
+      }
+
+      res.status(200).send(answer);
     }
   });
 };
 
-exports.viewSingle = (req, res) => {
-  var id = req.params.id;
-  var answer = { id };
+exports.viewJob = (req, res) => {
+  let id = req.params.id;
+  let steps = [];
+  if (req.query.steps) {
+    steps = req.query.steps.split(',').map(f => { return f.trim(); });
+  }
+  let answer = { id };
 
-  Job.findOne({ id }).exec((err, job) => {
+  Job.findOne({ id }).select("compendium_id status steps").lean().exec((err, job) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
-    if (err || job == null) { // intentially loose comparison
+    if (err || job == null) {
+      debug('[%s] error retrieving job %s: %s', id, err);
       res.status(404).send({ error: 'no job with this id' });
     } else {
-      debug(job);
+      debug('[%s] Found job, returning it with steps %s', id, JSON.stringify(steps));
       answer.compendium_id = job.compendium_id;
-      answer.steps = job.steps;
       answer.status = job.status;
-      try {
-        fs.accessSync(config.fs.job + id); // throws if directory does not exist
 
-        answer.files = rewriteTree(dirTree(config.fs.job + id),
+      answer.steps = {};
+      if (steps.length === 1 && steps[0] === allStepsValue) {
+        answer.steps = job.steps;
+      } else {
+        for (var step in job.steps) {
+          if (steps.includes(step)) {
+            // add with all details
+            answer.steps[step] = job.steps[step];
+          } else {
+            // add defaults
+            if (job.steps.hasOwnProperty(step)) {
+              answer.steps[step] = pick(job.steps[step], alwaysStepFields);
+            }
+          }
+        }
+      }
+
+      try {
+        fs.accessSync(path.join(config.fs.job, id)); // throws if directory does not exist
+
+        answer.files = rewriteTree(dirTree(path.join(config.fs.job, id)),
           config.fs.job.length + config.id_length, // remove local fs path and id
-          '/api/v1/job/' + id + '/data' // prepend proper location
+          urlJoin(config.api.resource.job, id, config.api.sub_resource.data)
         );
       } catch (e) {
         debug('ERROR: No data files found for job %s. Fail? %s', id, config.fs.fail_on_no_files);
@@ -114,7 +170,7 @@ exports.viewSingle = (req, res) => {
   });
 };
 
-exports.create = (req, res) => {
+exports.createJob = (req, res) => {
   let compendium_id = '';
   let job_id = randomstring.generate(config.id_length);
 
@@ -136,8 +192,8 @@ exports.create = (req, res) => {
     res.status(400).send({ error: 'compendium_id required' });
   }
 
-  // check compendium existence
-  Compendium.findOne({ id: compendium_id }).select('id candidate').exec((err, compendium) => {
+  // check compendium existence and load its metadata
+  Compendium.findOne({ id: compendium_id }).select('id candidate metadata bag compendium').exec((err, compendium) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (err || compendium == null) {
       debug('[%s] compendium "%s" not found, cannot create job', job_id, compendium_id);
@@ -160,21 +216,10 @@ exports.create = (req, res) => {
             debug('[%s] error starting job for compendium %s and user %s', job_id, compendium.id, req.user.orcid);
             throw new Error('error creating job');
           } else {
-            var job_path = path.join(config.fs.job, job_id);
-            var compendium_path = path.join(config.fs.compendium, compendium.id);
-            try {
-              fse.copySync(compendium_path, job_path); // throws error if it does not exist
-            } catch (err) {
-              debug('[%s] error copying compendium files for job: %s', err);
-              res.status(500).send({ error: 'internal error' });
-              return;
-            }
-
-            var execution = new Executor(job_id, config.fs.job);
+            var execution = new Executor(job_id, compendium);
             execution.execute();
             res.status(200).send({ job_id });
-            debug("[%s] Request complete and response sent; job executes compendium %s and is saved to database; job files are at %s",
-              job_id, compendium_id, job_path);
+            debug("[%s] Request complete and response sent; job for compendium %s started.", job_id, compendium_id);
           }
         });
       }

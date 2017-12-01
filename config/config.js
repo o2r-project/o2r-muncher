@@ -53,7 +53,15 @@ c.list_limit = 100; // amount of results per page
 c.id_length = 5;   // length of job & compendium ids [0-9,a-z,A-Z]
 
 // session secret
-c.sessionsecret = env.SESSION_SECRET || 'o2r';
+c.sessionSecret = env.SESSION_SECRET || 'o2r';
+
+// API paths
+c.api = {};
+c.api.resource = {};
+c.api.resource.compendium = '/api/v1/compendium';
+c.api.resource.job = '/api/v1/job';
+c.api.sub_resource = {};
+c.api.sub_resource.data = 'data';
 
 // user levels
 c.user = {};
@@ -66,40 +74,40 @@ c.user.level.view_candidates = 500;
 
 // bagtainer configuration
 c.bagtainer = {};
-c.bagtainer.supportedVersions = ['0.1', '1'];
-c.bagtainer.payloadDirectory = '/data';
+c.bagtainer.spec_version = {};
+c.bagtainer.spec_version.supported = ['0.1', '1'];
+c.bagtainer.spec_version.default = '1';
 c.bagtainer.configFile = 'erc.yml';
+c.bagtainer.mountLocationInContainer = '/erc';
 c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
 c.bagtainer.keepImages = true; // required for image download!
-c.bagtainer.validateBagBeforeExecute = false; // cannot validate before execute because metadata files are arleady added and invalidating the bag
+c.bagtainer.validateBagBeforeExecute = true; // bag validation will fail, gut useful to highlight the changes in compendium
 c.bagtainer.validateCompendiumBeforeExecute = true;
-c.bagtainer.failOnValidationError = false; // cannot validate before execute when saving image tarball but not updating the bag
+c.bagtainer.failOnValidationError = true;
+c.bagtainer.manifestFile = 'Dockerfile';
+c.bagtainer.mainFilePath = 'metadata.o2r.mainfile';
+c.bagtainer.displayFilePath = 'metadata.o2r.displayfile';
 
 c.bagit = {};
 c.bagit.detectionFileName = 'bagit.txt';
+c.bagit.payloadDirectory = 'data';
 c.bagit.validateFast = false;
 c.bagit.failOnValidationError = {};
-c.bagit.failOnValidationError.execute = false;
+c.bagit.failOnValidationError.execute = false; // muncher never updates the bag
+c.bagit.stepResultAfterValidationError = 'skipped'; // it's not really a failure!
 
 c.bagtainer.imageNamePrefix = 'erc:';
 c.bagtainer.forceImageRemoval = true;
 c.bagtainer.docker = {};
 // See https://docs.docker.com/engine/reference/commandline/create/ and https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#create-a-container
 c.bagtainer.docker.create_options = {
-  //AttachStderr: true,
-  //AttachStdin: false,
-  //AttachStdout: true,
-  //Cmd: ['bash', '-c', 'cat /etc/resolv.conf'],
   CpuShares: 256,
-  //Cpuset: '',
-  //Domainname: '',
-  //Entrypoint: null,
-  Env: ['O2RPLATFORM=true'],
-  //Hostname: 'b9ea983254ef',
+  Env: ['O2R_MUNCHER=true'],
   Memory: 1073741824, // 1G
   MemorySwap: 2147483648, // double of 1G
   NetworkMode: 'none',
-  Rm: true
+  User: '1000', // user name depends on image, use id to be save
+  Rm: !c.bagtainer.keepContainers
 };
 // https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#start-a-container
 c.bagtainer.docker.start_options = {
@@ -131,25 +139,55 @@ c.email.sender = env.MUNCHER_EMAIL_SENDER;
 
 // metadata extraction and brokering options
 c.meta = {};
-c.meta.cliPath = env.MUNCHER_META_TOOL_EXE || 'python3 ../o2r-meta/o2rmeta.py';
-c.meta.versionFile = 'version';
-c.meta.normativeFile = 'metadata_o2r.json';
 c.meta.dir = '.erc';
-
-c.meta.extract = {};
-c.meta.extract.targetElement = 'o2r';
+c.meta.normativeFile = 'metadata_o2r.json';
+c.meta.container = {};
+c.meta.container.image = env.MUNCHER_META_TOOL_CONTAINER || 'o2rproject/o2r-meta:latest';
+c.meta.container.default_create_options = {
+  CpuShares: 128,
+  Env: ['O2R_MUNCHER=true'],
+  Memory: 1073741824, // 1G
+  MemorySwap: 2147483648, // double of 1G
+  User: env.MUNCHER_META_TOOL_CONTAINER_USER || 'o2r', // or '1000', could be left away because of USER o2r command in o2r-meta's Dockerfile, but better safe than sorry.
+  AutoRemove: true
+};
 
 c.meta.broker = {};
 c.meta.broker.module = 'broker';
-c.meta.broker.mappings = {
+c.meta.broker.mappings = { 
   zenodo: {
     targetElement: 'zenodo.metadata',
-    file: 'zenodo-map.json'
+    file: 'metadata_zenodo.json',
+    mappingFile: 'broker/mappings/zenodo-map.json'
   },
-  dir: env.MUNCHER_META_EXTRACT_MAPPINGS_DIR || '../o2r-meta/broker/mappings'
-};
-
+  zenodo_sandbox: {
+    targetElement: 'zenodo_sandbox.metadata',
+    file: 'metadata_zenodo_sandbox.json',
+    mappingFile: 'broker/mappings/zenodo_sandbox-map.json'
+  },
+  //o2r: {
+  //  targetElement: 'o2r',
+  //  file: 'metadata_o2r.json',
+  //  mappingFile: 'broker/mappings/o2r-map.json'
+  //} 
+}; 
 c.meta.doiPath = 'metadata.o2r.identifier.doi';
+
+c.checker = {};
+c.checker.display_file_name_html = 'diffHTML.html';
+
+c.containerit = {};
+c.containerit.image = env.MUNCHER_CONTAINERIT_IMAGE || 'o2rproject/containerit:geospatial';
+c.containerit.default_create_options = {
+  CpuShares: 256,
+  Env: ['O2R_MUNCHER=true'],
+  Memory: 1073741824 * 2, // 2G
+  MemorySwap: 1073741824 * 4,
+  User: env.MUNCHER_CONTAINERIT_USER || 'rstudio', // IMPORTANT: this must fit the used image!
+  AutoRemove: true
+};
+c.containerit.baseImage = 'rocker/r-ver:3.4.2';
+c.containerit.maintainer = 'o2r';
 
 c.payload = {};
 c.payload.tarball = {};

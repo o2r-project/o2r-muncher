@@ -27,41 +27,45 @@ const chai = require('chai');
 chai.use(require('chai-datetime'));
 
 require("./setup");
+
 const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 
 describe('API Compendium', () => {
   before(function (done) {
-    this.timeout(10000);
-    let db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
+    this.timeout(1000);
+    let db = mongojs('localhost/muncher', ['compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) {
+        db.close();
         done();
       });
     });
   });
 
   describe('GET /api/v1/compendium (no compendium loaded)', () => {
-    it('should respond with HTTP 404 Not Found', (done) => {
-      request(global.test_host + '/api/v1/compendium', (err, res) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 404);
-        done();
-      });
-    });
-    it('should respond with a JSON object', (done) => {
+    it('should respond with HTTP 200 and valid JSON', (done) => {
       request(global.test_host + '/api/v1/compendium', (err, res, body) => {
         assert.ifError(err);
+        assert.equal(res.statusCode, 200);
         assert.isObject(JSON.parse(body), 'returned JSON');
         done();
       });
     });
-    it('should not yet contain array of compendium ids', (done) => {
+
+    it('should respond with an empty results list and no error', (done) => {
       request(global.test_host + '/api/v1/compendium', (err, res, body) => {
         assert.ifError(err);
-        assert.isUndefined(JSON.parse(body).result, 'returned no results');
+        let response = JSON.parse(body);
+        assert.notProperty(response, 'error');
+        assert.property(response, 'results');
+        assert.isArray(response.results);
+        assert.isEmpty(response.results);
         done();
       });
     });
+  });
+
+  describe('GET /api/v1/compendium/1234 (no compendium loaded)', () => {
     it('should return an error message when asking for a non-existing compendium', (done) => {
       request(global.test_host + '/api/v1/compendium/1234', (err, res, body) => {
         assert.ifError(err);
@@ -77,7 +81,7 @@ describe('API Compendium', () => {
     let compendium_id = '';
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);
-      this.timeout(30000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         assert.ifError(err);
@@ -87,7 +91,9 @@ describe('API Compendium', () => {
         assert.property(JSON.parse(body), 'id');
         compendium_id = JSON.parse(body).id;
 
-        publishCandidate(compendium_id, cookie, done);
+        publishCandidate(compendium_id, cookie, () => {
+          done();
+        });
       });
     });
 
@@ -106,12 +112,14 @@ describe('API Compendium', () => {
     let compendium_id = '';
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);
-      this.timeout(10000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
 
-        publishCandidate(compendium_id, cookie, done);
+        publishCandidate(compendium_id, cookie, () => {
+          done();
+        });
       });
     });
 
@@ -164,5 +172,92 @@ describe('API Compendium', () => {
         done();
       });
     });
+  });
+});
+
+describe('API Compendium sub-resource /jobs', () => {
+  before((done) => {
+      var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
+      db.compendia.drop(function (err, doc) {
+          db.jobs.drop(function (err, doc) {
+              db.close();
+              done();
+          });
+      });
+  });
+
+  describe('GET /api/v1/compendium/ sub-endpoint /jobs', () => {
+      let compendium_id = '';
+      before(function (done) {
+          this.timeout(60000);
+          let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);
+
+          request(req, (err, res, body) => {
+              response = JSON.parse(body);
+              assert.ifError(err);
+              assert.notProperty(response, 'error');
+
+              compendium_id = response.id;
+              publishCandidate(compendium_id, cookie, () => {
+                  done();
+              });
+          });
+      });
+
+      let job_id;
+
+      it('should respond with HTTP 200 and an empty list when there is no job for an existing compendium', (done) => {
+          request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
+              assert.ifError(err);
+              assert.equal(res.statusCode, 200);
+              let response = JSON.parse(body);
+              assert.property(response, 'results');
+              assert.notProperty(response, 'error');
+              assert.isEmpty(response.results);
+              done();
+          });
+      });
+
+      it('should return job ID when starting job', (done) => {
+          let j = request.jar();
+          let ck = request.cookie('connect.sid=' + cookie);
+          j.setCookie(ck, global.test_host);
+
+          request({
+              uri: global.test_host + '/api/v1/job',
+              method: 'POST',
+              jar: j,
+              formData: {
+                  compendium_id: compendium_id
+              }
+          }, (err, res, body) => {
+              assert.ifError(err);
+              assert.equal(res.statusCode, 200);
+              let response = JSON.parse(body);
+              assert.property(response, 'job_id');
+              job_id = response.job_id;
+              done();
+          });
+      });
+
+      it('should respond with HTTP 200 and one job in the list of jobs when one is started', (done) => {
+          request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
+              assert.ifError(err);
+              assert.equal(res.statusCode, 200);
+              assert.isDefined(JSON.parse(body).results, 'results returned');
+              assert.include(JSON.parse(body).results, job_id, 'job id is in results');
+              done();
+          });
+      });
+
+      it('should respond with HTTP 404 and error message when that compendium does not exist', (done) => {
+          request(global.test_host + '/api/v1/compendium/1234/jobs', (err, res, body) => {
+              assert.ifError(err);
+              assert.equal(res.statusCode, 404);
+              assert.isUndefined(JSON.parse(body).result, 'returned no results');
+              assert.propertyVal(JSON.parse(body), 'error', 'no compendium with id 1234');
+              done();
+          });
+      });
   });
 });

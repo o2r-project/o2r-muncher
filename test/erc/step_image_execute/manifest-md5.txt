@@ -1,3 +1,5 @@
+d41d8cd98f00b204e9800998ecf8427e  data/.Rhistory
 a48f626014a144f1cf4a9b3b8cac955e  data/Dockerfile
-9d2ed1b0b03e91bf27927dfe8171112d  data/erc.yml
-eadd49d3a3facebd5baa60d519505662  data/test.txt
+82c5b2b792c5d4b89a449ccaba6bc082  data/doc.Rmd
+6febbd159700b9a878756fb0ca389c91  data/doc.html
+5e01614e64e230679eb2dc86f79633ab  data/erc.yml
