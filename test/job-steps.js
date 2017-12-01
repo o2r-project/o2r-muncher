@@ -490,7 +490,7 @@ describe('API job steps', () => {
 
             sleep.sleep(sleepSecs);
 
-            request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+            request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
               assert.ifError(err);
               let response = JSON.parse(body);
 
@@ -723,7 +723,7 @@ describe('API job steps', () => {
     });
 
     it('should fail step "image_execute" with a status code "1"', (done) => {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.image_execute, 'status', 'failure');
@@ -822,7 +822,7 @@ describe('API job steps', () => {
     });
 
     it('should have a diff HTML but no images (depends on https://github.com/o2r-project/erc-checker/issues/8)', (done) => {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.property(response.steps.check, 'display');
@@ -834,7 +834,7 @@ describe('API job steps', () => {
     });
 
     it('should have a non-empty errors array', (done) => {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.property(response.steps.check, 'errors');
@@ -854,7 +854,7 @@ describe('API job steps', () => {
     });
 
     it('execution log should include uname output', (done) => {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.property(response.steps.image_execute, 'text');
@@ -1021,7 +1021,7 @@ describe('API job steps', () => {
     });
 
     it('should complete generate manifest and have the correct manifest file path in the step details', function (done) {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
@@ -1044,7 +1044,7 @@ describe('API job steps', () => {
     });
 
     it('should have empty errors array in the step check', function (done) {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
@@ -1056,7 +1056,7 @@ describe('API job steps', () => {
     });
 
     it('should have a reference to a diff file step check', function (done) {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
@@ -1067,7 +1067,7 @@ describe('API job steps', () => {
     });
 
     it('should not have an HTML file in the files list named as the main document (output_file naming works)', function (done) {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
