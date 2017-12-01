@@ -32,6 +32,7 @@ const Compendium = require('../lib/model/compendium');
 const Job = require('../lib/model/job');
 
 const alwaysStepFields = ["start", "end", "status"];
+const allStepsValue = "all";
 
 exports.listJobs = (req, res) => {
   var answer = {};
@@ -123,7 +124,7 @@ exports.viewJob = (req, res) => {
 
   Job.findOne({ id }).select("compendium_id status steps").lean().exec((err, job) => {
     // eslint-disable-next-line no-eq-null, eqeqeq
-    if (err || job == null) { // intentionally loose comparison
+    if (err || job == null) {
       debug('[%s] error retrieving job %s: %s', id, err);
       res.status(404).send({ error: 'no job with this id' });
     } else {
@@ -132,9 +133,19 @@ exports.viewJob = (req, res) => {
       answer.status = job.status;
 
       answer.steps = {};
-      for (var step in job.steps) {
-        if (job.steps.hasOwnProperty(step)) {
-          answer.steps[step] = pick(job.steps[step], alwaysStepFields);
+      if (steps.length === 1 && steps[0] === allStepsValue) {
+        answer.steps = job.steps;
+      } else {
+        for (var step in job.steps) {
+          if (steps.includes(step)) {
+            // add with all details
+            answer.steps[step] = job.steps[step];
+          } else {
+            // add defaults
+            if (job.steps.hasOwnProperty(step)) {
+              answer.steps[step] = pick(job.steps[step], alwaysStepFields);
+            }
+          }
         }
       }
 

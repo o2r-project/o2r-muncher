@@ -1078,7 +1078,7 @@ describe('API job steps', () => {
   });
 });
 
-describe.only('API job details filtering', () => {
+describe('API job details filtering', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
   var job_id;
 
@@ -1103,8 +1103,8 @@ describe.only('API job details filtering', () => {
     });
   });
 
-  describe('GET /api/v1/job', () => {
-    it('should return only status, start and end when "steps" is missing', (done) => {
+  describe('GET /api/v1/job when "steps" is missing', () => {
+    it('should return only status, start and end', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200, 'status code OK');
@@ -1127,8 +1127,8 @@ describe.only('API job details filtering', () => {
     });
   });
 
-  describe('GET /api/v1/job', () => {
-    it('should return all details when "steps=all"', (done) => {
+  describe('GET /api/v1/job when "steps=all"', () => {
+    it('should return all details', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
@@ -1153,8 +1153,8 @@ describe.only('API job details filtering', () => {
     });
   });
 
-  describe('GET /api/v1/job', () => {
-    it('should give status, start and end but full details for one selected step', (done) => {
+  describe('GET /api/v1/job for one selected step', () => {
+    it('should give status, start and end but full details for the step', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id + '?steps=generate_manifest', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
@@ -1166,7 +1166,7 @@ describe.only('API job details filtering', () => {
           assert.property(value, 'status', step + ' has status');
           assert.property(value, 'start', step + ' has start');
           assert.property(value, 'end'), step + ' has end';
-          if (name != 'generate_manifest') assert.notProperty(value, 'text', step + ' does not have text');
+          if (step != 'generate_manifest') assert.notProperty(value, 'text', step + ' does not have text');
         });
 
         assert.property(response.steps.generate_manifest, 'manifest');
@@ -1177,8 +1177,8 @@ describe.only('API job details filtering', () => {
     });
   });
 
-  describe('GET /api/v1/job', () => {
-    it('should work with trailing slash and without', (done) => {
+  describe('GET /api/v1/job with trailing slash and without', () => {
+    it('should just work', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id + '/?steps=validate_bag', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
@@ -1205,7 +1205,7 @@ describe.only('API job details filtering', () => {
     });
   });
 
-  describe('GET /api/v1/job', () => {
+  describe('GET /api/v1/job with two selected steps', () => {
     it('should give status, start and end for all steps, but full details for two selected steps', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id + '?steps=check,cleanup', (err, res, body) => {
         assert.ifError(err);
@@ -1232,8 +1232,35 @@ describe.only('API job details filtering', () => {
     });
   });
 
-  describe('GET /api/v1/job', () => {
-    it('should have the default behaviour for unknown steps parameter', (done) => {
+  describe('GET /api/v1/job with two existing steps and one unknown', () => {
+    it('should give status, start and end for all steps, but full details for two selected steps', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=check,cleanup,oneGiantLeap', (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        assert.isObject(JSON.parse(body), 'returned JSON');
+        let response = JSON.parse(body);
+
+        assert.property(response, 'steps');
+        Object.entries(response.steps).forEach(([step, value], index, array) => {
+          assert.property(value, 'status', step + ' has status');
+          assert.property(value, 'start', step + ' has start');
+          assert.property(value, 'end'), step + ' has end';
+          if (!['check', 'cleanup'].includes(step)) {
+            assert.notProperty(value, 'text', step + ' does not have text');
+          }
+        });
+
+        assert.property(response.steps.check, 'text');
+        assert.property(response.steps.cleanup, 'text');
+        assert.property(response.steps.check, 'images');
+
+        done();
+      });
+    });
+  });
+
+  describe('GET /api/v1/job with unknown steps parameter', () => {
+    it('should have the default behaviour', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id + '?steps=none', (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200, 'status code OK');
