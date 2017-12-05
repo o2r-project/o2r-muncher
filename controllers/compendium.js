@@ -390,7 +390,7 @@ updateMetadataFile = function (id, file, metadata) {
   return new Promise((fulfill, reject) => {
     debug('[%s] Overwriting file %s', id, file);
     fs.truncate(file, 0, function () {
-      fs.writeFile(file, JSON.stringify(metadata), function (err) {
+      fs.writeFile(file, JSON.stringify(metadata, null, config.meta.prettyPrint.indent), function (err) {
         if (err) {
           debug('[%s] Error updating normative metadata file: %s', id, err);
           err.message = 'Error updating normative metadata file';

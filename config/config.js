@@ -149,6 +149,8 @@ c.email.sender = env.MUNCHER_EMAIL_SENDER;
 // metadata extraction and brokering options
 c.meta = {};
 c.meta.dir = '.erc';
+c.meta.prettyPrint = {};
+c.meta.prettyPrint.indent = 4;
 c.meta.normativeFile = 'metadata_o2r.json';
 c.meta.container = {};
 c.meta.container.image = env.MUNCHER_META_TOOL_CONTAINER || 'o2rproject/o2r-meta:latest';
