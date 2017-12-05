@@ -9,6 +9,7 @@ before_install:
   - docker pull o2rproject/o2r-loader:latest
   - docker pull o2rproject/o2r-meta:latest
   - docker pull o2rproject/containerit:geospatial
+  - docker pull o2rproject/o2r-muncher-integration-testing:latest
   - docker pull mongo:3.4
 install:
   - npm install

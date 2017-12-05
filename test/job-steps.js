@@ -807,7 +807,7 @@ describe('API job steps', () => {
     });
 
     it('should fail step "check" and have empty images and display properties (depends on https://github.com/o2r-project/erc-checker/issues/8)', (done) => {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.check, 'status', 'failure');
@@ -949,7 +949,7 @@ describe('API job steps', () => {
     });
 
     it('should complete step "check" but not have a display diff nor images', (done) => {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.check, 'status', 'success');
