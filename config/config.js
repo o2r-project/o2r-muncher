@@ -15,6 +15,7 @@
  *
  */
 const yn = require('yn');
+const debug = require('debug')('muncher:config');
 
 var c = {};
 c.net = {};
@@ -22,6 +23,12 @@ c.mongo = {};
 c.fs = {};
 c.oauth = {};
 var env = process.env;
+
+debug('Configuring loader with environment variables %s', Object
+.keys(env)
+.filter(k => k.startsWith("MUNCHER"))
+.map(k => { return k + "=" + env[k]; })
+);
 
 // Information about muncher
 c.api_version = 1;
@@ -47,6 +54,8 @@ c.fs.compendium = c.fs.base + 'compendium/';
 c.fs.job = c.fs.base + 'job/';
 c.fs.delete_inc = true;
 c.fs.fail_on_no_files = yn(env.MUNCHER_FAIL_ON_NO_FILES) || false;
+
+c.fs.volume = env.MUNCHER_VOLUME || null;
 
 // muncher behaviour & defaults
 c.list_limit = 100; // amount of results per page
@@ -148,9 +157,9 @@ c.meta.container.default_create_options = {
   Env: ['O2R_MUNCHER=true'],
   Memory: 1073741824, // 1G
   MemorySwap: 2147483648, // double of 1G
-  User: env.MUNCHER_META_TOOL_CONTAINER_USER || 'o2r', // or '1000', could be left away because of USER o2r command in o2r-meta's Dockerfile, but better safe than sorry.
-  AutoRemove: true
+  User: env.MUNCHER_META_TOOL_CONTAINER_USER || 'o2r' // or '1000', could be left away because of USER o2r command in o2r-meta's Dockerfile, but better safe than sorry.
 };
+c.meta.container.rm = yn(env.MUNCHER_META_TOOL_CONTAINER_RM) || false;
 
 c.meta.broker = {};
 c.meta.broker.module = 'broker';
@@ -195,5 +204,7 @@ c.payload.tarball.tmpdir = c.fs.base + 'payloads/';
 c.payload.tarball.statConcurrency = 4; // concurrency when creating payload tarballs
 c.payload.tarball.gzip = false;
 c.payload.tarball.gzipOptions = {};
+
+debug('CONFIGURATION:\n%s', JSON.stringify(c));
 
 module.exports = c;
