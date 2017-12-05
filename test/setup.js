@@ -265,7 +265,7 @@ before(function (done) {
     // otherwise tests time out
     buildDockerfileSimilarToTestDockerfile = (cb) => {
         dockerFile = 'Dockerfile';
-        debug('Building image using %s', dockerFile);
+        debug('Pre-building image for tests using file "%s" (logs cut off after 100 characters)', dockerFile);
 
         docker.buildImage({
             context: __dirname,
@@ -276,8 +276,9 @@ before(function (done) {
                 cb(err);
                 return;
             }
-            stream.pipe(process.stdout, {
-                end: true
+            stream.on('data', function (data) {
+                s = JSON.parse(data.toString('utf8'));
+                if (s.stream) debug(s.stream.substring(0, 100).trim());
             });
 
             stream.on('end', function () {
