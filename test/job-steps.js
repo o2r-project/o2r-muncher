@@ -605,6 +605,92 @@ describe('API job steps', () => {
 
   });
 
+  describe('EXECUTION Dockerfile generation for workspace minimal-script', () => {
+    let job_id = '';
+    let compendium_id = '';
+
+    before(function (done) {
+      this.timeout(60000);
+      let req = createCompendiumPostRequest('./test/workspace/minimal-script', cookie_o2r, 'workspace');
+
+      request(req, (err, res, body) => {
+        compendium_id = JSON.parse(body).id;
+        publishCandidate(compendium_id, cookie_o2r, () => {
+          startJob(compendium_id, id => {
+            job_id = id;
+            sleep.sleep(sleepSecs);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should skip validation steps because it is a workspace', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
+        assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
+        done();
+      });
+    });
+
+    it('should complete step "generate_manifest"', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.generate_manifest, 'status', 'success');
+        done();
+      });
+    });
+
+    it('show have the manifest file in the job files', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        filePaths = response.files.children.map(elem => { return elem.path; });
+        assert.include(filePaths, '/api/v1/job/' + job_id + '/data/Dockerfile');
+        done();
+      });
+    });
+
+    it('should have the manifest file in the compendium files', (done) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        filePaths = response.files.children.map(elem => { return elem.path; });
+        assert.include(filePaths, '/api/v1/compendium/' + compendium_id + '/data/Dockerfile');
+        done();
+      });
+    });
+
+    it('should have the expected content in the manifest', function (done) {
+      request(global.test_host_transporter + '/api/v1/job/' + job_id + '/data/Dockerfile', (err, res, body) => {
+        assert.ifError(err);
+        assert.isNotObject(body, 'response is not JSON');
+        assert.notInclude(body, 'COPY', 'no COPY statement, because files are mounted');
+        assert.include(body, 'CMD ["R", "--vanilla", "-f", "main.R"]');
+        done();
+      });
+    });
+
+    it('should complete build, execute, and cleanup', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.image_build, 'status', 'success');
+        assert.propertyVal(response.steps.image_execute, 'status', 'success');
+        assert.propertyVal(response.steps.cleanup, 'status', 'success');
+        done();
+      });
+    });
+
+  });
+
   describe('EXECUTION step_image_prepare', () => {
     let job_id = '';
 
