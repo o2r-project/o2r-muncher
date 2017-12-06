@@ -31,7 +31,7 @@ const cookie_uploader = 's:lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO.0iapdV1c85wc5NO3d3h+
 const waitSecs = 20;
 
 describe('API job filtering', () => {
-  db = mongojs('localhost/muncher', ['compendia', 'jobs']);
+  var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
   before((done) => {
     db.compendia.drop(function (err, doc) {

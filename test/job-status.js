@@ -31,7 +31,7 @@ const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9y
 const waitSecs = 3;
 
 describe('API job overall status', () => {
-  db = mongojs('localhost/muncher', ['compendia', 'jobs']);
+  var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
   before(function (done) {
     db.compendia.drop(function (err, doc) {

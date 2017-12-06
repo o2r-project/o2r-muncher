@@ -375,6 +375,6 @@ after(function (done) {
 });
 
 after(function (done) {
-    global.asyncDump();
+    //global.asyncDump();
     done();
 });

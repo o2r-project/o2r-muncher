@@ -32,14 +32,13 @@ const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx
 
 tags('storage_access')
   .describe('BagIt functions', () => {
-    db = mongojs('localhost/muncher', ['compendia']);
+    var db = mongojs('localhost/muncher', ['compendia']);
 
     before(function(done) {
       db.compendia.drop(function (err, doc) {
         done();
       });
     });
-
 
     after(function (done) {
       db.close();
