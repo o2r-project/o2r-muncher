@@ -293,9 +293,9 @@ before(function (done) {
         loadUserPlain,
         loadUserAdmin,
         loadUserEditor,
-        close,
         pullBaseImageForManifestGeneration,
-        buildDockerfileSimilarToTestDockerfile
+        buildDockerfileSimilarToTestDockerfile,
+        close
     ],
         function (err, results) {
             if (err) {
@@ -356,7 +356,8 @@ before(function (done) {
 
 });
 
-after((done) => {
+after(function (done) {
+    this.timeout(60000);
     delete docker;
 
     if (env.LOADER_CONTAINER && yn(env.LOADER_CONTAINER)) {
@@ -373,4 +374,7 @@ after((done) => {
     }
 });
 
-
+after(function (done) {
+    global.asyncDump();
+    done();
+});

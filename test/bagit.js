@@ -31,102 +31,108 @@ require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 
 tags('storage_access')
-.describe('BagIt functions', () => {
-  before((done) => {
+  .describe('BagIt functions', () => {
     db = mongojs('localhost/muncher', ['compendia']);
-    db.compendia.drop(function (err, doc) {
+
+    before(function(done) {
+      db.compendia.drop(function (err, doc) {
+        done();
+      });
+    });
+
+
+    after(function (done) {
       db.close();
       done();
     });
-  });
 
-  describe('bag detection for ERC compendium', function () {
-    let compendium_id = null;
-    before(function (done) {
-      this.timeout(60000);
-      let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
+    describe('bag detection for ERC compendium', function () {
+      let compendium_id = null;
+      before(function (done) {
+        this.timeout(60000);
+        let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
 
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          done();
-        });
-      });
-    });
-
-    it('should correctly identify a bag directory', (done) => {
-      assert.isTrue(bagit.compendiumIsBag(compendium_id));
-      assert.isNotFalse(bagit.compendiumIsBag(compendium_id));
-      done();
-    });
-  });
-
-  describe('bag detection for workspace compendium', function () {
-    let compendium_id = null;
-    before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_validate_bag/data', cookie_o2r, 'workspace');
-      this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          done();
-        });
-      });
-    });
-
-    it('should correctly identify a not-bag directory', (done) => {
-      assert.isNotTrue(bagit.compendiumIsBag(compendium_id));
-      assert.isFalse(bagit.compendiumIsBag(compendium_id));
-      done();
-    });
-  });
-
-  describe('bag detection for job on workspace', function () {
-    let job_id = null;
-    before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_image_execute/data', cookie_o2r, 'workspace');
-      this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        let compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
             done();
           });
         });
       });
+
+      it('should correctly identify a bag directory', (done) => {
+        assert.isTrue(bagit.compendiumIsBag(compendium_id));
+        assert.isNotFalse(bagit.compendiumIsBag(compendium_id));
+        done();
+      });
     });
 
-    it('should correctly identify a not-bag directory', (done) => {
-      assert.isNotTrue(bagit.jobIsBag(job_id));
-      assert.isFalse(bagit.jobIsBag(job_id));
-      done();
-    });
-  });
+    describe('bag detection for workspace compendium', function () {
+      let compendium_id = null;
+      before(function (done) {
+        let req = createCompendiumPostRequest('./test/erc/step_validate_bag/data', cookie_o2r, 'workspace');
+        this.timeout(60000);
 
-  describe('bag detection for job on compendium', function () {
-    let job_id = null;
-    before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
-      this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        let compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
             done();
           });
         });
       });
+
+      it('should correctly identify a not-bag directory', (done) => {
+        assert.isNotTrue(bagit.compendiumIsBag(compendium_id));
+        assert.isFalse(bagit.compendiumIsBag(compendium_id));
+        done();
+      });
     });
 
-    it('should correctly identify a not-bag directory', (done) => {
-      assert.isNotTrue(bagit.jobIsBag(job_id));
-      assert.isFalse(bagit.jobIsBag(job_id));
-      done();
+    describe('bag detection for job on workspace', function () {
+      let job_id = null;
+      before(function (done) {
+        let req = createCompendiumPostRequest('./test/erc/step_image_execute/data', cookie_o2r, 'workspace');
+        this.timeout(60000);
+
+        request(req, (err, res, body) => {
+          let compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              done();
+            });
+          });
+        });
+      });
+
+      it('should correctly identify a not-bag directory', (done) => {
+        assert.isNotTrue(bagit.jobIsBag(job_id));
+        assert.isFalse(bagit.jobIsBag(job_id));
+        done();
+      });
+    });
+
+    describe('bag detection for job on compendium', function () {
+      let job_id = null;
+      before(function (done) {
+        let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
+        this.timeout(60000);
+
+        request(req, (err, res, body) => {
+          let compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              done();
+            });
+          });
+        });
+      });
+
+      it('should correctly identify a not-bag directory', (done) => {
+        assert.isNotTrue(bagit.jobIsBag(job_id));
+        assert.isFalse(bagit.jobIsBag(job_id));
+        done();
+      });
     });
   });
-});

@@ -33,7 +33,7 @@ const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPu
 describe('API compendium filter', () => {
   var db = mongojs('localhost/muncher', ['compendia']);
 
-  after((done) => {
+  after(function (done) {
     db.close();
     done();
   });

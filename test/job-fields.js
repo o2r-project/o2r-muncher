@@ -31,14 +31,19 @@ const cookie_uploader = 's:lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO.0iapdV1c85wc5NO3d3h+
 
 
 describe('returned fields in job listing', () => {
+  db = mongojs('localhost/muncher', ['compendia', 'jobs']);
+
   before(function (done) {
-    var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) {
-        db.close();
         done();
       });
     });
+  });
+
+  after(function (done) {
+    db.close();
+    done();
   });
 
   describe('status and user fields', () => {

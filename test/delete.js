@@ -35,10 +35,9 @@ const cookie_admin = 's:hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i.IEPb0lmtGojn2cVk2edRuom
 const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
 
 describe('Delete candidate (using metatainer)', () => {
-  var db = null;
+  db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
-  before((done) => {
-    db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
+  before(function(done) {
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) {
         done();
@@ -46,7 +45,7 @@ describe('Delete candidate (using metatainer)', () => {
     });
   });
   
-  after((done) => {
+  after(function(done) {
     db.close();
     done();
   });

@@ -38,13 +38,15 @@ let docker = new Docker();
 describe('API job steps', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
-  before((done) => {
+  before(function (done) {
     db.compendia.drop(function (err, doc) {
-      db.jobs.drop(function (err, doc) {
-        db.close();
-        done();
-      });
+      done();
     });
+  });
+
+  after(function (done) {
+    db.close();
+    done();
   });
 
   describe('GET /api/v1/job (with no job started)', () => {
@@ -1180,13 +1182,17 @@ describe('API job details filtering', () => {
             startJob(compendium_id, id => {
               job_id = id;
               sleep.sleep(sleepSecs);
-              db.close();
               done();
             });
           });
         });
       });
     });
+  });
+
+  after(function (done) {
+    db.close();
+    done();
   });
 
   describe('GET /api/v1/job when "steps" is missing', () => {

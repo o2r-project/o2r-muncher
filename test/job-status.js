@@ -31,14 +31,19 @@ const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9y
 const waitSecs = 3;
 
 describe('API job overall status', () => {
-  before((done) => {
-    var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
+  db = mongojs('localhost/muncher', ['compendia', 'jobs']);
+
+  before(function (done) {
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) {
-        db.close;
         done();
       });
     });
+  });
+
+  after(function (done) {
+    db.close();
+    done();
   });
 
   describe('EXECUTION step_validate_compendium', () => {
