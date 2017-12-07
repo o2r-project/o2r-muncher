@@ -40,7 +40,9 @@ describe('API job steps', () => {
 
   before(function (done) {
     db.compendia.drop(function (err, doc) {
-      done();
+      db.jobs.drop(function (err, doc) {
+        done();
+      });
     });
   });
 
