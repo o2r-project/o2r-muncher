@@ -67,7 +67,7 @@ exports.viewCompendium = (req, res) => {
 
   Compendium
     .findOne({ id })
-    .select('id user metadata created candidate bag compendium')
+    .select('id user metadata created candidate bag compendium substituted')
     .lean()
     .exec((err, compendium) => {
       // eslint-disable-next-line no-eq-null, eqeqeq
@@ -83,7 +83,8 @@ exports.viewCompendium = (req, res) => {
           created: compendium.created,
           user: compendium.user,
           bag: compendium.bag,
-          compendium: compendium.compendium
+          compendium: compendium.compendium,
+          substituted: compendium.substituted
         }
 
         try {
@@ -347,7 +348,7 @@ exports.viewCompendiumMetadata = (req, res) => {
 
   Compendium
     .findOne({ id })
-    .select('id metadata candidate user')
+    .select('id metadata candidate user substituted')
     .lean()
     .exec((err, compendium) => {
       // eslint-disable-next-line no-eq-null, eqeqeq
@@ -356,6 +357,7 @@ exports.viewCompendiumMetadata = (req, res) => {
       } else {
         answer.metadata = {};
         answer.metadata.o2r = compendium.metadata.o2r;
+        answer.substituted = compendium.substituted;
 
         // check if user is allowed to view the candidate (easier to check async if done after answer creation)
         if (compendium.candidate) {
