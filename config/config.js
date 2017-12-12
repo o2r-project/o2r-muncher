@@ -115,9 +115,10 @@ c.bagtainer.docker.create_options = {
   Memory: 1073741824, // 1G
   MemorySwap: 2147483648, // double of 1G
   NetworkMode: 'none',
-  User: '1000', // user name depends on image, use id to be save
-  Rm: !c.bagtainer.keepContainers
+  User: '1000' // user name depends on image, use id to be save
 };
+c.bagtainer.rm = yn(env.EXECUTE_CONTAINER_RM) || true;
+
 // https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#start-a-container
 c.bagtainer.docker.start_options = {
 };
@@ -161,7 +162,7 @@ c.meta.container.default_create_options = {
   MemorySwap: 2147483648, // double of 1G
   User: env.MUNCHER_META_TOOL_CONTAINER_USER || 'o2r' // or '1000', could be left away because of USER o2r command in o2r-meta's Dockerfile, but better safe than sorry.
 };
-c.meta.container.rm = yn(env.MUNCHER_META_TOOL_CONTAINER_RM) || false;
+c.meta.container.rm = yn(env.MUNCHER_META_TOOL_CONTAINER_RM) || true;
 
 c.meta.broker = {};
 c.meta.broker.module = 'broker';
@@ -194,11 +195,11 @@ c.containerit.default_create_options = {
   Env: ['O2R_MUNCHER=true'],
   Memory: 1073741824 * 2, // 2G
   MemorySwap: 1073741824 * 4,
-  User: env.MUNCHER_CONTAINERIT_USER || 'rstudio', // IMPORTANT: this must fit the used image!
-  AutoRemove: true
+  User: env.MUNCHER_CONTAINERIT_USER || 'rstudio' // IMPORTANT: this must fit the used image!
 };
-c.containerit.baseImage = 'rocker/r-ver:3.4.2';
+c.containerit.baseImage = 'rocker/r-ver:3.4.3';
 c.containerit.maintainer = 'o2r';
+c.containerit.rm = yn(env.MUNCHER_CONTAINERIT_CONTAINER_RM) || true;
 
 c.payload = {};
 c.payload.tarball = {};

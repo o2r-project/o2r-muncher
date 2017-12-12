@@ -30,7 +30,7 @@ const unameCall = require('node-uname');
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
-const sleepSecs = 30;
+const sleepSecs = 40;
 
 let Docker = require('dockerode');
 let docker = new Docker();
@@ -579,7 +579,7 @@ describe('API job steps', () => {
       request(global.test_host_transporter + '/api/v1/job/' + job_id + '/data/Dockerfile', (err, res, body) => {
         assert.ifError(err);
         assert.isNotObject(body, 'response is not JSON');
-        assert.include(body, 'FROM rocker/r-ver:3.4.2');
+        assert.include(body, 'FROM rocker/r-ver:3.4.3');
         assert.include(body, 'rmarkdown::render(input = \\"/erc/main.Rmd\\"');
         done();
       });
@@ -589,7 +589,7 @@ describe('API job steps', () => {
       request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/Dockerfile', (err, res, body) => {
         assert.ifError(err);
         assert.isNotObject(body, 'response is not JSON');
-        assert.include(body, 'FROM rocker/r-ver:3.4.2');
+        assert.include(body, 'FROM rocker/r-ver:3.4.3');
         assert.include(body, 'rmarkdown::render(input = \\"/erc/main.Rmd\\"');
         done();
       });

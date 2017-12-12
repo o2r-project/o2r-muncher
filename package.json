@@ -28,7 +28,7 @@
     "debug": "^3.1.0",
     "directory-tree": "^2.0.0",
     "dockerode": "^2.5.3",
-    "erc-checker": "github:o2r-project/erc-checker#b2cfecd",
+    "erc-checker": "github:o2r-project/erc-checker#91bd93d",
     "express": "^4.16.2",
     "express-session": "^1.15.6",
     "fs-extra": "^4.0.2",

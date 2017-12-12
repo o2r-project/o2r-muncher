@@ -1,4 +1,4 @@
-FROM rocker/r-ver:3.4.2
+FROM rocker/r-ver:3.4.3
 LABEL maintainer="o2r"
 RUN export DEBIAN_FRONTEND=noninteractive; apt-get -y update \
  && apt-get install -y git-core \
