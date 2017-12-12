@@ -348,7 +348,7 @@ exports.viewCompendiumMetadata = (req, res) => {
 
   Compendium
     .findOne({ id })
-    .select('id metadata candidate user substituted')
+    .select('id metadata candidate user')
     .lean()
     .exec((err, compendium) => {
       // eslint-disable-next-line no-eq-null, eqeqeq
@@ -357,7 +357,6 @@ exports.viewCompendiumMetadata = (req, res) => {
       } else {
         answer.metadata = {};
         answer.metadata.o2r = compendium.metadata.o2r;
-        answer.substituted = compendium.substituted;
 
         // check if user is allowed to view the candidate (easier to check async if done after answer creation)
         if (compendium.candidate) {
