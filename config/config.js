@@ -25,9 +25,9 @@ c.oauth = {};
 var env = process.env;
 
 debug('Configuring loader with environment variables %s', Object
-.keys(env)
-.filter(k => k.startsWith("MUNCHER"))
-.map(k => { return k + "=" + env[k]; })
+  .keys(env)
+  .filter(k => k.startsWith("MUNCHER"))
+  .map(k => { return k + "=" + env[k]; })
 );
 
 // Information about muncher
@@ -115,7 +115,7 @@ c.bagtainer.docker.create_options = {
   Memory: 1073741824, // 1G
   MemorySwap: 2147483648, // double of 1G
   NetworkMode: 'none',
-  User: '1000' // user name depends on image, use id to be save
+  User: env.MUNCHER_CONTAINER_USER || '1000' // user name depends on image, use id to be save
 };
 c.bagtainer.rm = yn(env.EXECUTE_CONTAINER_RM) || true;
 
@@ -166,7 +166,7 @@ c.meta.container.rm = yn(env.MUNCHER_META_TOOL_CONTAINER_RM) || true;
 
 c.meta.broker = {};
 c.meta.broker.module = 'broker';
-c.meta.broker.mappings = { 
+c.meta.broker.mappings = {
   zenodo: {
     targetElement: 'zenodo.metadata',
     file: 'metadata_zenodo.json',
@@ -182,7 +182,7 @@ c.meta.broker.mappings = {
   //  file: 'metadata_o2r.json',
   //  mappingFile: 'broker/mappings/o2r-map.json'
   //} 
-}; 
+};
 c.meta.doiPath = 'metadata.o2r.identifier.doi';
 
 c.checker = {};
@@ -192,13 +192,13 @@ c.containerit = {};
 c.containerit.image = env.MUNCHER_CONTAINERIT_IMAGE || 'o2rproject/containerit:geospatial';
 c.containerit.default_create_options = {
   CpuShares: 256,
-  Env: ['O2R_MUNCHER=true'],
+  Env: ['O2R_MUNCHER=true', 'O2R_MUNCHER_VERSION=' + c.version],
   Memory: 1073741824 * 2, // 2G
   MemorySwap: 1073741824 * 4,
   User: env.MUNCHER_CONTAINERIT_USER || 'rstudio' // IMPORTANT: this must fit the used image!
 };
 c.containerit.baseImage = 'rocker/r-ver:3.4.3';
-c.containerit.maintainer = 'o2r';
+c.containerit.maintainer = 'o2r <http://o2r.info>';
 c.containerit.rm = yn(env.MUNCHER_CONTAINERIT_CONTAINER_RM) || true;
 
 c.payload = {};

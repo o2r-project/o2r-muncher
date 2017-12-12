@@ -510,7 +510,6 @@ describe('API job steps', () => {
         });
       });
     }).timeout(sleepSecs * 1000 * 2);
-
   });
 
   describe('EXECUTION Dockerfile generation for workspace minimal-rmd-data', () => {

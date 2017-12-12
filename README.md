@@ -36,18 +36,20 @@ You can override these environment variables (configured in `config/config.js`) 
   Base path for the compendia storage. Defaults to `/tmp/o2r`. If you want persistent compendia storage, you should point this to a separate volume.
 - `MUNCHER_VOLUME`
   The name of the volume where compendia are stored, needed for mounting the correct path to 2nd level containers in compose configurations; overrides `MUNCHER_BASEPATH` for the metadata tools containers. Not set by default.
+- `MUNCHER_CONTAINER_USER`
+  User name or id for the user running the compendium containers, defaults to `1000`. _Change this for usage with `docker-compose`!
 - `MUNCHER_EMAIL_TRANSPORT`, `MUNCHER_EMAIL_RECEIVERS`, `MUNCHER_EMAIL_SENDER`
-  Email configuration settings for sending emails when critical events in the server occure, based on [nodemailer](https://www.npmjs.com/package/nodemailer). `_TRANSPORT` ist the mail transport string, see nodemailer documented, `_RECEIVERS` is a comma-seperated list, and `_SENDER` is the mails sender. All three must be set. Mail notification can also be disabled completely via `config.js`.
+  Email configuration settings for sending emails when critical events in the server happen, based on [nodemailer](https://www.npmjs.com/package/nodemailer). `_TRANSPORT` ist the mail transport string, see nodemailer documented, `_RECEIVERS` is a comma-separated list, and `_SENDER` is the mails sender. All three must be set. Mail notification can also be disabled completely via `config.js`.
 - `MUNCHER_META_TOOL_CONTAINER`
   Docker image name and tag for metadata tools, defaults to running latest [o2r-meta in a container](https://github.com/o2r-project/o2r-meta#using-docker), i.e. `o2rproject/o2r-meta:latest`.
 - `MUNCHER_META_TOOL_CONTAINER_USER`
-  User name or id for the [user running the container](https://docs.docker.com/engine/reference/run/#user), defaults to `o2r`.
+  User name or id for the [user](https://docs.docker.com/engine/reference/run/#user) running the meta container, defaults to `o2r`.
 - `MUNCHER_META_TOOL_CONTAINER_RM`
   Remove the metadata extraction and brokering containers after completion, defaults to `true`.
 - `MUNCHER_CONTAINERIT_IMAGE`
   Docker image name and tag for containerit tool, defaults to running Rocker's [geospatial](https://github.com/rocker-org/geospatial/) image with [containerit](https://github.com/o2r-project/containerit/) pre-installed, i.e. `o2rproject/containerit:geospatial`.
 - `MUNCHER_CONTAINERIT_USER`
-  The user within the container, which must match the used image (see previous setting), defaults to `rstudio`, which is suitable for images in the `rocker/verse` stack of images.
+  The user within the container, which must match the used image (see previous setting), defaults to `rstudio`, which is suitable for images in the `rocker/verse` stack of images. _Change this for usage with `docker-compose`!
 - `MUNCHER_FAIL_ON_NO_FILES`
   Should an error be thrown when files for a compendium that exists in the database are _not found_? Defaults to `false` (useful for testing).
 
