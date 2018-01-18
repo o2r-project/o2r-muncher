@@ -15,6 +15,7 @@
  *
  */
 const yn = require('yn');
+const util = require('util');
 const debug = require('debug')('muncher:config');
 
 var c = {};
@@ -208,6 +209,6 @@ c.payload.tarball.statConcurrency = 4; // concurrency when creating payload tarb
 c.payload.tarball.gzip = false;
 c.payload.tarball.gzipOptions = {};
 
-debug('CONFIGURATION:\n%s', JSON.stringify(c));
+debug('CONFIGURATION:\n%s', util.inspect(c, { depth: null, colors: true }));
 
 module.exports = c;
