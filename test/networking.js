@@ -49,7 +49,7 @@ describe('Container networking', () => {
       db.compendia.drop(function (err, doc) {
         db.jobs.drop(function (err, doc) {
 
-          let req = createCompendiumPostRequest('./test/workspace/ping', cookie_o2r, type = 'workspace');
+          let req = createCompendiumPostRequest('./test/workspace/ping', cookie_o2r, 'workspace');
           request(req, (err, res, body) => {
             compendium_id = JSON.parse(body).id;
             publishCandidate(compendium_id, cookie_o2r, () => {
@@ -118,7 +118,7 @@ describe('Container networking', () => {
       this.timeout(60000);
       db.compendia.drop(function (err, doc) {
 
-        let req = createCompendiumPostRequest('./test/workspace/ping_online', cookie_o2r, type = 'workspace');
+        let req = createCompendiumPostRequest('./test/workspace/ping_online', cookie_o2r, 'workspace');
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
           publishCandidate(compendium_id, cookie_o2r, () => {

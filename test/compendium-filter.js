@@ -151,12 +151,12 @@ describe('API compendium filter', () => {
           compendium1_id = JSON.parse(body).id;
           publishCandidate(compendium1_id, cookie_o2r, () => {
 
-            let req = createCompendiumPostRequest('./test/erc/pingtainer', cookie_o2r);
+            let req = createCompendiumPostRequest('./test/workspace/ping', cookie_o2r, 'workspace');
             request(req, (err, res, body2) => {
               compendium2_id = JSON.parse(body2).id;
               publishCandidate(compendium2_id, cookie_o2r, () => {
 
-                let req = createCompendiumPostRequest('./test/erc/pingtainer', cookie_editor);
+                let req = createCompendiumPostRequest('./test/workspace/ping', cookie_editor, 'workspace');
                 request(req, (err, res, body3) => {
                   compendium3_id = JSON.parse(body3).id;
                   publishCandidate(compendium3_id, cookie_editor, () => {

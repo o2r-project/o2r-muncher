@@ -155,12 +155,11 @@ describe('API Compendium', () => {
         done();
       });
     });
-    it('should respond with correct candidate and substituted properties', (done) => {
+    it('should respond with missing candidate and correct substituted properties', (done) => {
       request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.property(response, 'candidate');
-        assert.propertyVal(response, 'candidate', false);
+        assert.notProperty(response, 'candidate');
         assert.property(response, 'substituted');
         assert.propertyVal(response, 'substituted', false);
         done();
