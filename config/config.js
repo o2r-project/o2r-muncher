@@ -198,7 +198,7 @@ c.containerit.default_create_options = {
   User: env.MUNCHER_CONTAINERIT_USER || 'rstudio' // IMPORTANT: this must fit the used image!
 };
 c.containerit.baseImage = 'rocker/r-ver:3.4.3';
-c.containerit.maintainer = 'o2r <http://o2r.info>';
+c.containerit.maintainer = 'o2r';
 c.containerit.rm = yn(env.MUNCHER_CONTAINERIT_CONTAINER_RM) || true;
 
 c.payload = {};
