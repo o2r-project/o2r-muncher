@@ -2,7 +2,7 @@
 sudo: required
 language: node_js
 node_js:
-  - "8"
+  - "9"
 services:
   - docker
 before_install:
@@ -10,6 +10,7 @@ before_install:
   - docker pull o2rproject/o2r-meta:latest
   - docker pull o2rproject/containerit:geospatial
   - docker pull mongo:3.4
+  - docker build --file test/Dockerfile .
 install:
   - npm install
 before_script:
