@@ -109,13 +109,13 @@ c.bagit.stepResultAfterValidationError = 'skipped'; // it's not really a failure
 c.bagtainer.imageNamePrefix = 'erc:';
 c.bagtainer.forceImageRemoval = true;
 c.bagtainer.docker = {};
-// See https://docs.docker.com/engine/reference/commandline/create/ and https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#create-a-container
+// See https://docs.docker.com/engine/api/v1.29/#operation/ContainerCreate
 c.bagtainer.docker.create_options = {
   CpuShares: 256,
   Env: ['O2R_MUNCHER=true'],
   Memory: 1073741824, // 1G
   MemorySwap: 2147483648, // double of 1G
-  NetworkMode: 'none',
+  NetworkDisabled : true,
   User: env.MUNCHER_CONTAINER_USER || '1000' // user name depends on image, use id to be save
 };
 c.bagtainer.rm = yn(env.EXECUTE_CONTAINER_RM) || true;
