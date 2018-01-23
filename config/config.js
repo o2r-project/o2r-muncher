@@ -154,7 +154,7 @@ c.meta = {};
 c.meta.dir = '.erc';
 c.meta.prettyPrint = {};
 c.meta.prettyPrint.indent = 4;
-c.meta.normativeFile = 'metadata_o2r.json';
+c.meta.normativeFile = 'metadata_o2r_1.json';
 c.meta.container = {};
 c.meta.container.image = env.MUNCHER_META_TOOL_CONTAINER || 'o2rproject/o2r-meta:latest';
 c.meta.container.default_create_options = {
@@ -171,17 +171,17 @@ c.meta.broker.module = 'broker';
 c.meta.broker.mappings = {
   zenodo: {
     targetElement: 'zenodo.metadata',
-    file: 'metadata_zenodo.json',
+    file: 'metadata_zenodo_1.json',
     mappingFile: 'broker/mappings/zenodo-map.json'
   },
   zenodo_sandbox: {
     targetElement: 'zenodo_sandbox.metadata',
-    file: 'metadata_zenodo_sandbox.json',
+    file: 'metadata_zenodo_sandbox_1.json',
     mappingFile: 'broker/mappings/zenodo_sandbox-map.json'
   },
   //o2r: {
   //  targetElement: 'o2r',
-  //  file: 'metadata_o2r.json',
+  //  file: 'metadata_o2r_1.json',
   //  mappingFile: 'broker/mappings/o2r-map.json'
   //} 
 };
