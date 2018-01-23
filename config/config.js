@@ -16,6 +16,7 @@
  */
 const yn = require('yn');
 const util = require('util');
+const path = require('path');
 const debug = require('debug')('muncher:config');
 
 var c = {};
@@ -50,9 +51,9 @@ if (c.mongo.location[c.mongo.location.length - 1] !== '/') {
 
 // fs paths
 c.fs.base = env.MUNCHER_BASEPATH || '/tmp/o2r/';
-c.fs.incoming = c.fs.base + 'incoming/';
-c.fs.compendium = c.fs.base + 'compendium/';
-c.fs.job = c.fs.base + 'job/';
+c.fs.incoming = path.join(c.fs.base, 'incoming');
+c.fs.compendium = path.join(c.fs.base, 'compendium');
+c.fs.job = path.join(c.fs.base, 'job');
 c.fs.delete_inc = true;
 c.fs.fail_on_no_files = yn(env.MUNCHER_FAIL_ON_NO_FILES) || false;
 
@@ -204,7 +205,7 @@ c.containerit.rm = yn(env.MUNCHER_CONTAINERIT_CONTAINER_RM) || true;
 
 c.payload = {};
 c.payload.tarball = {};
-c.payload.tarball.tmpdir = c.fs.base + 'payloads/';
+c.payload.tarball.tmpdir = path.join(c.fs.base, 'payloads');
 c.payload.tarball.statConcurrency = 4; // concurrency when creating payload tarballs
 c.payload.tarball.gzip = false;
 c.payload.tarball.gzipOptions = {};
