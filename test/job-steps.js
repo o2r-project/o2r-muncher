@@ -1100,6 +1100,26 @@ describe('API job steps', () => {
         });
       });
     }).timeout(20000);
+
+    it('should list the image tarball in the compendium file listing', function (done) {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.include(JSON.stringify(response.files), 'image.tar');
+        done();
+      });
+    });
+
+    it('should not have the image tarball in the job file listing', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.notInclude(JSON.stringify(response.files), 'image.tar');
+        done();
+      });
+    });
   });
 
   describe('EXECUTION check with random result in HTML', () => {
