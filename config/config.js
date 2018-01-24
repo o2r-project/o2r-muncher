@@ -16,6 +16,7 @@
  */
 const yn = require('yn');
 const util = require('util');
+const path = require('path');
 const debug = require('debug')('muncher:config');
 
 var c = {};
@@ -50,9 +51,9 @@ if (c.mongo.location[c.mongo.location.length - 1] !== '/') {
 
 // fs paths
 c.fs.base = env.MUNCHER_BASEPATH || '/tmp/o2r/';
-c.fs.incoming = c.fs.base + 'incoming/';
-c.fs.compendium = c.fs.base + 'compendium/';
-c.fs.job = c.fs.base + 'job/';
+c.fs.incoming = path.join(c.fs.base, 'incoming');
+c.fs.compendium = path.join(c.fs.base, 'compendium');
+c.fs.job = path.join(c.fs.base, 'job');
 c.fs.delete_inc = true;
 c.fs.fail_on_no_files = yn(env.MUNCHER_FAIL_ON_NO_FILES) || false;
 
@@ -90,7 +91,9 @@ c.bagtainer.spec_version.default = '1';
 c.bagtainer.configFile = 'erc.yml';
 c.bagtainer.mountLocationInContainer = '/erc';
 c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
-c.bagtainer.keepImages = true; // required for image download!
+c.bagtainer.keepImages = true;
+c.bagtainer.saveImageTarball = true;
+c.bagtainer.imageTarballFile = 'image.tar';
 c.bagtainer.validateBagBeforeExecute = true; // bag validation will fail, gut useful to highlight the changes in compendium
 c.bagtainer.validateCompendiumBeforeExecute = true;
 c.bagtainer.failOnValidationError = true;
@@ -153,7 +156,7 @@ c.meta = {};
 c.meta.dir = '.erc';
 c.meta.prettyPrint = {};
 c.meta.prettyPrint.indent = 4;
-c.meta.normativeFile = 'metadata_o2r.json';
+c.meta.normativeFile = 'metadata_o2r_1.json';
 c.meta.container = {};
 c.meta.container.image = env.MUNCHER_META_TOOL_CONTAINER || 'o2rproject/o2r-meta:latest';
 c.meta.container.default_create_options = {
@@ -170,17 +173,17 @@ c.meta.broker.module = 'broker';
 c.meta.broker.mappings = {
   zenodo: {
     targetElement: 'zenodo.metadata',
-    file: 'metadata_zenodo.json',
+    file: 'metadata_zenodo_1.json',
     mappingFile: 'broker/mappings/zenodo-map.json'
   },
   zenodo_sandbox: {
     targetElement: 'zenodo_sandbox.metadata',
-    file: 'metadata_zenodo_sandbox.json',
+    file: 'metadata_zenodo_sandbox_1.json',
     mappingFile: 'broker/mappings/zenodo_sandbox-map.json'
   },
   //o2r: {
   //  targetElement: 'o2r',
-  //  file: 'metadata_o2r.json',
+  //  file: 'metadata_o2r_1.json',
   //  mappingFile: 'broker/mappings/o2r-map.json'
   //} 
 };
@@ -204,10 +207,12 @@ c.containerit.rm = yn(env.MUNCHER_CONTAINERIT_CONTAINER_RM) || true;
 
 c.payload = {};
 c.payload.tarball = {};
-c.payload.tarball.tmpdir = c.fs.base + 'payloads/';
+c.payload.tarball.tmpdir = path.join(c.fs.base, 'payloads');
 c.payload.tarball.statConcurrency = 4; // concurrency when creating payload tarballs
 c.payload.tarball.gzip = false;
 c.payload.tarball.gzipOptions = {};
+c.payload.tarball.globPattern = '**/*';
+c.payload.tarball.ignore = [c.bagtainer.imageTarballFile, c.meta.dir + '/**'];
 
 debug('CONFIGURATION:\n%s', util.inspect(c, { depth: null, colors: true }));
 

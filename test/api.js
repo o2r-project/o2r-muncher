@@ -21,6 +21,7 @@ const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
+const startJob = require('./util').startJob;
 const fs = require('fs');
 const mongojs = require('mongojs');
 const chai = require('chai');
@@ -224,8 +225,6 @@ describe('API Compendium sub-resource /jobs', () => {
       });
     });
 
-    let job_id;
-
     it('should respond with HTTP 200 and an empty list when there is no job for an existing compendium', (done) => {
       request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
         assert.ifError(err);
@@ -238,35 +237,33 @@ describe('API Compendium sub-resource /jobs', () => {
       });
     });
 
-    it('should return job ID when starting job', (done) => {
-      let j = request.jar();
-      let ck = request.cookie('connect.sid=' + cookie);
-      j.setCookie(ck, global.test_host);
-
-      request({
-        uri: global.test_host + '/api/v1/job',
-        method: 'POST',
-        jar: j,
-        formData: {
-          compendium_id: compendium_id
-        }
-      }, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        let response = JSON.parse(body);
-        assert.property(response, 'job_id');
-        job_id = response.job_id;
-        done();
+    it('should respond with HTTP 200 valid JSON and one job in the list of jobs when one is started', (done) => {
+      startJob(compendium_id, id => {
+        request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
+          assert.ifError(err);
+          assert.equal(res.statusCode, 200);
+          response = JSON.parse(body);
+          assert.isObject(response);
+          assert.isDefined(response.results, 'results returned');
+          assert.isArray(response.results);
+          assert.lengthOf(response.results, 1);
+          assert.include(response.results, id, 'job id is in results');
+          done();
+        });
       });
     });
 
-    it('should respond with HTTP 200 and one job in the list of jobs when one is started', (done) => {
-      request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        assert.isDefined(JSON.parse(body).results, 'results returned');
-        assert.include(JSON.parse(body).results, job_id, 'job id is in results');
-        done();
+    it('should respond with HTTP 200 valid JSON and two jobs in the list of jobs when another one is started', (done) => {
+      startJob(compendium_id, id => {
+        request(global.test_host + '/api/v1/compendium/' + compendium_id + '/jobs', (err, res, body) => {
+          assert.ifError(err);
+          assert.equal(res.statusCode, 200);
+          response = JSON.parse(body);
+          assert.isObject(response);
+          assert.lengthOf(response.results, 2);
+          assert.include(response.results, id, 'job id is in results');
+          done();
+        });
       });
     });
 
