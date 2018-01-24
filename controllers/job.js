@@ -150,10 +150,11 @@ exports.viewJob = (req, res) => {
       }
 
       try {
-        fs.accessSync(path.join(config.fs.job, id)); // throws if directory does not exist
+        fullPath = path.join(config.fs.job, id)
+        fs.accessSync(fullPath); // throws if directory does not exist
 
-        answer.files = rewriteTree(dirTree(path.join(config.fs.job, id)),
-          config.fs.job.length + config.id_length, // remove local fs path and id
+        answer.files = rewriteTree(dirTree(fullPath),
+          fullPath.length, // remove local fs path and id
           urlJoin(config.api.resource.job, id, config.api.sub_resource.data)
         );
       } catch (e) {

@@ -88,9 +88,10 @@ exports.viewCompendium = (req, res) => {
         }
 
         try {
-          fs.accessSync(path.join(config.fs.compendium, id)); // throws if does not exist
-          answer.files = rewriteTree(dirTree(path.join(config.fs.compendium, id)),
-            config.fs.compendium.length + config.id_length, // remove local fs path and id
+          fullPath = path.join(config.fs.compendium, id);
+          fs.accessSync(fullPath); // throws if does not exist
+          answer.files = rewriteTree(dirTree(fullPath),
+            fullPath.length, // remove local fs path and id
             urlJoin(config.api.resource.compendium, id, config.api.sub_resource.data) // prepend proper location
           );
         } catch (err) {

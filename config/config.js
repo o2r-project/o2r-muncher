@@ -91,7 +91,9 @@ c.bagtainer.spec_version.default = '1';
 c.bagtainer.configFile = 'erc.yml';
 c.bagtainer.mountLocationInContainer = '/erc';
 c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
-c.bagtainer.keepImages = true; // required for image download!
+c.bagtainer.keepImages = true;
+c.bagtainer.saveImageTarball = true;
+c.bagtainer.imageTarballFile = 'image.tar';
 c.bagtainer.validateBagBeforeExecute = true; // bag validation will fail, gut useful to highlight the changes in compendium
 c.bagtainer.validateCompendiumBeforeExecute = true;
 c.bagtainer.failOnValidationError = true;
@@ -209,6 +211,8 @@ c.payload.tarball.tmpdir = path.join(c.fs.base, 'payloads');
 c.payload.tarball.statConcurrency = 4; // concurrency when creating payload tarballs
 c.payload.tarball.gzip = false;
 c.payload.tarball.gzipOptions = {};
+c.payload.tarball.globPattern = '**/*';
+c.payload.tarball.ignore = [c.bagtainer.imageTarballFile, c.meta.dir + '/**'];
 
 debug('CONFIGURATION:\n%s', util.inspect(c, { depth: null, colors: true }));
 
