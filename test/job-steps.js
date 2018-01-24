@@ -114,7 +114,7 @@ describe('API job steps', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
-      this.timeout(60000);
+      this.timeout(90000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -266,7 +266,7 @@ describe('API job steps', () => {
     let job_id = '';
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       let req = createCompendiumPostRequest('./test/erc/step_validate_bag', cookie_o2r);
 
       request(req, (err, res, body) => {
@@ -344,7 +344,7 @@ describe('API job steps', () => {
     let job_id = '';
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
 
       request(req, (err, res, body) => {
@@ -518,7 +518,7 @@ describe('API job steps', () => {
     let compendium_id = '';
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       let req = createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace');
 
       request(req, (err, res, body) => {
@@ -614,7 +614,7 @@ describe('API job steps', () => {
     let compendium_id = '';
 
     before(function (done) {
-      this.timeout(80000);
+      this.timeout(90000);
       let req = createCompendiumPostRequest('./test/workspace/minimal-script', cookie_o2r, 'workspace');
 
       request(req, (err, res, body) => {
@@ -700,7 +700,7 @@ describe('API job steps', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_prepare', cookie_o2r);
-      this.timeout(60000);
+      this.timeout(90000);
 
       request(req, (err, res, body) => {
         let compendium_id = JSON.parse(body).id;
@@ -767,7 +767,7 @@ describe('API job steps', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_build', cookie_o2r);
-      this.timeout(60000);
+      this.timeout(90000);
 
       request(req, (err, res, body) => {
         let compendium_id = JSON.parse(body).id;
@@ -859,7 +859,7 @@ describe('API job steps', () => {
     let job_id = '';
 
     before(function (done) {
-      this.timeout(80000);
+      this.timeout(90000);
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
 
       request(req, (err, res, body) => {
@@ -867,7 +867,7 @@ describe('API job steps', () => {
         publishCandidate(compendium_id, cookie_o2r, () => {
           startJob(compendium_id, id => {
             job_id = id;
-            sleep.sleep(sleepSecs);
+            sleep.sleep(sleepSecs / 2);
             done();
           });
         });
@@ -930,15 +930,17 @@ describe('API job steps', () => {
         assert.property(response.steps.check, 'errors');
         assert.isArray(response.steps.check.errors);
         assert.isNotEmpty(response.steps.check.errors);
+        assert.include(JSON.stringify(response.steps.check.errors), 'no such file');
+        assert.include(JSON.stringify(response.steps.check.errors), 'wrongname.html');
         done();
       });
     });
 
-    it('should skip step "image_save"', (done) => {
+    it('should have step "image_save" queued', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.propertyVal(response.steps.image_save, 'status', 'skipped');
+        assert.propertyVal(response.steps.image_save, 'status', 'queued');
         done();
       });
     });
@@ -1105,7 +1107,7 @@ describe('API job steps', () => {
     let compendium_id = '';
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       let req = createCompendiumPostRequest('./test/workspace/rmd-data-random', cookie_o2r, 'workspace');
 
       request(req, (err, res, body) => {
@@ -1229,7 +1231,7 @@ describe('API job details filtering', () => {
   var job_id;
 
   before(function (done) {
-    this.timeout(60000);
+    this.timeout(90000);
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) {
         let req = createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace');

@@ -25,5 +25,5 @@ script:
   - npm run test_ci
 after_failure:
   - sleep 5
-  - docker logs testloader
   - docker logs testmuncher
+  - docker logs testloader
