@@ -90,6 +90,7 @@ module.exports.publishCandidate = function (compendium_id, cookie, done) {
       updateMetadata.json = { o2r: response.metadata.o2r };
 
       request(updateMetadata, (err, res, body) => {
+        debug("Published candidate: %s", JSON.stringify(body));
         done();
       });
     }
@@ -111,6 +112,7 @@ module.exports.startJob = function (compendium_id, done) {
     timeout: 1000
   }, (err, res, body) => {
     let response = JSON.parse(body);
+    debug("Started job: %s", JSON.stringify(response));
     done(response.job_id);
   });
 }
