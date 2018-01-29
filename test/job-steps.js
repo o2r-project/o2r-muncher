@@ -453,7 +453,7 @@ describe('API job steps', () => {
   });
 
   describe('EXECUTION configuration file generation', () => {
-    it('should skip step (and previous step) for rmd-configuration-file, but complete following steps', (done) => {
+    it('should skip steps validate bag and generatoe configuration, but complete following steps', (done) => {
       let req = createCompendiumPostRequest('./test/workspace/rmd-configuration-file', cookie_o2r, 'workspace');
       request(req, (err, res, body) => {
         assert.ifError(err);
