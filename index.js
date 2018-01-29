@@ -17,7 +17,7 @@
 
 // General modules
 const debug = require('debug')('muncher');
-const c = require('./config/config');
+const config = require('./config/config');
 const fse = require('fs-extra');
 const backoff = require('backoff');
 const child_process = require('child_process');
@@ -34,7 +34,7 @@ process.on('unhandledRejection', (reason) => {
 
 // mongo connection
 const mongoose = require('mongoose');
-const dbURI = c.mongo.location + c.mongo.database;
+const dbURI = config.mongo.location + config.mongo.database;
 // see http://blog.mlab.com/2014/04/mongodb-driver-mongoose/#Production-ready_connection_settings and http://mongodb.github.io/node-mongodb-native/2.1/api/Server.html and http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/overview.html
 var dbOptions = {
   autoReconnect: true,
@@ -88,8 +88,8 @@ controllers.compendium = require('./controllers/compendium');
 controllers.job = require('./controllers/job');
 
 // check fs & create dirs if necessary
-fse.mkdirsSync(c.fs.job);
-fse.mkdirsSync(c.payload.tarball.tmpdir);
+fse.mkdirsSync(config.fs.job);
+fse.mkdirsSync(config.payload.tarball.tmpdir);
 
 // minimal serialize/deserialize to make auth details cookie-compatible.
 passport.serializeUser((user, cb) => {
@@ -113,9 +113,9 @@ function initApp(callback) {
         reject(err);
       } else {
         debug('Docker available? %s', data);
-        debug('meta tools version: %s', c.meta.container.image);
+        debug('meta tools version: %s', config.meta.container.image);
 
-        docker.pull(c.meta.container.image, function (err, stream) {
+        docker.pull(config.meta.container.image, function (err, stream) {
           if (err) {
             debug('error pulling meta image: %s', err);
             reject(err);
@@ -141,7 +141,7 @@ function initApp(callback) {
 
   pullContaineritContainer = new Promise((fulfill, reject) => {
     docker2 = new Docker();
-    docker2.pull(c.containerit.image, function (err, stream) {
+    docker2.pull(config.containerit.image, function (err, stream) {
       if (err) {
         debug('error pulling containerit image: %s', err);
         reject(err);
@@ -165,7 +165,7 @@ function initApp(callback) {
 
   configureExpressApp = new Promise((fulfill, reject) => {
     app.use(session({
-      secret: c.sessionSecret,
+      secret: config.sessionSecret,
       resave: true,
       saveUninitialized: true,
       maxAge: 60 * 60 * 24 * 7, // cookies become invalid after one week
@@ -206,17 +206,17 @@ function initApp(callback) {
       if (!req.isAuthenticated()) {
         res.status(401).send({ error: 'not authenticated' });
         return;
-      } else if (req.user.level < c.user.level.view_status) {
+      } else if (req.user.level < config.user.level.view_status) {
         res.status(403).send({ error: 'not allowed' });
         return;
       }
 
       var response = {
         name: "muncher",
-        version: c.version,
-        levels: c.user.level,
-        mongodb: c.mongo,
-        filesystem: c.fs
+        version: config.version,
+        levels: config.user.level,
+        mongodb: config.mongo,
+        filesystem: config.fs
       };
       res.send(response);
     });
@@ -252,14 +252,14 @@ function initApp(callback) {
   });
 
   configureEmailTransporter = new Promise((fulfill, reject) => {
-    if (c.email.enable
-      && c.email.transport
-      && c.email.sender
-      && c.email.receivers) {
-      emailTransporter = nodemailer.createTransport(c.email.transport);
-      debug('Sending emails on critical events to %s', c.email.receivers);
+    if (config.email.enable
+      && config.email.transport
+      && config.email.sender
+      && config.email.receivers) {
+      emailTransporter = nodemailer.createTransport(config.email.transport);
+      debug('Sending emails on critical events to %s', config.email.receivers);
     } else {
-      debug('Email notification for critical events _not_ active: %s', JSON.stringify(c.email));
+      debug('Email notification for critical events _not_ active: %s', JSON.stringify(config.email));
     }
     fulfill();
   });
@@ -278,11 +278,11 @@ function initApp(callback) {
   });
 
   startListening = new Promise((fulfill, reject) => {
-    app.listen(c.net.port, () => {
+    app.listen(config.net.port, () => {
       debug('muncher %s with API version %s waiting for requests on port %s'.green,
-        c.version,
-        c.api_version,
-        c.net.port);
+        config.version,
+        config.api_version,
+        config.net.port);
       fulfill();
     });
   });
@@ -304,11 +304,11 @@ function initApp(callback) {
 // auto_reconnect is on by default and only for RE(!)connects, not for the initial attempt: http://bites.goodeggs.com/posts/reconnecting-to-mongodb-when-mongoose-connect-fails-at-startup/
 var dbBackoff = backoff.fibonacci({
   randomisationFactor: 0,
-  initialDelay: c.mongo.initial_connection_initial_delay,
-  maxDelay: c.mongo.initial_connection_max_delay
+  initialDelay: config.mongo.initial_connection_initial_delay,
+  maxDelay: config.mongo.initial_connection_max_delay
 });
 
-dbBackoff.failAfter(c.mongo.initial_connection_attempts);
+dbBackoff.failAfter(config.mongo.initial_connection_attempts);
 dbBackoff.on('backoff', function (number, delay) {
   debug('Trying to connect to MongoDB (#%s) in %sms', number, delay);
 });
