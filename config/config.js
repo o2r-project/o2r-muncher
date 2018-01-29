@@ -214,6 +214,11 @@ c.payload.tarball.gzipOptions = {};
 c.payload.tarball.globPattern = '**/*';
 c.payload.tarball.ignore = [c.bagtainer.imageTarballFile, c.meta.dir + '/**'];
 
+c.body_parser_config = {
+  // increase limit for metadata uploads, see https://github.com/expressjs/body-parser#limit
+  limit: '50mb'
+};
+
 debug('CONFIGURATION:\n%s', util.inspect(c, { depth: null, colors: true }));
 
 module.exports = c;

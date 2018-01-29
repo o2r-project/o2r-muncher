@@ -62,7 +62,7 @@ const multer = require('multer');
 const upload = multer();
 const app = express();
 app.use(compression());
-app.use(bodyParser.json());
+app.use(bodyParser.json(config.body_parser_config));
 
 // passport & session modules for authenticating users.
 const User = require('./lib/model/user');
