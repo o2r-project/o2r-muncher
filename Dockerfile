@@ -85,6 +85,7 @@ LABEL maintainer="o2r-project <https://o2r.info>" \
 
 # If running in a container the app is root, so the second order container also must have root access, otherwise permission problems
 ENV MUNCHER_META_TOOL_CONTAINER_USER=root
+ENV MUNCHER_CONTAINERIT_USER=root
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["npm", "start" ]

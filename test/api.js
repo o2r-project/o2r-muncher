@@ -87,14 +87,12 @@ describe('API Compendium', () => {
     let compendium_id = '';
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);
-      this.timeout(60000);
+      this.timeout(90000);
 
       request(req, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
-        assert.isObject(JSON.parse(body), 'returned JSON');
-        assert.isDefined(JSON.parse(body).id, 'returned id');
-        assert.property(JSON.parse(body), 'id');
+        response = JSON.parse(body);
         compendium_id = JSON.parse(body).id;
 
         publishCandidate(compendium_id, cookie, () => {

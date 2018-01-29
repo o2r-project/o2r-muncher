@@ -16,7 +16,7 @@
  */
 
 const config = require('../config/config');
-const debug = require('debug')('job');
+const debug = require('debug')('muncher:job');
 const randomstring = require('randomstring');
 const fs = require('fs');
 const path = require('path');
