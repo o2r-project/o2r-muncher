@@ -16,7 +16,7 @@
  */
 
 const config = require('../config/config');
-const debug = require('debug')('compendium');
+const debug = require('debug')('muncher:compendium');
 const fs = require('fs');
 const fse = require('fs-extra');
 const path = require('path');
@@ -500,7 +500,7 @@ exports.updateCompendiumMetadata = (req, res) => {
       detect_rights(user_id, compendium, config.user.level.edit_metadata)
         .then(function (passon) {
           if (!req.body.hasOwnProperty('o2r')) {
-            debug('[%s] invalid metadata provided: no o2r root element', id);
+            debug('[%s] invalid metadata provided: no o2r root element', id, JSON.stringify(req.body));
             res.status(422).send({ error: "JSON with root element 'o2r' required" });
             return;
           }
