@@ -31,7 +31,7 @@ const path = require('path');
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
-const sleepSecs = 40;
+const sleepSecs = 50;
 
 let Docker = require('dockerode');
 let docker = new Docker();
@@ -182,7 +182,7 @@ describe('API job steps', () => {
 
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
-      this.timeout(sleepSecs * 1000 * 2);
+      this.timeout(90000);
 
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -453,7 +453,7 @@ describe('API job steps', () => {
   });
 
   describe('EXECUTION configuration file generation', () => {
-    it('should skip steps validate bag and generatoe configuration, but complete following steps', (done) => {
+    it('should skip steps validate bag and generate configuration, but complete following steps', (done) => {
       let req = createCompendiumPostRequest('./test/workspace/rmd-configuration-file', cookie_o2r, 'workspace');
       request(req, (err, res, body) => {
         assert.ifError(err);
@@ -622,7 +622,7 @@ describe('API job steps', () => {
         publishCandidate(compendium_id, cookie_o2r, () => {
           startJob(compendium_id, id => {
             job_id = id;
-            sleep.sleep(sleepSecs);
+            sleep.sleep(sleepSecs * 1.5);
             done();
           });
         });
@@ -936,7 +936,7 @@ describe('API job steps', () => {
       });
     });
 
-    it('should have step "image_save" queued', (done) => {
+    it('should have step "image_save" queued (failure in previous step)', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
@@ -1201,7 +1201,7 @@ describe('API job steps', () => {
       });
     });
 
-    it('should skip the step image_save', function (done) {
+    it('should have skipped the step image_save', function (done) {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);

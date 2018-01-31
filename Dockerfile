@@ -83,9 +83,10 @@ LABEL maintainer="o2r-project <https://o2r.info>" \
   org.label-schema.docker.schema-version="rc1" \
   info.o2r.meta.version=$META_VERSION
 
-# If running in a container the app is root, so the second order container also must have root access, otherwise permission problems
+# If running in a container the app is root, so the second order containers also must have root access, otherwise permission problems arise
 ENV MUNCHER_META_TOOL_CONTAINER_USER=root
 ENV MUNCHER_CONTAINERIT_USER=root
+ENV MUNCHER_CONTAINER_USER=root
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["npm", "start" ]
