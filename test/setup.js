@@ -299,10 +299,10 @@ before(function (done) {
     ],
         function (err, results) {
             if (err) {
-                debug('Error during test setup: %s', JSON.stringify(err));
+                debug('Error during test setup: %o', err);
                 process.exit(1);
             } else {
-                debug('Test setup result: %s', JSON.stringify(results));
+                debug('Test setup result: %o', results);
                 if (env.LOADER_CONTAINER && !yn(env.LOADER_CONTAINER)) {
                     debugContainer('Not starting container, found env var LOADER_CONTAINER="%s"', env.LOADER_CONTAINER);
                     done();
@@ -342,7 +342,7 @@ before(function (done) {
                     }).then(function (container) {
                         loader_container = container;
                         return container.start({}, (err, data) => {
-                            if (err) debugContainer('ERROR %s', JSON.stringify(err));
+                            if (err) debugContainer('ERROR %O', err);
                             else {
                                 debugContainer('Started loader container with id %s at port 8088', container.id)
                                 sleep.sleep(8);

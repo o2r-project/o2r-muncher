@@ -466,7 +466,7 @@ brokerMetadata = function (compendium, metadata_dir, metadata_file, mappings) {
                 debug('[%s] ERROR saving new compendium: %s', compendium.id, err);
                 reject(err);
               } else {
-                debug('[%s] Updated compendium, now is:\n%s', compendium.id, JSON.stringify(doc));
+                debug('[%s] Updated compendium, now is: %o', compendium.id, doc);
                 fulfill(doc);
               }
             });
@@ -500,7 +500,7 @@ exports.updateCompendiumMetadata = (req, res) => {
       detect_rights(user_id, compendium, config.user.level.edit_metadata)
         .then(function (passon) {
           if (!req.body.hasOwnProperty('o2r')) {
-            debug('[%s] invalid metadata provided: no o2r root element', id, JSON.stringify(req.body));
+            debug('[%s] invalid metadata provided: no o2r root element: %O', id, req.body);
             res.status(422).send({ error: "JSON with root element 'o2r' required" });
             return;
           }

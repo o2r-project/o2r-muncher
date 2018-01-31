@@ -117,15 +117,15 @@ function initApp(callback) {
 
         docker.pull(config.meta.container.image, function (err, stream) {
           if (err) {
-            debug('error pulling meta image: %s', err);
+            debug('error pulling meta image: %o', err);
             reject(err);
           } else {
             function onFinished(err, output) {
               if (err) {
-                debug('error pulling meta image: %s', JSON.stringify(err));
+                debug('Error pulling meta image: %o', err);
                 reject(err);
               } else {
-                debug('pulled meta tools image: %s', JSON.stringify(output));
+                debug('pulled meta tools image: %o', output);
                 fulfill();
               }
 
@@ -148,10 +148,10 @@ function initApp(callback) {
       } else {
         function onFinished(err, output) {
           if (err) {
-            debug('error pulling containerit image: %s', JSON.stringify(err));
+            debug('error pulling containerit image: %o', err);
             reject(err);
           } else {
-            debug('pulled containerit tools image: %s', JSON.stringify(output));
+            debug('pulled containerit tools image:\n%O', output);
             fulfill();
           }
 
@@ -259,7 +259,7 @@ function initApp(callback) {
       emailTransporter = nodemailer.createTransport(config.email.transport);
       debug('Sending emails on critical events to %s', config.email.receivers);
     } else {
-      debug('Email notification for critical events _not_ active: %s', JSON.stringify(config.email));
+      debug('Email notification for critical events _not_ active: %o', config.email);
     }
     fulfill();
   });

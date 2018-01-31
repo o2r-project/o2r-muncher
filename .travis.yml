@@ -10,14 +10,15 @@ before_install:
   - docker pull o2rproject/o2r-meta:latest
   - docker pull o2rproject/containerit:geospatial
   - docker pull mongo:3.4
-  - docker build --file test/Dockerfile .
+  - docker pull o2rproject/o2r-muncher:test
+  - docker build --file test/Dockerfile . | tee docker_image_build.log
 install:
   - npm install
 before_script:
   - mkdir -p /tmp/o2r
   - docker run --name mongodb -d -p 27017:27017 mongo:3.4
   - docker run --name testloader      -d -p 8088:8088 --link mongodb:mongodb -v /tmp/o2r:/tmp/o2r -v /var/run/docker.sock:/var/run/docker.sock -e LOADER_MONGODB=mongodb://mongodb:27017      -e DEBUG=* o2rproject/o2r-loader:latest
-  #- docker run --name testtransporter -d -p 8081:8081 --link mongodb:mongodb -v /tmp/o2r:/tmp/o2r -v /var/run/docker.sock:/var/run/docker.sock -e TRANSPORTER_MONGODB=mongodb://mongodb:27017 -e DEBUG=* o2rproject/o2r-transporter:latest
+  - docker run --name testtransporter -d -p 8081:8081 --link mongodb:mongodb -v /tmp/o2r:/tmp/o2r -e TRANSPORTER_MONGODB=mongodb://mongodb:27017 -e DEBUG=* o2rproject/o2r-transporter:latest
   - docker build --tag muncher .
   - docker run --name testmuncher     -d -p 8080:8080 --link mongodb:mongodb -v /tmp/o2r:/tmp/o2r -v /var/run/docker.sock:/var/run/docker.sock -e MUNCHER_MONGODB=mongodb://mongodb:27017     -e DEBUG=muncher,muncher:* muncher
   - sleep 10
@@ -27,3 +28,5 @@ after_failure:
   - sleep 5
   - docker logs testmuncher
   - docker logs testloader
+  - docker logs testransporter
+  - cat docker_image_build.log

@@ -128,7 +128,7 @@ exports.viewJob = (req, res) => {
       debug('[%s] error retrieving job %s: %s', id, err);
       res.status(404).send({ error: 'no job with this id' });
     } else {
-      debug('[%s] Found job, returning it with steps %s', id, JSON.stringify(steps));
+      debug('[%s] Found job, returning it with steps %o', id, steps);
       answer.compendium_id = job.compendium_id;
       answer.status = job.status;
 
