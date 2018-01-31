@@ -1,12 +1,13 @@
 {
   "name": "muncher",
-  "version": "0.14.2",
+  "version": "0.14.3",
   "description": "Node.js implementation of parts of the [o2r web api](http://o2r.info/o2r-web-api).",
   "main": "index.js",
   "scripts": {
     "start": "DEBUG=muncher,muncher:*,executor:* node index.js",
     "test_port80": "LOADER_CONTAINER=no TEST_HOST=http://localhost DEBUG=*,-modem,-mocha:* mocha",
     "test": "LOADER_CONTAINER=no DEBUG=*,-modem,-mocha:* mocha",
+    "test_bail": "LOADER_CONTAINER=no DEBUG=*,-modem,-mocha:* mocha --bail",
     "test_ci": "LOADER_CONTAINER=no DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access\""
   },
   "author": "o2r-project (http://o2r.info)",
