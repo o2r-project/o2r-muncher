@@ -109,7 +109,15 @@ c.bagit.failOnValidationError = {};
 c.bagit.failOnValidationError.execute = false; // muncher never updates the bag
 c.bagit.stepResultAfterValidationError = 'skipped'; // it's not really a failure!
 
-c.bagtainer.imageNamePrefix = 'erc:';
+c.bagtainer.image = {};
+c.bagtainer.image.name = {
+  compendium: 'erc',
+  job: 'job'
+};
+c.bagtainer.image.prefix = {
+  compendium: c.bagtainer.image.name.compendium + ':',
+  job: c.bagtainer.image.name.job + ':'
+};
 c.bagtainer.forceImageRemoval = true;
 c.bagtainer.docker = {};
 // See https://docs.docker.com/engine/api/v1.29/#operation/ContainerCreate

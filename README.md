@@ -76,6 +76,9 @@ TEST_HOST=http://localhost:80 npm test
 LOADER_CONTAINER=no TEST_HOST=http://localhost npm test
 # or
 npm run test
+
+# stop tests after the first failing one
+npm run test_bail
 ```
 
 ## Development

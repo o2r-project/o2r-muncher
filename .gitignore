@@ -4,3 +4,4 @@ incoming
 npm-debug.log
 test/erc/step*.zip
 *.Rhistory
+test/workspace/with-image-tarball/image\.tar
