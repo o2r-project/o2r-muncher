@@ -16,11 +16,17 @@
  */
 
 const request = require('request');
-const tmp = require('tmp');
-const AdmZip = require('adm-zip');
+const archiver = require('archiver');
 const fs = require('fs');
+const os = require('os');
+const zlib = require('zlib');
 const tags = require('mocha-tags');
 const debug = require('debug')('test:util');
+const path = require('path');
+const hasher = require('node-object-hash');
+var hashSortCoerce = hasher();
+const AsyncPolling = require('async-polling');
+
 debug('Test filter: ', tags.filter);
 
 require("./setup");
@@ -28,16 +34,15 @@ debug('Using loader at ' + global.test_host_loader);
 
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 
-module.exports.createCompendiumPostRequest = function (path, cookie, type = 'compendium') {
-  var zip = new AdmZip();
-  zip.addLocalFolder(path);
-  var tmpfile = tmp.tmpNameSync() + '.zip';
-  zip.writeZip(tmpfile);
+// TODO rewrite function to start the request, so that we can pipe the archive, see https://github.com/archiverjs/node-archiver/issues/165#issuecomment-166710026
+module.exports.createCompendiumPostRequest = function (dataPath, cookie, type = 'compendium', done) {
+  zipHash = hashSortCoerce.hash({ path: dataPath, type: type });
+  tmpfile = path.join(os.tmpdir(), 'o2r-muncher-upload_' + zipHash + '.zip');
 
   let formData = {
     'content_type': type,
     'compendium': {
-      value: fs.createReadStream(tmpfile),
+      value: null,
       options: {
         filename: 'another.zip',
         contentType: 'application/zip'
@@ -53,10 +58,43 @@ module.exports.createCompendiumPostRequest = function (path, cookie, type = 'com
     method: 'POST',
     jar: j,
     formData: formData,
-    timeout: 30000
+    timeout: 60000
   };
 
-  return (reqParams);
+  fs.access(tmpfile, (err) => {
+    if (err) {
+      output = fs.createWriteStream(tmpfile);
+      archive = archiver('zip', {
+        zlib: { level: zlib.constants.Z_NO_COMPRESSION }
+      });
+      archive.on('end', function () {
+        debug('Created zip file %s (%s total bytes)', tmpfile, archive.pointer());
+        reqParams.formData.compendium.value = fs.createReadStream(tmpfile);
+        debug('Created creation request: %O', reqParams);
+        done(reqParams);
+      });
+      archive.on('warning', function (err) {
+        if (err.code === 'ENOENT') {
+          debug(err);
+        } else {
+          throw err;
+        }
+      });
+      archive.on('error', function (err) {
+        throw err;
+      });
+      archive.pipe(output);
+
+      debug('writing files from %s to %s', path, tmpfile);
+      archive.directory(dataPath, false);
+      archive.finalize();
+    } else {
+      debug('upload zip already found at %s (manually delete it if the files at %s changed)', tmpfile, dataPath);
+      reqParams.formData.compendium.value = fs.createReadStream(tmpfile);
+      debug('Created creation request: %O', reqParams);
+      done(reqParams);
+    }
+  });
 }
 
 // publish a candidate with a direct copy of the metadata
@@ -83,7 +121,7 @@ module.exports.publishCandidate = function (compendium_id, cookie, done) {
     let response = JSON.parse(body);
     if (err) {
       console.error('error publishing candidate: %s', err);
-    } else if(response.error) {
+    } else if (response.error) {
       console.error('error publishing candidate: %s', JSON.stringify(response));
       throw new Error('Could not publish candidate, aborting test.');
     } else {
@@ -115,4 +153,36 @@ module.exports.startJob = function (compendium_id, done) {
     debug("Started job: %o", response);
     done(response.job_id);
   });
+}
+
+module.exports.waitForJob = function (job_id, done) {
+  var polling = AsyncPolling(function (end) {
+    request({
+      uri: global.test_host + '/api/v1/job/' + job_id,
+      method: 'GET',
+      timeout: 500
+    }, (err, res, body) => {
+      if (err) end(err, null);
+      else {
+        let response = JSON.parse(body);
+        if (response.status !== 'running') {
+          end(null, response);
+        } else {
+          end(new Error(response.status));
+        }
+      }
+    });
+  }, 3000);
+
+  polling.on('error', function (error) {
+    debug("Job %s: %s", job_id, error.message);
+  });
+
+  polling.on('result', function (result) {
+    debug('Job finished with %s', result.status);
+    done(result.status);
+    polling.stop();
+  });
+
+  polling.run();
 }

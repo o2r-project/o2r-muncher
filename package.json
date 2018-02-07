@@ -53,17 +53,17 @@
     "yn": "^2.0.0"
   },
   "devDependencies": {
-    "adm-zip": "^0.4.7",
     "async": "^2.6.0",
+    "async-polling": "^0.2.1",
     "chai": "^4.1.2",
     "chai-datetime": "^1.5.0",
     "eslint": "^4.16.0",
     "mocha": "^5.0.0",
     "mocha-tags": "^1.0.1",
     "mongojs": "^2.4.1",
+    "node-object-hash": "^1.3.0",
     "node-uname": "^1.0.1",
     "request": "^2.83.0",
-    "sleep": "^5.1.1",
-    "tmp": "0.0.33"
+    "sleep": "^5.1.1"
   }
 }
