@@ -57,7 +57,7 @@ describe.only('Workspaces with images in the upload', () => {
     let job_id, compendium_id, job_id2 = '';
 
     workspacePath = './test/workspace/with-image-tarball';
-    imageTag = 'erc:12345';
+    let imageTag = 'erc:12345';
     imageTarballFile = path.join(workspacePath, config.bagtainer.imageTarballFile);
 
     before(function (done) {
@@ -172,7 +172,7 @@ describe.only('Workspaces with images in the upload', () => {
       });
     });
 
-    it('should have tagged an image for both the compendium and the job (skipped if images are not kept)', function (done) {
+    it('should have tagged an image for both the compendium and the job and have the original image tag (skipped if images are not kept)', function (done) {
       if (config.bagtainer.keepImages) {
         docker.listImages(function (err, images) {
           assert.ifError(err);
@@ -188,6 +188,7 @@ describe.only('Workspaces with images in the upload', () => {
 
           assert.include(names, config.bagtainer.image.prefix.job + compendium_id);
           assert.include(names, config.bagtainer.image.prefix.job + job_id);
+          assert.include(names, imageTag);
           done();
         });
       } else {
