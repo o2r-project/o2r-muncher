@@ -1,3 +1,5 @@
 ---
 id: KIbebWnPlx
 spec_version: "1"
+display: "wrongname.html"
+main: "doc.Rmd"

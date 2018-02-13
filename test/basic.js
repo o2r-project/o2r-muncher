@@ -68,7 +68,7 @@ describe('API', () => {
         done();
       });
     });
-    it('should at "current" endpoint return a document with valid subpaths', (done) => {
+    it('should at "current" endpoint return a document with valid sub-paths', (done) => {
       request(global.test_host + current, (err, res, body) => {
         let response = JSON.parse(body);
         assert.ifError(err);

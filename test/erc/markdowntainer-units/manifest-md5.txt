@@ -1,9 +1,0 @@
-79fbacc75c0c4d1bf75735c85b24effa  data/2016-09-29-plot_units.Rmd
-52a1a6b31891aa8b04e696d8e4bc8047  data/2016-09-29-plot_units.html
-834c53032a98dfed1d327ac4de61121a  data/Dockerfile
-6dd31e8be50e3799e6a4ee3b2ee41804  data/erc.yml
-80a202b61664fdfd6f76cdf081e083d6  data/images/plot-units1-1.png
-0f9f549af04c57137652494bd7bdf35e  data/images/plot-units2-1.png
-c43c18acefbb411e398e2f0cb5ba326f  data/images/plot-units3-1.png
-c74bfd6e99284df278650d99d35b8dd0  data/images/plot-units4-1.png
-4ceb99e160adefdc32077ccfc740c88f  data/images/plot-units5-1.png

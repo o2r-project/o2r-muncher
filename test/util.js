@@ -20,10 +20,11 @@ const tmp = require('tmp');
 const AdmZip = require('adm-zip');
 const fs = require('fs');
 const tags = require('mocha-tags');
-console.log('Test filter: ', tags.filter);
+const debug = require('debug')('test:util');
+debug('Test filter: ', tags.filter);
 
 require("./setup");
-console.log('Using loader at ' + global.test_host_loader);
+debug('Using loader at ' + global.test_host_loader);
 
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 
@@ -52,7 +53,7 @@ module.exports.createCompendiumPostRequest = function (path, cookie, type = 'com
     method: 'POST',
     jar: j,
     formData: formData,
-    timeout: 10000
+    timeout: 30000
   };
 
   return (reqParams);
@@ -79,13 +80,17 @@ module.exports.publishCandidate = function (compendium_id, cookie, done) {
   };
 
   request(getMetadata, (err, res, body) => {
+    let response = JSON.parse(body);
     if (err) {
       console.error('error publishing candidate: %s', err);
+    } else if(response.error) {
+      console.error('error publishing candidate: %s', JSON.stringify(response));
+      throw new Error('Could not publish candidate, aborting test.');
     } else {
-      let response = JSON.parse(body);
       updateMetadata.json = { o2r: response.metadata.o2r };
 
       request(updateMetadata, (err, res, body) => {
+        debug("Published candidate: %s", JSON.stringify(body).slice(0, 80));
         done();
       });
     }
@@ -107,6 +112,7 @@ module.exports.startJob = function (compendium_id, done) {
     timeout: 1000
   }, (err, res, body) => {
     let response = JSON.parse(body);
+    debug("Started job: %o", response);
     done(response.job_id);
   });
 }
