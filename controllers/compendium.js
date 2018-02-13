@@ -16,17 +16,19 @@
  */
 
 const config = require('../config/config');
-const debug = require('debug')('compendium');
+const debug = require('debug')('muncher:compendium');
 const fs = require('fs');
 const fse = require('fs-extra');
 const path = require('path');
 const exec = require('child_process').exec;
 const objectPath = require('object-path');
+const urlJoin = require('url-join');
 
 const dirTree = require('directory-tree');
 const rewriteTree = require('../lib/rewrite-tree');
 const errorMessageHelper = require('../lib/error-message');
 const bagit = require('../lib/bagit');
+const meta = require('../lib/meta');
 
 var Compendium = require('../lib/model/compendium');
 var User = require('../lib/model/user');
@@ -59,12 +61,14 @@ detect_rights = function (user_id, compendium, level) {
   });
 }
 
-exports.viewSingle = (req, res) => {
+exports.viewCompendium = (req, res) => {
   let id = req.params.id;
   debug('[%s] view single compendium', id);
 
-  Compendium.findOne({ id })
-    .select('id user metadata created candidate bag compendium')
+  Compendium
+    .findOne({ id })
+    .select('id user metadata created candidate bag compendium substituted')
+    .lean()
     .exec((err, compendium) => {
       // eslint-disable-next-line no-eq-null, eqeqeq
       if (err || compendium == null) {
@@ -79,26 +83,19 @@ exports.viewSingle = (req, res) => {
           created: compendium.created,
           user: compendium.user,
           bag: compendium.bag,
-          compendium: compendium.compendium
+          compendium: compendium.compendium,
+          substituted: compendium.substituted
         }
 
         try {
-          fs.accessSync(path.join(config.fs.compendium, id)); // throws if does not exist
-          /*
-           *  Rewrite file URLs with api path. directory-tree creates path like
-           *  config.fs.compendium + id + filepath
-           *
-           *  We are only interested in the filepath itself and want to create a
-           *  url like
-           *  host/api/v1/compendium/id/data/filepath
-           *
-           */
-          answer.files = rewriteTree(dirTree(path.join(config.fs.compendium, id)),
-            config.fs.compendium.length + config.id_length, // remove local fs path and id
-            '/api/v1/compendium/' + id + '/data' // prepend proper location
+          fullPath = path.join(config.fs.compendium, id);
+          fs.accessSync(fullPath); // throws if does not exist
+          answer.files = rewriteTree(dirTree(fullPath),
+            fullPath.length, // remove local fs path and id
+            urlJoin(config.api.resource.compendium, id, config.api.sub_resource.data) // prepend proper location
           );
         } catch (err) {
-          debug('[%s] Error: No data files found. Fail? %s\n%s', id, config.fs.fail_on_no_files, err);
+          debug('[%s] Error: No data files found (Fail? %s): %s', id, config.fs.fail_on_no_files, err);
           if (config.fs.fail_on_no_files) {
             res.status(500).send({ error: 'internal error: could not read compendium contents from storage' });
             return;
@@ -137,7 +134,7 @@ exports.viewSingle = (req, res) => {
     });
 };
 
-exports.delete = (req, res) => {
+exports.deleteCompendium = (req, res) => {
   let id = req.params.id;
   debug('[%s] DELETE compendium', id);
 
@@ -162,7 +159,7 @@ exports.delete = (req, res) => {
       detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
         .then((passon) => {
           if (passon.user_has_rights) {
-            debug('[%s] single compendium found, going to remove it and its files at %s on behalf of user %s (has rights: )',
+            debug('[%s] single compendium found, going to remove it and its files at %s on behalf of user %s (has rights: %s)',
               compendium.id, compendium_path, passon.user_id, passon.user_has_rights);
             Compendium.findOneAndRemove({ id: compendium.id }).exec((err) => {
               if (err) {
@@ -190,46 +187,50 @@ exports.delete = (req, res) => {
   });
 };
 
-exports.viewSingleJobs = (req, res) => {
+exports.viewCompendiumJobs = (req, res) => {
   var id = req.params.id;
   var answer = {};
   var filter = { compendium_id: id };
   var limit = parseInt(req.query.limit || config.list_limit, 10);
   var start = parseInt(req.query.start || 1, 10) - 1;
 
-  Job.find(filter).select('id').skip(start).limit(limit).exec((err, jobs) => {
-    if (err) {
-      res.status(500).send({ error: 'query failed' });
-    } else {
-      var count = jobs.length;
-      if (count <= 0) {
-        Compendium.find({ id }).limit(1).exec((err, compendium) => { // https://blog.serverdensity.com/checking-if-a-document-exists-mongodb-slow-findone-vs-find/
-          if (err) {
-            res.status(404).send({ error: 'no compendium found: ' + err.message });
-          }
-          else {
-            if (compendium.length <= 0) {
-              res.status(404).send({ error: 'no compendium with this id' });
-            } else {
-              res.status(404).send({ error: 'no job found for compendium ' + id });
-            }
-          }
-        });
+  Job
+    .find(filter)
+    .select('id')
+    .skip(start)
+    .limit(limit)
+    .lean()
+    .exec((err, jobs) => {
+      if (err) {
+        res.status(500).send({ error: 'query failed' });
       } else {
 
         answer.results = jobs.map(job => {
           return job.id;
         });
-        res.status(200).send(answer);
+
+        if (jobs.length <= 0) {
+          Compendium.find({ id }).limit(1).exec((err, compendium) => {
+            if (err) {
+              res.status(404).send({ error: 'error finding compendium: ' + err.message });
+            } else {
+              if (compendium.length <= 0) {
+                res.status(404).send({ error: 'no compendium with id ' + id });
+              } else {
+                res.status(200).send(answer);
+              }
+            }
+          });
+        } else {
+          res.status(200).send(answer);
+        }
       }
-    }
-  });
+    });
 };
 
-exports.view = (req, res) => {
+exports.listCompendia = (req, res) => {
   let filter = {};
 
-  // add query element to filter (used in database search)
   // eslint-disable-next-line no-eq-null, eqeqeq
   if (req.query.job_id != null) {
     filter.job_id = req.query.job_id;
@@ -255,19 +256,23 @@ exports.view = (req, res) => {
     passon.filter.candidate = false;
 
     return new Promise(function (resolve, reject) {
-      Compendium.find(passon.filter).select('id').skip(passon.start).limit(passon.limit).exec((err, comps) => {
-        if (err) {
-          debug('Error querying candidates for user %s: %s', req.user.orcid, err);
-          let error = new Error('query failed');
-          error.status = 500;
-          reject(error);
-        } else {
-          var count = comps.length;
-          if (count <= 0) {
-            let error = new Error('no compendium found');
-            error.status = 404;
+      Compendium
+        .find(passon.filter)
+        .select('id')
+        .skip(passon.start)
+        .limit(passon.limit)
+        .lean()
+        .exec((err, comps) => {
+          if (err) {
+            debug('Error querying candidates for user %s: %s', req.user.orcid, err);
+            let error = new Error('query failed');
+            error.status = 500;
             reject(error);
           } else {
+            var count = comps.length;
+            if (count <= 0) {
+              debug('Search turned up empty, no compendium found.');
+            }
 
             passon.results = comps.map(comp => {
               return comp.id;
@@ -275,8 +280,7 @@ exports.view = (req, res) => {
 
             resolve(passon);
           }
-        }
-      })
+        })
     });
   };
 
@@ -339,47 +343,145 @@ exports.view = (req, res) => {
 
 };
 
-exports.viewSingleMetadata = (req, res) => {
+exports.viewCompendiumMetadata = (req, res) => {
   let id = req.params.id;
   let answer = { id: id };
 
-  Compendium.findOne({ id }).select('id metadata candidate user').exec((err, compendium) => {
-    // eslint-disable-next-line no-eq-null, eqeqeq
-    if (err || compendium == null) {
-      res.status(404).send({ error: 'no compendium with this id' });
-    } else {
-      answer.metadata = {};
-      answer.metadata.o2r = compendium.metadata.o2r;
-
-      // check if user is allowed to view the candidate (easier to check async if done after answer creation)
-      if (compendium.candidate) {
-        debug('[%s] Compendium is a candidate, need to make some checks.', id);
-
-        if (!req.isAuthenticated()) {
-          debug('[%s] User is not authenticated, cannot view candidate.', id);
-          res.status(401).send({ error: 'user is not authenticated' });
-          return;
-        }
-        detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
-          .then((passon) => {
-            if (passon.user_has_rights) {
-              debug('[%s] User %s may see candidate metadata.', id, req.user.orcid);
-              res.status(200).send(answer);
-            } else {
-              debug('[%s] Error: user does not have rights but promise fulfilled', id);
-            }
-          }, function (passon) {
-            debug('[%s] User %s may NOT see candidate metadata.', id, req.user.orcid);
-            res.status(403).send(passon);
-          });
+  Compendium
+    .findOne({ id })
+    .select('id metadata candidate user')
+    .lean()
+    .exec((err, compendium) => {
+      // eslint-disable-next-line no-eq-null, eqeqeq
+      if (err || compendium == null) {
+        res.status(404).send({ error: 'no compendium with this id' });
       } else {
-        res.status(200).send(answer);
+        answer.metadata = {};
+        answer.metadata.o2r = compendium.metadata.o2r;
+
+        // check if user is allowed to view the candidate (easier to check async if done after answer creation)
+        if (compendium.candidate) {
+          debug('[%s] Compendium is a candidate, need to make some checks.', id);
+
+          if (!req.isAuthenticated()) {
+            debug('[%s] User is not authenticated, cannot view candidate.', id);
+            res.status(401).send({ error: 'user is not authenticated' });
+            return;
+          }
+          detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
+            .then((passon) => {
+              if (passon.user_has_rights) {
+                debug('[%s] User %s may see candidate metadata.', id, req.user.orcid);
+                res.status(200).send(answer);
+              } else {
+                debug('[%s] Error: user does not have rights but promise fulfilled', id);
+              }
+            }, function (passon) {
+              debug('[%s] User %s may NOT see candidate metadata.', id, req.user.orcid);
+              res.status(403).send(passon);
+            });
+        } else {
+          res.status(200).send(answer);
+        }
       }
-    }
-  });
+    });
 };
 
-exports.updateMetadata = (req, res) => {
+// overwrite metadata file in compendium directory (which is then used for brokering)
+updateMetadataFile = function (id, file, metadata) {
+  return new Promise((fulfill, reject) => {
+    debug('[%s] Overwriting file %s', id, file);
+    fs.truncate(file, 0, function () {
+      fs.writeFile(file, JSON.stringify(metadata, null, config.meta.prettyPrint.indent), function (err) {
+        if (err) {
+          debug('[%s] Error updating normative metadata file: %s', id, err);
+          err.message = 'Error updating normative metadata file';
+          reject(err);
+        } else {
+          fulfill({
+            id: id,
+            file: file
+          });
+        }
+      });
+    });
+  });
+}
+
+reloadMetadataFromFile = function (id, metadata_file, targetElement) {
+  return new Promise((fulfill, reject) => {
+    // read mapped metadata for saving to DB
+    debug('[%s] Reading mapping file: %s', id, metadata_file);
+    fs.readFile(metadata_file, (err, data) => {
+      if (err) {
+        debug('[%s] Error reading mapping file: %s', id, err);
+        reject(err);
+      } else {
+        debug('[%s] Read file %s and stored contents to be saved at', id, metadata_file, targetElement);
+        fulfill({
+          targetElement: targetElement,
+          metadata: JSON.parse(data),
+          file: metadata_file
+        });
+      }
+    });
+  });
+}
+
+brokerMetadata = function (compendium, metadata_dir, metadata_file, mappings) {
+  return new Promise((fulfill, reject) => {
+
+    let brokerings = [];
+    Object.keys(mappings).forEach(function (name) {
+      brokerPromise = meta.broker(compendium.id, metadata_dir, metadata_file, name);
+      brokerings.push(brokerPromise);
+    });
+
+    Promise.all(brokerings)
+      .then((brokerResults) => {
+        debug('[%s] Completed brokerings: %s', compendium.id, brokerResults.filter(obj => { return !obj.error }).map(obj => { return obj.name; }).join(', '));
+        debug('[%s] FAILED brokerings: %s', compendium.id, brokerResults.filter(obj => { return obj.error }).map(obj => { return obj.name; }).join(', '));
+
+        let reloads = [];
+        Object.keys(mappings).forEach((name) => {
+          mapping = mappings[name];
+          reloadPromise = reloadMetadataFromFile(compendium.id, path.join(metadata_dir, mapping.file), mapping.targetElement);
+          reloads.push(reloadPromise);
+        });
+
+        Promise.all(reloads)
+          .then((reloadResults) => {
+
+            reloadResults.forEach((result) => {
+              objectPath.set(compendium.metadata,
+                result.targetElement,
+                result.metadata);
+            });
+            debug('[%s] Reloaded metadata from %s files:', compendium.id, reloadResults.length, reloadResults.map(obj => { return obj.file }).join(', '));
+
+            // FINALLY persist the metadata update to the database
+            compendium.markModified('metadata');
+            compendium.save((err, doc) => {
+              if (err) {
+                debug('[%s] ERROR saving new compendium: %s', compendium.id, err);
+                reject(err);
+              } else {
+                debug('[%s] Updated compendium, now is: %o', compendium.id, doc);
+                fulfill(doc);
+              }
+            });
+          });
+      })
+      .catch(err => {
+        debug('[%s] Problem during metadata brokering: %s', compendium.id, err);
+        let errors = err.message.split(':');
+        err.message = errorMessageHelper(errors[errors.length - 1]);
+        reject(err);
+      });
+  });
+}
+
+exports.updateCompendiumMetadata = (req, res) => {
   let id = req.params.id;
   let answer = { id: id };
 
@@ -398,7 +500,7 @@ exports.updateMetadata = (req, res) => {
       detect_rights(user_id, compendium, config.user.level.edit_metadata)
         .then(function (passon) {
           if (!req.body.hasOwnProperty('o2r')) {
-            debug('[%s] invalid metadata provided: no o2r root element', id);
+            debug('[%s] invalid metadata provided: no o2r root element: %O', id, req.body);
             res.status(422).send({ error: "JSON with root element 'o2r' required" });
             return;
           }
@@ -406,115 +508,42 @@ exports.updateMetadata = (req, res) => {
           // TODO check metadata conformance with profile
           if (passon.user_has_rights) {
             compendium.candidate = false;
+            compendium.markModified('candidate');
           }
-
-          let isBag = bagit.compendiumIsBag(id);
 
           compendium.metadata.o2r = req.body.o2r;
           answer.metadata = {};
           answer.metadata.o2r = compendium.metadata.o2r;
 
-          // TODO restructure following code, remove nested callbacks!
-
-          // overwrite metadata file in compendium directory (needed for brokering)
           let compendium_path = path.join(config.fs.compendium, id);
-          let metadata_file;
-          if (isBag) {
-            metadata_file = path.join(compendium_path, config.bagtainer.payloadDirectory, config.meta.dir, config.meta.normativeFile);
+          let metadata_dir;
+          if (bagit.compendiumIsBag(id)) {
+            metadata_dir = path.join(compendium_path, config.bagit.payloadDirectory, config.meta.dir);
           } else {
-            metadata_file = path.join(compendium_path, config.meta.dir, config.meta.normativeFile);
+            metadata_dir = path.join(compendium_path, config.meta.dir);
           }
 
-          debug('[%s] Overwriting file %s', id, metadata_file);
-          fs.truncate(metadata_file, 0, function () {
-            fs.writeFile(metadata_file, JSON.stringify(compendium.metadata.o2r), function (err) {
-              if (err) {
-                debug('[%s] Error updating normative metadata file: %s', id, err);
+          let normative_metadata_file = path.join(metadata_dir, config.meta.normativeFile);
+
+          if (compendium.metadata && compendium.metadata.o2r) {
+
+            updateMetadataFile(id, normative_metadata_file, compendium.metadata.o2r)
+              .then(() => {
+                return brokerMetadata(compendium, metadata_dir, normative_metadata_file, config.meta.broker.mappings);
+              })
+              .catch((err) => {
+                debug('[%s] Error during brokering, returning HTTP 500 response: %s', id, err);
                 res.status(500).send({ error: 'Error updating normative metadata file' });
-              } else {
-                // re-broker
-                let current_mapping = 'zenodo';
-                let mapping_file = path.join(config.meta.broker.mappings.dir, config.meta.broker.mappings[current_mapping].file);
-                let metabroker_dir;
-                if (isBag) {
-                  metabroker_dir = path.join(compendium_path, config.bagtainer.payloadDirectory, config.meta.dir);
-                } else {
-                  metabroker_dir = path.join(compendium_path, config.meta.dir);
-                }
+              })
+              .then(() => {
+                debug('[%s] completed metadata update, sending answer.', id);
+                res.status(200).send(answer);
+              });
 
-                let cmd = [
-                  config.meta.cliPath,
-                  '-debug',
-                  config.meta.broker.module,
-                  '--inputfile', metadata_file,
-                  '--map', mapping_file,
-                  '--outputdir', metabroker_dir
-                ].join(' ');
-
-                debug('Running metadata brokering with command "%s"', cmd);
-                exec(cmd, (error, stdout, stderr) => {
-                  if (error || stderr) {
-                    debug('Problem during metadata brokering of %s:\n\t%s\n\t%s',
-                      id, error.message, stderr.message);
-                    debug(error, stderr, stdout);
-                    let errors = error.message.split(':');
-                    let message = errorMessageHelper(errors[errors.length - 1]);
-                    res.status(500).send({ error: 'metadata brokering failed: ' + message });
-                  } else {
-                    debug('[%s] Completed metadata brokering:\n\n%s\n', id, stdout);
-
-                    fs.readdir(metabroker_dir, (err, files) => {
-                      if (err) {
-                        debug('Error reading brokered metadata directory %s:\n\t%s', metabroker_dir, err);
-                        res.status(500).send({ error: 'error reading brokered metadata directory' });
-                      } else {
-                        debug('[%s] Now have %s metadata files: %s', id, files.length, JSON.stringify(files));
-
-                        // get filename from mapping definition
-                        fs.readFile(mapping_file, (err, data) => {
-                          if (err) {
-                            debug('Error reading mapping file: %s', err.message);
-                            res.status(500).send({ error: 'Error reading mapping file' });
-                          } else {
-                            let mapping = JSON.parse(data);
-                            let mapping_output_file = path.join(metabroker_dir, mapping.Settings.outputfile);
-                            debug('Loading brokering output from file %s', mapping_output_file);
-
-                            // read mapped metadata for saving to DB
-                            fs.readFile(mapping_output_file, (err, data) => {
-                              if (err) {
-                                debug('Error reading brokering output file for %s: %s', id, err.message);
-                                res.status(500).send({ error: 'Error reading brokering output from file' });
-                              } else {
-                                let mapping_output = JSON.parse(data);
-                                // read mapped metadata and save it also to DB
-                                objectPath.set(compendium.metadata,
-                                  config.meta.broker.mappings[current_mapping].targetElement,
-                                  mapping_output);
-                                debug('Finished metadata brokering for %s !', id);
-
-                                // FINALLY persist the metadata update to the database
-                                compendium.markModified('metadata');
-                                compendium.save((err, doc) => {
-                                  if (err) {
-                                    debug('[%s] ERROR saving new compendium: %s', id, err);
-                                    res.status(500).send({ error: 'internal error' });
-                                  } else {
-                                    debug('[%s] Updated compendium, now is:\n%s', id, JSON.stringify(doc));
-                                    res.status(200).send(answer);
-                                  }
-                                });
-                              }
-                            });
-                          }
-                        });
-                      }
-                    });
-                  }
-                });
-              }
-            });
-          });
+          } else {
+            debug('[%s] No metadata provided that could be brokered!', id);
+            res.status(500).send({ error: 'Error updating metadata: no metadata found.' });
+          }
         }, function (passon) {
           res.status(401).send(passon);
         });

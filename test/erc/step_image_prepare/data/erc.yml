@@ -1,3 +1,5 @@
 ---
 id: KIbebWnPlx
 spec_version: 1
+main: test.txt
+display: test.xt

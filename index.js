@@ -17,30 +17,34 @@
 
 // General modules
 const debug = require('debug')('muncher');
-const c = require('./config/config');
+const config = require('./config/config');
 const fse = require('fs-extra');
 const backoff = require('backoff');
 const child_process = require('child_process');
 const exec = require('child_process').exec;
 const fs = require('fs');
+const colors = require('colors');
+const starwars = require('starwars');
+const Docker = require('dockerode');
+
+// handle unhandled rejections
+process.on('unhandledRejection', (reason) => {
+  debug('Unhandled rejection: %s\n%s'.red, reason, reason.stack);
+});
 
 // mongo connection
 const mongoose = require('mongoose');
-
-// use ES6 promises for mongoose
-mongoose.Promise = global.Promise;
-const dbURI = c.mongo.location + c.mongo.database;
+const dbURI = config.mongo.location + config.mongo.database;
 // see http://blog.mlab.com/2014/04/mongodb-driver-mongoose/#Production-ready_connection_settings and http://mongodb.github.io/node-mongodb-native/2.1/api/Server.html and http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/overview.html
 var dbOptions = {
   autoReconnect: true,
   reconnectTries: Number.MAX_VALUE,
   keepAlive: 30000,
   socketTimeoutMS: 30000,
-  useMongoClient: true,
-  promiseLibrary: mongoose.Promise
+  promiseLibrary: mongoose.Promise // use ES6 promises for mongoose
 };
 mongoose.connection.on('error', (err) => {
-  debug('Could not connect to MongoDB @ %s: %s', dbURI, err);
+  debug('Could not connect to MongoDB @ %s: %s'.yellow, dbURI, err);
 });
 // If the Node process ends, close the Mongoose connection 
 process.on('SIGINT', function () {
@@ -54,15 +58,11 @@ process.on('SIGINT', function () {
 const express = require('express');
 const compression = require('compression');
 const bodyParser = require('body-parser');
-
+const multer = require('multer');
+const upload = multer();
 const app = express();
 app.use(compression());
-app.use(bodyParser.json());
-
-// load controllers
-var controllers = {};
-controllers.compendium = require('./controllers/compendium');
-controllers.job = require('./controllers/job');
+app.use(bodyParser.json(config.body_parser_config));
 
 // passport & session modules for authenticating users.
 const User = require('./lib/model/user');
@@ -70,26 +70,28 @@ const passport = require('passport');
 const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
 
-// Less crucial things
-const starwars = require('starwars');
+var mongoStore = new MongoDBStore({
+  uri: dbURI,
+  collection: 'sessions'
+}, err => {
+  if (err) {
+    debug('Error connecting MongoStore used for session authentication: %s', err);
+  }
+});
+mongoStore.on('error', (err) => {
+  debug('Error with MongoStore used for session authentication: %s', err);
+  //process.exit(1);
+});
 
-/*
- *  File Upload
- */
+var controllers = {};
+controllers.compendium = require('./controllers/compendium');
+controllers.job = require('./controllers/job');
+
 // check fs & create dirs if necessary
+fse.mkdirsSync(config.fs.job);
+fse.mkdirsSync(config.payload.tarball.tmpdir);
 
-fse.mkdirsSync(c.fs.job);
-fse.mkdirsSync(c.payload.tarball.tmpdir);
-
-var multer = require('multer');
-
-var upload = multer();
-
-/*
- *  Authentication & Authorization
- *  This is be needed in every service that wants to check if a user is authenticated.
- */
-// minimal serialize/deserialize to make authdetails cookie-compatible.
+// minimal serialize/deserialize to make auth details cookie-compatible.
 passport.serializeUser((user, cb) => {
   cb(null, user.orcid);
 });
@@ -103,24 +105,67 @@ passport.deserializeUser((user, cb) => {
 function initApp(callback) {
   debug('Initialize application...');
 
-  try {
-    // configure express-session, stores reference to authdetails in cookie.
-    // authdetails themselves are stored in MongoDBStore
-    var mongoStore = new MongoDBStore({
-      uri: dbURI,
-      collection: 'sessions'
-    }, err => {
+  checkDockerAndPullMetaContainer = new Promise((fulfill, reject) => {
+    docker = new Docker();
+    docker.ping((err, data) => {
       if (err) {
-        debug('Error starting MongoStore: %s', err);
+        debug('Error pinging Docker: %s'.yellow, err);
+        reject(err);
+      } else {
+        debug('Docker available? %s', data);
+        debug('meta tools version: %s', config.meta.container.image);
+
+        docker.pull(config.meta.container.image, function (err, stream) {
+          if (err) {
+            debug('error pulling meta image: %o', err);
+            reject(err);
+          } else {
+            function onFinished(err, output) {
+              if (err) {
+                debug('Error pulling meta image: %o', err);
+                reject(err);
+              } else {
+                debug('pulled meta tools image: %o', output);
+                fulfill();
+              }
+
+              delete docker;
+            }
+
+            docker.modem.followProgress(stream, onFinished);
+          }
+        });
       }
     });
+  });
 
-    mongoStore.on('error', err => {
-      debug('Error with MongoStore: %s', err);
+  pullContaineritContainer = new Promise((fulfill, reject) => {
+    docker2 = new Docker();
+    docker2.pull(config.containerit.image, function (err, stream) {
+      if (err) {
+        debug('error pulling containerit image: %s', err);
+        reject(err);
+      } else {
+        function onFinished(err, output) {
+          if (err) {
+            debug('error pulling containerit image: %o', err);
+            reject(err);
+          } else {
+            debug('pulled containerit tools image:\n%O', output);
+            fulfill();
+          }
+
+          delete docker2;
+        }
+
+        docker2.modem.followProgress(stream, onFinished);
+      }
     });
+  });
 
+  configureExpressApp = new Promise((fulfill, reject) => {
     app.use(session({
-      secret: c.sessionsecret,
+      secret: config.sessionSecret,
       resave: true,
       saveUninitialized: true,
       maxAge: 60 * 60 * 24 * 7, // cookies become invalid after one week
@@ -130,32 +175,12 @@ function initApp(callback) {
     app.use(passport.initialize());
     app.use(passport.session());
 
-    /*
-     * check Docker availability
-     */
-    Docker = require('dockerode');
-    docker = new Docker();
-    docker.ping((err, data) => {
-      if(err) {
-        debug('Error pinging Docker: %s', err);
-        throw err;
-      } else {
-        debug('Docker available? %s', data);
-        delete docker;
-        delete Docker;
-      }
-    });
-
-    /*
-     *  Routes & general Middleware
-     */
     app.use('/', (req, res, next) => {
       var orcid = '';
       if (req.user && req.user.orcid) {
         orcid = ' | orcid: ' + req.user.orcid;
       }
-      debug('REQUEST %s %s authenticated user: %s | session: %s',
-        req.method, req.path, req.isAuthenticated(), req.session.id, orcid);
+      debug('REQUEST %s %s authenticated user: %s | session: %s', req.method, req.path, req.isAuthenticated(), req.session.id, orcid);
       next();
     });
 
@@ -170,7 +195,9 @@ function initApp(callback) {
     indexResponseV1.compendia = '/api/v1/compendium';
     indexResponseV1.jobs = '/api/v1/job';
     indexResponseV1.users = '/api/v1/user';
+    indexResponseV1.search = '/api/v1/search';
     indexResponseV1.shipments = '/api/v1/shipment';
+    indexResponseV1.recipients = '/api/v1/recipient';
     indexResponseV1.substitutions = '/api/v1/substitution';
 
     // set up routes
@@ -179,17 +206,17 @@ function initApp(callback) {
       if (!req.isAuthenticated()) {
         res.status(401).send({ error: 'not authenticated' });
         return;
-      } else if (req.user.level < c.user.level.view_status) {
+      } else if (req.user.level < config.user.level.view_status) {
         res.status(403).send({ error: 'not allowed' });
         return;
       }
 
       var response = {
         name: "muncher",
-        version: c.version,
-        levels: c.user.level,
-        mongodb: c.mongo,
-        filesystem: c.fs
+        version: config.version,
+        levels: config.user.level,
+        mongodb: config.mongo,
+        filesystem: config.fs
       };
       res.send(response);
     });
@@ -209,77 +236,79 @@ function initApp(callback) {
       res.send(indexResponseV1);
     });
 
-    app.get('/api/v1/compendium', controllers.compendium.view);
-    app.get('/api/v1/compendium/:id', controllers.compendium.viewSingle);
-    app.delete('/api/v1/compendium/:id', controllers.compendium.delete);
-    app.get('/api/v1/compendium/:id/jobs', controllers.compendium.viewSingleJobs);
+    app.get('/api/v1/compendium', controllers.compendium.listCompendia);
+    app.get('/api/v1/compendium/:id', controllers.compendium.viewCompendium);
+    app.delete('/api/v1/compendium/:id', controllers.compendium.deleteCompendium);
+    app.get('/api/v1/compendium/:id/jobs', controllers.compendium.viewCompendiumJobs);
 
-    app.get('/api/v1/compendium/:id/metadata', controllers.compendium.viewSingleMetadata);
-    app.put('/api/v1/compendium/:id/metadata', upload.any(), controllers.compendium.updateMetadata);
+    app.get('/api/v1/compendium/:id/metadata', controllers.compendium.viewCompendiumMetadata);
+    app.put('/api/v1/compendium/:id/metadata', upload.any(), controllers.compendium.updateCompendiumMetadata);
 
-    app.get('/api/v1/job', controllers.job.view);
-    app.post('/api/v1/job', upload.any(), controllers.job.create);
-    app.get('/api/v1/job/:id', controllers.job.viewSingle);
+    app.get('/api/v1/job', controllers.job.listJobs);
+    app.post('/api/v1/job', upload.any(), controllers.job.createJob);
+    app.get('/api/v1/job/:id', controllers.job.viewJob);
 
-    /*
-     * Python version and meta tools version
-     */
-    let pythonVersionCmd = 'echo ';
-    if (c.meta.cliPath.toLowerCase().startsWith('python')) {
-      pythonVersionCmd = pythonVersionCmd.concat('$(', c.meta.cliPath.split(" ")[0], ' --version)');
+    fulfill();
+  });
+
+  configureEmailTransporter = new Promise((fulfill, reject) => {
+    if (config.email.enable
+      && config.email.transport
+      && config.email.sender
+      && config.email.receivers) {
+      emailTransporter = nodemailer.createTransport(config.email.transport);
+      debug('Sending emails on critical events to %s', config.email.receivers);
     } else {
-      pythonVersionCmd = pythonVersionCmd.concat('$(python --version)')
+      debug('Email notification for critical events _not_ active: %o', config.email);
     }
+    fulfill();
+  });
+
+  logVersions = new Promise((fulfill, reject) => {
+    // Python version used for bagit.py
+    let pythonVersionCmd = 'echo $(python --version)';
     exec(pythonVersionCmd, (error, stdout, stderr) => {
       if (error) {
         debug('Error detecting python version: %s', error);
       } else {
         let version = stdout.concat(stderr);
-        debug('Using "%s" for meta tools at "%s"', version.trim(), c.meta.cliPath);
+        debug('Using "%s" for bagit.py', version.trim());
       }
     });
-    let versionFile = c.meta.broker.mappings.dir.split('broker/')[0].concat(c.meta.versionFile);
-    fs.readFile(versionFile, 'utf8', function (err, data) {
-      if (err) {
-        debug('could not read meta tools version: %s', err);
-      } else {
-        debug('meta tools version: %s', data.trim());
-      }
+  });
+
+  startListening = new Promise((fulfill, reject) => {
+    app.listen(config.net.port, () => {
+      debug('muncher %s with API version %s waiting for requests on port %s'.green,
+        config.version,
+        config.api_version,
+        config.net.port);
+      fulfill();
+    });
+  });
+
+  checkDockerAndPullMetaContainer
+    .then(pullContaineritContainer)
+    .then(logVersions)
+    .then(configureEmailTransporter)
+    .then(configureExpressApp)
+    .then(startListening)
+    .then(() => {
+      callback(null);
     })
-
-    app.listen(c.net.port, () => {
-      debug('muncher %s with API version %s waiting for requests on port %s',
-        c.version,
-        c.api_version,
-        c.net.port);
+    .catch((err) => {
+      callback(err);
     });
-
-    // create reusable transporter object using the default SMTP transport
-    if (c.email.enable
-      && c.email.transport
-      && c.email.sender
-      && c.email.receivers) {
-
-      emailTransporter = nodemailer.createTransport(c.email.transport);
-      debug('Sending emails on critical events to %s', c.email.receivers);
-    } else {
-      debug('Email notification for critical events _not_ active: %s', JSON.stringify(c.email));
-    }
-  } catch (err) {
-    callback(err);
-  }
-
-  callback(null);
 }
 
 // auto_reconnect is on by default and only for RE(!)connects, not for the initial attempt: http://bites.goodeggs.com/posts/reconnecting-to-mongodb-when-mongoose-connect-fails-at-startup/
 var dbBackoff = backoff.fibonacci({
   randomisationFactor: 0,
-  initialDelay: c.mongo.initial_connection_initial_delay,
-  maxDelay: c.mongo.initial_connection_max_delay
+  initialDelay: config.mongo.initial_connection_initial_delay,
+  maxDelay: config.mongo.initial_connection_max_delay
 });
 
-dbBackoff.failAfter(c.mongo.initial_connection_attempts);
+dbBackoff.failAfter(config.mongo.initial_connection_attempts);
 dbBackoff.on('backoff', function (number, delay) {
   debug('Trying to connect to MongoDB (#%s) in %sms', number, delay);
 });
@@ -303,7 +332,7 @@ dbBackoff.on('ready', function (number, delay) {
           });
           dbBackoff.backoff();
         }
-        debug('Started application.');
+        debug('Started application.'.green);
       });
     }
   });

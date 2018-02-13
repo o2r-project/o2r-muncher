@@ -31,11 +31,19 @@ const cookie_uploader = 's:lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO.0iapdV1c85wc5NO3d3h+
 const waitSecs = 20;
 
 describe('API job filtering', () => {
+  var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
+
   before((done) => {
-    var db = mongojs('localhost/muncher', ['users', 'sessions', 'compendia', 'jobs']);
     db.compendia.drop(function (err, doc) {
-      db.jobs.drop(function (err, doc) { done(); });
+      db.jobs.drop(function (err, doc) {
+        done();
+      });
     });
+  });
+
+  after(function (done) {
+    db.close();
+    done();
   });
 
   describe('job filtering with compendium_id, status and user', () => {
@@ -50,7 +58,7 @@ describe('API job filtering', () => {
     // upload 1st compendium with final job status "success"
     before(function (done) {
       let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
-      this.timeout(10000);
+      this.timeout(60000);
 
       request(req, (err, res, body) => {
         compendium_id_success = JSON.parse(body).id;
@@ -167,7 +175,7 @@ describe('API job filtering', () => {
       });
     }).timeout(10000);
 
-    it('5th job (failing compendium, orcid_uploader user): should return job ID when starting job execution', (done) => {
+    it('5th job (failing compendium, orcid_uploader user): should return job ID when starting job execution (now wait for jobs to finish!)', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_uploader);
       j.setCookie(ck, global.test_host);
@@ -188,13 +196,13 @@ describe('API job filtering', () => {
         job_id = response.job_id;
         job_count_failure++;
         job_count_user_uploader++;
+
+        sleep.sleep(waitSecs);
         done();
       });
-    }).timeout(10000);
+    }).timeout(waitSecs * 1000 * 2);
 
-    it('should list 2 jobs for successful compendium _after some waiting_', (done) => {
-      sleep.sleep(waitSecs);
-
+    it('should list 2 jobs for successful compendium', (done) => {
       request(global.test_host + '/api/v1/job/?compendium_id=' + compendium_id_success, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
@@ -203,7 +211,7 @@ describe('API job filtering', () => {
         assert.equal(response.results.length, 2);
         done();
       });
-    }).timeout(waitSecs * 1000 * 2);
+    });
 
     it('should list 3 jobs for failing compendium', (done) => {
       request(global.test_host + '/api/v1/job/?compendium_id=' + compendium_id_failure, (err, res, body) => {
@@ -263,17 +271,25 @@ describe('API job filtering', () => {
     it('should find no jobs with the undefined status "foo"', (done) => {
       request(global.test_host + '/api/v1/job/?status=foo', (err, res, body) => {
         assert.ifError(err);
-        assert.notProperty(JSON.parse(body), 'results');
-        assert.propertyVal(JSON.parse(body), 'error', 'no jobs found');
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.property(response, 'results');
+        assert.notProperty(response, 'error');
+        assert.isArray(response.results);
+        assert.isEmpty(response.results);
         done();
       });
     });
 
-    it('should find no jobs of user 9999-9999-9999-9999', (done) => {
+    it('should find no jobs for user 9999-9999-9999-9999', (done) => {
       request(global.test_host + '/api/v1/job/?user=9999-9999-9999-9999', (err, res, body) => {
         assert.ifError(err);
-        assert.notProperty(JSON.parse(body), 'results');
-        assert.propertyVal(JSON.parse(body), 'error', 'no jobs found');
+        assert.equal(res.statusCode, 200);
+        let response = JSON.parse(body);
+        assert.property(response, 'results');
+        assert.notProperty(response, 'error');
+        assert.isArray(response.results);
+        assert.isEmpty(response.results);
         done();
       });
     });

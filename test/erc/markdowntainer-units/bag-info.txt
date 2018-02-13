@@ -1,3 +1,0 @@
-Bag-Size: 935 KB
-Bagging-Date: 2017-04-03
-Payload-Oxum: 956589.9

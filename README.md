@@ -1,20 +1,13 @@
 # o2r muncher
 
-![Travis CI](https://api.travis-ci.org/o2r-project/o2r-muncher.svg)
-[![](https://images.microbadger.com/badges/image/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own version badge on microbadger.com")
+[![Build Status](https://travis-ci.org/o2r-project/o2r-muncher.svg?branch=master)](https://travis-ci.org/o2r-project/o2r-muncher) [![](https://images.microbadger.com/badges/image/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own version badge on microbadger.com")
 
 Node.js implementation of the endpoints `/api/v1/compendium` (reading and metadata update) and `/api/v1/jobs` of the [o2r-web-api](http://o2r.info/o2r-web-api/).
 
 Requirements:
 
-- Node.js `>= 6.2`
-- npm
-- Python `>= 3.x`
-- bagit-python (`bagit.py`)
-- o2r-meta (`o2rmeta.py`)
-- unzip
-- tar
-- mongodb
+- Docker
+- MongoDB
 
 ## Run
 
@@ -25,7 +18,7 @@ docker build -t muncher .
 
 docker run --name mongodb -d -p 27017:27017 mongo:3.4
 
-DEBUG=muncher,muncher:* docker run -it -p 8080:8080 --link mongodb:mongodb -v /var/run/docker.sock:/var/run/docker.sock -e MUNCHER_MONGODB=mongodb://mongodb:27017 -e DEBUG=muncher,muncher:* muncher
+docker run -it -p 8080:8080 --link mongodb:mongodb -v /var/run/docker.sock:/var/run/docker.sock -e MUNCHER_MONGODB=mongodb://mongodb:27017 -e DEBUG=muncher,muncher:* muncher
 ```
 
 ## Configuration
@@ -40,18 +33,27 @@ You can override these environment variables (configured in `config/config.js`) 
   Which database inside the MongoDB should be used? Defaults to `muncher`.
 - `MUNCHER_BASEPATH`
   Base path for the compendia storage. Defaults to `/tmp/o2r`. If you want persistent compendia storage, you should point this to a separate volume.
+- `MUNCHER_VOLUME`
+  The name of the volume where compendia are stored, needed for mounting the correct path to 2nd level containers in compose configurations; overrides `MUNCHER_BASEPATH` for the metadata tools containers. Not set by default.
+- `MUNCHER_CONTAINER_USER`
+  User name or id for the user running the compendium containers, defaults to `1000`. _Change this for usage with `docker-compose`!
 - `MUNCHER_EMAIL_TRANSPORT`, `MUNCHER_EMAIL_RECEIVERS`, `MUNCHER_EMAIL_SENDER`
-  Email configuration settings for sending emails when critical events in the server occure, based on [nodemailer](https://www.npmjs.com/package/nodemailer). `_TRANSPORT` ist the mail transport string, see nodemailer documented, `_RECEIVERS` is a comma-seperated list, and `_SENDER` is the mails sender. All three must be set. Mail notification can also be disabled completely via `config.js`.
-- `MUNCHER_META_TOOL_EXE` __Required__
-  Executable for metadata tools, defaults to `python3 ../o2r-meta/o2rmeta.py`. You will very likely need to change this.
-- `MUNCHER_META_EXTRACT_MAPPINGS_DIR` __Required__
-  Path to extraction mappings, defaults to `../o2r-meta/broker/mappings`. You will very likely need to change this.
+  Email configuration settings for sending emails when critical events in the server happen, based on [nodemailer](https://www.npmjs.com/package/nodemailer). `_TRANSPORT` ist the mail transport string, see nodemailer documented, `_RECEIVERS` is a comma-separated list, and `_SENDER` is the mails sender. All three must be set. Mail notification can also be disabled completely via `config.js`.
+- `MUNCHER_META_TOOL_CONTAINER`
+  Docker image name and tag for metadata tools, defaults to running latest [o2r-meta in a container](https://github.com/o2r-project/o2r-meta#using-docker), i.e. `o2rproject/o2r-meta:latest`.
+- `MUNCHER_META_TOOL_CONTAINER_USER`
+  User name or id for the [user](https://docs.docker.com/engine/reference/run/#user) running the meta container, defaults to `o2r`.
+- `MUNCHER_META_TOOL_CONTAINER_RM`
+  Remove the metadata extraction and brokering containers after completion, defaults to `true`.
+- `MUNCHER_CONTAINERIT_IMAGE`
+  Docker image name and tag for containerit tool, defaults to running Rocker's [geospatial](https://github.com/rocker-org/geospatial/) image with [containerit](https://github.com/o2r-project/containerit/) pre-installed, i.e. `o2rproject/containerit:geospatial`.
+- `MUNCHER_CONTAINERIT_USER`
+  The user within the container, which must match the used image (see previous setting), defaults to `rstudio`, which is suitable for images in the `rocker/verse` stack of images. _Change this for usage with `docker-compose`!
 - `MUNCHER_FAIL_ON_NO_FILES`
   Should an error be thrown when files for a compendium that exists in the database are _not found_? Defaults to `false` (useful for testing).
 
 The connection to the Docker API is build on [dockerode](https://www.npmjs.com/package/dockerode) which allows execution on any Docker host that exposes the port.
 Most commonly, the default configuration will be used, i.e. the local Docker socket is mounted at the default location into the container running muncher (see [above](#run))
-
 
 ## Testing
 
@@ -78,6 +80,12 @@ npm run test
 
 ## Development
 
+### Run container with MongoDB on host
+
+```bash
+docker run -it -p 8080:8080 -v /var/run/docker.sock:/var/run/docker.sock -e MUNCHER_MONGODB=mongodb://172.17.0.1:27017 -e DEBUG=muncher,muncher:* muncher
+```
+
 ### Removing all containers/images created by muncher
 
 ```bash
@@ -93,37 +101,34 @@ The following steps assume that you have all the required projects (`o2r-content
 ```bash
 mkdir /tmp/o2r-mongodb-data
 mongod --dbpath /tmp/o2r-mongodb-data
-# new terminal: start contentbutler (default port 8081)
-cd ../o2r-contentbutler
-DEBUG=* npm start
+
+# new termine: start loader (default port 8088)
+
 # new terminal: start muncher (default port 8080)
 cd ../o2r-muncher
 DEBUG=* npm start
+
 # new terminal: run tests to add test data
 npm test
+
 # new terminal: run a webservice container in daemon mode on port 80 with (a) a proxy in front of the microservices and (b) the client project at / (must change app constant manually!)
 cd ../o2r-platform
 docker run --rm --name o2r-platform -p 80:80 -v $(pwd)/test/nginx.conf:/etc/nginx/nginx.conf -v $(pwd):/etc/nginx/html nginx
+
 # do work, restart respective apps as needed
 ```
 
-Alternatively, start the component under development from your IDE.
+Alternatively, start the component(s) under development from your IDE(s).
 
-Be aware that the different services run on their own port, so it might have to be changed manually when navigating through the API.
+### Authentication and upload with curl
 
-### Authentication and upload
+You can authenticate locally with OAuth via ORCID using the required configuration parameters (see project [reference-implementation](https://github.com/o2r-project/reference-implementation)).
 
-You can authenticate locally with OAuth as well.
-
-To upload compendia, the user must have the appropriate level. If you want to upload from the command line, get the session cookie out of the browser and use it in the curl request:
+If you want to upload from the command line, make sure the account has the required [level](http://o2r.info/o2r-web-api/user/#user-levels) (it should [by default](https://github.com/o2r-project/o2r-bouncer#available-environment-variables)), get the session cookie `connect.sid` content out of the browser and use it in the `curl` request:
 
 ```bash
 curl --cookie connect.sid=s:S1oH7... -F "compendium=@/<path to compendium.zip>;type=application/zip" -F "content_type=compendium"
 ```
-
-See `o2r-bagtainers/README.md` on using the much more convenient *uploader container*.
-
-See the [o2r Web API docs](http://o2r.info/o2r-web-api/user/#user-levels) for information on **user levels**.
 
 ### Create bags for testing
 
@@ -136,7 +141,7 @@ python -c "import bagit; bag = bagit.make_bag('success-validate');"
 # validate bag
 python -c "import bagit; bag = bagit.Bag('success-load-validate'); print('Is Bag valid?', bag.validate());"
 
-# update manifest and validate it with
+# update bag
 python -c "import bagit; bag = bagit.Bag('success-load-validate'); bag.save(manifests=True);"
 ```
 
