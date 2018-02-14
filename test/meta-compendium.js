@@ -107,7 +107,7 @@ describe('compendium metadata', () => {
     });
   });
 
-  describe.only('checking contents of compendium metadata', () => {
+  describe('checking contents of compendium metadata', () => {
     let metadata = {};
     let files = {};
     let main_file = 'document.Rmd';
@@ -567,4 +567,3 @@ describe('compendium metadata', () => {
     });
   });
 });
-
