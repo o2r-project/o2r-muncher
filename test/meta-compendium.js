@@ -174,7 +174,7 @@ describe('compendium metadata', () => {
         assert.include(files_dirs_Names, 'data');
         let erc_files = {};
 
-        files.children.forEach(function (child) { if (child.name == 'data') { erc_files = child } });
+        files.children.map(function (child) { if (child.name == 'data') { erc_files = child } });
         assertMimeTypes(erc_files);
         done();
     });
