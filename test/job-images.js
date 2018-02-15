@@ -37,7 +37,7 @@ const sleepSecs = 50;
 let Docker = require('dockerode');
 let docker = new Docker();
 
-describe.only('Workspaces with images in the upload', () => {
+describe('Workspaces with images in the upload', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
   before(function (done) {
@@ -61,7 +61,7 @@ describe.only('Workspaces with images in the upload', () => {
     imageTarballFile = path.join(workspacePath, config.bagtainer.imageTarballFile);
 
     before(function (done) {
-      this.timeout(180000);
+      this.timeout(240000);
       createCompendiumPostRequest(workspacePath, cookie_o2r, 'workspace', (requestData) => {
         fs.access(imageTarballFile, (err) => {
           if (err) {
@@ -103,7 +103,8 @@ describe.only('Workspaces with images in the upload', () => {
               });
             });
           } else {
-            debug('local image tarball file found at %s, uploading workspace now...', imageTarballFile);
+            debug('local image tarball file found at %s. YOU MUST MANUALLY DELETE THIS FILE (and potentially the upload cache file, see test:util log) if the content at %s changed. Uploading workspace now...',
+              imageTarballFile, workspacePath);
             request(requestData, (err, res, body) => {
               if (err) throw err;
               compendium_id = JSON.parse(body).id;
@@ -150,11 +151,11 @@ describe.only('Workspaces with images in the upload', () => {
     });
 
     it('should mention loading the existing tarball', function (done) {
-      request(global.test_host + '/api/v1/job/' + job_id2 + '?steps=image_build', (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=image_build', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
-        assert.property(response.steps.image_save, 'text');
+        assert.property(response.steps.image_build, 'text');
         assert.include(JSON.stringify(response.steps.image_build.text), 'Image tarball found! Loading it');
         assert.include(JSON.stringify(response.steps.image_build.text), 'Loaded image tarball from file ' + config.bagtainer.imageTarballFile);
         done();
@@ -162,12 +163,12 @@ describe.only('Workspaces with images in the upload', () => {
     });
 
     it('should have correct text log for image_save', function (done) {
-      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=image_save', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
         assert.property(response.steps.image_save, 'text');
-        assert.notInclude(JSON.stringify(response.steps.image_save.text), 'file already exists');
+        assert.include(JSON.stringify(response.steps.image_save.text), 'file already exists');
         done();
       });
     });
@@ -186,7 +187,7 @@ describe.only('Workspaces with images in the upload', () => {
             }
           });
 
-          assert.include(names, config.bagtainer.image.prefix.job + compendium_id);
+          assert.include(names, config.bagtainer.image.prefix.compendium + compendium_id);
           assert.include(names, config.bagtainer.image.prefix.job + job_id);
           assert.include(names, imageTag);
           done();

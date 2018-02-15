@@ -34,7 +34,8 @@ debug('Using loader at ' + global.test_host_loader);
 
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 
-// TODO rewrite function to start the request, so that we can pipe the archive, see https://github.com/archiverjs/node-archiver/issues/165#issuecomment-166710026
+// TODO rewrite function to start the request here instead of just creating the request object,
+// so that we can pipe the archive, see https://github.com/archiverjs/node-archiver/issues/165#issuecomment-166710026
 module.exports.createCompendiumPostRequest = function (dataPath, cookie, type = 'compendium', done) {
   zipHash = hashSortCoerce.hash({ path: dataPath, type: type });
   tmpfile = path.join(os.tmpdir(), 'o2r-muncher-upload_' + zipHash + '.zip');
@@ -58,14 +59,14 @@ module.exports.createCompendiumPostRequest = function (dataPath, cookie, type = 
     method: 'POST',
     jar: j,
     formData: formData,
-    timeout: 60000
+    timeout: 120000
   };
 
   fs.access(tmpfile, (err) => {
     if (err) {
       output = fs.createWriteStream(tmpfile);
       archive = archiver('zip', {
-        zlib: { level: zlib.constants.Z_NO_COMPRESSION }
+        zlib: { level: zlib.constants.Z_BEST_SPEED }
       });
       archive.on('end', function () {
         debug('Created zip file %s (%s total bytes)', tmpfile, archive.pointer());
@@ -89,7 +90,7 @@ module.exports.createCompendiumPostRequest = function (dataPath, cookie, type = 
       archive.directory(dataPath, false);
       archive.finalize();
     } else {
-      debug('upload zip already found at %s (manually delete it if the files at %s changed)', tmpfile, dataPath);
+      debug('USING CACHED ZIP file for upload: %s | You MUST MANUALLY DELETE IT if the files at %s changed!)', tmpfile, dataPath);
       reqParams.formData.compendium.value = fs.createReadStream(tmpfile);
       debug('Created creation request: %O', reqParams);
       done(reqParams);
