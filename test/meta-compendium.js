@@ -32,6 +32,39 @@ const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9y
 const cookie_admin = 's:hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i.IEPb0lmtGojn2cVk2edRuomIEanX6Ddz87egE5Pe8UM';
 const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
 
+function assertMimeTypes (files) {
+
+  files.children.forEach(function (file) {
+    if (file.extension) {
+      switch (file.extension) {
+          case (".txt"):
+              assert.propertyVal(file, "type", "text/plain");
+              break;
+          case (".html"):
+              assert.propertyVal(file, "type", "text/html");
+              break;
+          case (".yml"):
+              assert.propertyVal(file, "type", "text/yaml");
+              break;
+          case (".tex"):
+              assert.propertyVal(file, "type", "application/x-tex");
+              break;
+          case (".rdata"):
+          case (".rda"):
+              assert.propertyVal(file, "type", "application/x-r-data");
+              break;
+          case (".r"):
+              assert.propertyVal(file, "type", "script/x-R");
+              break;
+          case (".rmd"):
+              assert.notProperty(file, "type");
+              break;
+          default:
+              break;
+      }
+    }
+  })
+}
 
 describe('compendium metadata', () => {
   let compendium_id = '';
@@ -76,16 +109,18 @@ describe('compendium metadata', () => {
 
   describe('checking contents of compendium metadata', () => {
     let metadata = {};
+    let files = {};
     let main_file = 'document.Rmd';
     let display_file = 'document.html';
 
-    it('should response with document', (done) => {
+    it('should respond with document', (done) => {
       request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.property(response, 'metadata');
         assert.property(response.metadata, 'o2r');
         metadata = response.metadata.o2r;
+        files = response.files;
         assert.propertyVal(response, 'id', compendium_id);
         done();
       });
@@ -129,6 +164,19 @@ describe('compendium metadata', () => {
       assert.include(authorNames, 'Ted Tester');
       assert.include(authorNames, 'Carl Connauthora');
       done();
+    });
+
+    it('should contain correct mime-types (including custom types) for all files', (done) => {
+        assert.property(files, 'name');
+        assert.propertyVal(files, 'name', compendium_id);
+        assert.isArray(files.children);
+        let files_dirs_Names = files.children.map(function (child) { return child.name; });
+        assert.include(files_dirs_Names, 'data');
+        let erc_files = {};
+
+        files.children.map(function (child) { if (child.name == 'data') { erc_files = child } });
+        assertMimeTypes(erc_files);
+        done();
     });
   });
 
@@ -519,4 +567,3 @@ describe('compendium metadata', () => {
     });
   });
 });
-

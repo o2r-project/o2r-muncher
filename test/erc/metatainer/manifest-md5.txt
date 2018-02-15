@@ -3,3 +3,5 @@ e9754627ab84b3a1bbd5610c43863613  data/Dockerfile
 1ea8674783bebcf6eb4aee49a72d0c9a  data/document.html
 1c8a5b8165632b5a75dcc0918322422f  data/document.tex
 e41ab84a0cbd30d6d623922645a21a1b  data/erc.yml
+45b9bcfbecd348fdbfb3abc5c62d5e1b  data/example.R
+1c4c8fcf4108b4b8e55a60f017467b39  data/example.RData
