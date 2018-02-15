@@ -19,7 +19,6 @@
 const mongojs = require('mongojs');
 const Docker = require('dockerode');
 const Stream = require('stream');
-const sleep = require('sleep');
 const exec = require('child_process').exec;
 const yn = require('yn');
 const async = require('async');
@@ -27,7 +26,6 @@ const tar = require('tar');
 const path = require('path');
 const fs = require('fs');
 const debug = require('debug')('test:setup');
-var debugContainer = require('debug')('loader_container');
 
 // test parameters for local session authentication directly via fixed database entries
 var orcid_o2r = '0000-0001-6021-1617';
@@ -40,8 +38,6 @@ var sessionId_plain = 'yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq';
 var sessionId_uploader = 'lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO';
 var sessionId_admin = 'hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i';
 var sessionId_editor = 'xWHihqZq6jEAObwbfowO5IwdnBxohM7z';
-
-var loader_container = null;
 
 var env = process.env;
 const config = require('../config/config');
@@ -303,54 +299,7 @@ before(function (done) {
                 process.exit(1);
             } else {
                 debug('Test setup result: %o', results);
-                if (env.LOADER_CONTAINER && !yn(env.LOADER_CONTAINER)) {
-                    debugContainer('Not starting container, found env var LOADER_CONTAINER="%s"', env.LOADER_CONTAINER);
-                    done();
-                } else {
-                    debugContainer('Starting loader in a Docker container to handle the ERC creation, disable with LOADER_CONTAINER=false');
-
-                    var docker = new Docker();
-                    // create stream that logs container stdout
-                    let container_stream = Stream.Writable();
-                    container_stream._write = function (chunk, enc, next) {
-                        debugContainer(chunk.toString('utf8'));
-                        next();
-                    };
-
-                    docker.createContainer({
-                        Image: 'o2rproject/o2r-loader',
-                        name: 'loader_for_testing',
-                        AttachStdin: false,
-                        AttachStdout: true,
-                        AttachStderr: true,
-                        Tty: true,
-                        Cmd: [],
-                        Env: [
-                            "DEBUG=loader,loader:*",
-                            "LOADER_MONGODB=mongodb://172.17.0.1/" // Docker default host IP
-                        ],
-                        Volumes: {
-                            '/tmp/o2r': {}
-                        },
-                        HostConfig: {
-                            Binds: [
-                                '/tmp/o2r:/tmp/o2r'
-                            ],
-                            PortBindings: { '8088/tcp': [{ 'HostPort': '8088' }] }
-                        },
-                        ExposedPorts: { '8088/tcp': {} }
-                    }).then(function (container) {
-                        loader_container = container;
-                        return container.start({}, (err, data) => {
-                            if (err) debugContainer('ERROR %O', err);
-                            else {
-                                debugContainer('Started loader container with id %s at port 8088', container.id)
-                                sleep.sleep(8);
-                                done();
-                            }
-                        });
-                    });
-                }
+                done();
             }
         });
 
@@ -359,19 +308,7 @@ before(function (done) {
 after(function (done) {
     this.timeout(60000);
     delete docker;
-
-    if (env.LOADER_CONTAINER && yn(env.LOADER_CONTAINER)) {
-        exec('docker rm -f loader_for_testing', (error, stdout, stderr) => {
-            if (error || stderr) {
-                debugContainer(error, stderr, stdout);
-            } else {
-                debugContainer('Removed container: %s', stdout);
-            }
-            done();
-        });
-    } else {
-        done();
-    }
+    done();
 });
 
 after(function (done) {

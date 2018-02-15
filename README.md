@@ -67,15 +67,13 @@ To be able to test job execution and compendia metadata update, the tests _may_ 
 # must start with replica set for oplog (finder) to work, see https://docs.mongodb.com/manual/tutorial/convert-standalone-to-replica-set/ and https://docs.mongodb.com/manual/tutorial/deploy-replica-set-for-testing/
 mongod --dbpath ./db --replSet rso2r --smallfiles;
 
-npm run test_loader
+# start o2r-loader
+
+# run tests
+npm test
 
 # you can also run the tests towards a manually specified host
 TEST_HOST=http://localhost:80 npm test
-
-# you can also disable the loader container
-LOADER_CONTAINER=no TEST_HOST=http://localhost npm test
-# or
-npm run test
 
 # stop tests after the first failing one
 npm run test_bail
