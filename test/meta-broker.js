@@ -33,41 +33,41 @@ const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPu
 describe('Brokering compendium metadata', () => {
   let compendium_id = '';
   before(function (done) {
-    let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
     this.timeout(60000);
-
-    request(req, (err, res, body) => {
-      assert.ifError(err);
-      let response = JSON.parse(body);
-      assert.notProperty(response, 'error');
-      compendium_id = response.id;
-
-      let data = {
-        o2r: {
-          title: 'New brokered title on the block'
-        }
-      };
-      let j2 = request.jar();
-      let ck2 = request.cookie('connect.sid=' + cookie_o2r);
-      j2.setCookie(ck2, global.test_host);
-
-      let req_doc_o2r = {
-        method: 'PUT',
-        jar: j2,
-        json: data,
-        timeout: 20000
-      };
-
-      req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
-      request(req_doc_o2r, (err, res, body) => {
+    createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+      request(req, (err, res, body) => {
         assert.ifError(err);
-        done();
+        let response = JSON.parse(body);
+        assert.notProperty(response, 'error');
+        compendium_id = response.id;
+
+        let data = {
+          o2r: {
+            title: 'New brokered title on the block'
+          }
+        };
+        let j2 = request.jar();
+        let ck2 = request.cookie('connect.sid=' + cookie_o2r);
+        j2.setCookie(ck2, global.test_host);
+
+        let req_doc_o2r = {
+          method: 'PUT',
+          jar: j2,
+          json: data,
+          timeout: 20000
+        };
+
+        req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
+        request(req_doc_o2r, (err, res, body) => {
+          assert.ifError(err);
+          done();
+        });
       });
     });
   });
 
   describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with author user', () => {
-    it('should have the brokered metadata for zenodo', (done) => {
+    it('should have the brokered metadata for Zenodo', (done) => {
       request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);

@@ -24,14 +24,11 @@ const publishCandidate = require('./util').publishCandidate;
 const startJob = require('./util').startJob;
 const mongojs = require('mongojs');
 const chai = require('chai');
-const sleep = require('sleep');
 const debug = require('debug')('test:networking');
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
-
-const sleepSecs = 15;
 
 describe('Container networking', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
@@ -49,14 +46,16 @@ describe('Container networking', () => {
       db.compendia.drop(function (err, doc) {
         db.jobs.drop(function (err, doc) {
 
-          let req = createCompendiumPostRequest('./test/workspace/ping', cookie_o2r, 'workspace');
-          request(req, (err, res, body) => {
-            compendium_id = JSON.parse(body).id;
-            publishCandidate(compendium_id, cookie_o2r, () => {
-              startJob(compendium_id, id => {
-                job_id = id;
-                sleep.sleep(sleepSecs);
-                done();
+          createCompendiumPostRequest('./test/workspace/ping', cookie_o2r, 'workspace', (req) => {
+            request(req, (err, res, body) => {
+              compendium_id = JSON.parse(body).id;
+              publishCandidate(compendium_id, cookie_o2r, () => {
+                startJob(compendium_id, id => {
+                  job_id = id;
+                  waitForJob(job_id, (finalStatus) => {
+                    done();
+                  });
+                });
               });
             });
           });
@@ -118,14 +117,16 @@ describe('Container networking', () => {
       this.timeout(60000);
       db.compendia.drop(function (err, doc) {
 
-        let req = createCompendiumPostRequest('./test/workspace/ping_online', cookie_o2r, 'workspace');
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id = id;
-              sleep.sleep(sleepSecs);
-              done();
+        createCompendiumPostRequest('./test/workspace/ping_online', cookie_o2r, 'workspace', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              startJob(compendium_id, id => {
+                job_id = id;
+                waitForJob(job_id, (finalStatus) => {
+                  done();
+                });
+              });
             });
           });
         });

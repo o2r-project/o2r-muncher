@@ -25,14 +25,12 @@ const waitForJob = require('./util').waitForJob;
 const startJob = require('./util').startJob;
 const mongojs = require('mongojs');
 const fs = require('fs');
-const sleep = require('sleep');
 const unameCall = require('node-uname');
 const path = require('path');
 const debug = require('debug')('test:job-images');
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
-const sleepSecs = 50;
 
 let Docker = require('dockerode');
 let docker = new Docker();
@@ -195,7 +193,7 @@ describe('Workspaces with images in the upload', () => {
       } else {
         this.skip();
       }
-    }).timeout(sleepSecs * 1000);
+    }).timeout(30000);
 
   });
 

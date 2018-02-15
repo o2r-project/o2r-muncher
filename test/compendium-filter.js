@@ -45,12 +45,13 @@ describe('API compendium filter', () => {
 
     before(function (done) {
       this.timeout(60000);
-      db.compendia.drop(function (err, doc) { // start without any compendia
-        let req = createCompendiumPostRequest('./test/erc/metatainer-doi', cookie_o2r);
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/metatainer-doi', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              done();
+            });
           });
         });
       });
@@ -144,23 +145,24 @@ describe('API compendium filter', () => {
 
     before(function (done) {
       this.timeout(60000);
-      db.compendia.drop(function (err, doc) { // start without any compendia
+      db.compendia.drop(function (err, doc) {
 
-        let req = createCompendiumPostRequest('./test/erc/metatainer-doi', cookie_o2r);
-        request(req, (err, res, body) => {
-          compendium1_id = JSON.parse(body).id;
-          publishCandidate(compendium1_id, cookie_o2r, () => {
-
-            let req = createCompendiumPostRequest('./test/workspace/ping', cookie_o2r, 'workspace');
-            request(req, (err, res, body2) => {
-              compendium2_id = JSON.parse(body2).id;
-              publishCandidate(compendium2_id, cookie_o2r, () => {
-
-                let req = createCompendiumPostRequest('./test/workspace/ping', cookie_editor, 'workspace');
-                request(req, (err, res, body3) => {
-                  compendium3_id = JSON.parse(body3).id;
-                  publishCandidate(compendium3_id, cookie_editor, () => {
-                    done();
+        createCompendiumPostRequest('./test/erc/metatainer-doi', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium1_id = JSON.parse(body).id;
+            publishCandidate(compendium1_id, cookie_o2r, () => {
+              createCompendiumPostRequest('./test/workspace/ping', cookie_o2r, 'workspace', (req) => {
+                request(req, (err, res, body2) => {
+                  compendium2_id = JSON.parse(body2).id;
+                  publishCandidate(compendium2_id, cookie_o2r, () => {
+                    createCompendiumPostRequest('./test/workspace/ping', cookie_editor, 'workspace', (req) => {
+                      request(req, (err, res, body3) => {
+                        compendium3_id = JSON.parse(body3).id;
+                        publishCandidate(compendium3_id, cookie_editor, () => {
+                          done();
+                        });
+                      });
+                    });
                   });
                 });
               });

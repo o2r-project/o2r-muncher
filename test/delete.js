@@ -32,7 +32,6 @@ require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 const cookie_admin = 's:hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i.IEPb0lmtGojn2cVk2edRuomIEanX6Ddz87egE5Pe8UM';
-const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
 
 describe('Delete candidate (using metatainer)', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
@@ -54,12 +53,12 @@ describe('Delete candidate (using metatainer)', () => {
     let compendium_id = null;
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
       this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        done();
+      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          done();
+        });
       });
     });
 
@@ -137,12 +136,12 @@ describe('Delete candidate (using metatainer)', () => {
     let compendium_id = null;
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
       this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        done();
+      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          done();
+        });
       });
     });
 
@@ -175,12 +174,12 @@ describe('Delete candidate (using metatainer)', () => {
     let compendium_id = null;
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
       this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        done();
+      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          done();
+        });
       });
     });
 
@@ -219,13 +218,12 @@ describe('Delete candidate (using metatainer)', () => {
     let compendium_id = null;
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_admin);
       this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        done();
-
+      createCompendiumPostRequest('./test/erc/metatainer', cookie_admin, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          done();
+        });
       });
     });
 
@@ -272,28 +270,28 @@ describe('Delete candidate (using metatainer)', () => {
     });
 
     it('should return HTTP 400 with valid JSON and error response when trying to delete non-candidate compendium', (done) => {
-      let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      let compendium_id = null;
+      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+        let compendium_id = null;
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
 
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
+            j = request.jar();
+            ck = request.cookie('connect.sid=' + cookie_o2r);
+            j.setCookie(ck, global.test_host);
 
-          j = request.jar();
-          ck = request.cookie('connect.sid=' + cookie_o2r);
-          j.setCookie(ck, global.test_host);
-
-          request({
-            uri: global.test_host + '/api/v1/compendium/' + compendium_id,
-            method: 'DELETE',
-            jar: j
-          }, (err, res, body) => {
-            assert.ifError(err);
-            assert.equal(res.statusCode, 400);
-            let response = JSON.parse(body);
-            assert.isObject(response);
-            assert.property(response, 'error');
-            done();
+            request({
+              uri: global.test_host + '/api/v1/compendium/' + compendium_id,
+              method: 'DELETE',
+              jar: j
+            }, (err, res, body) => {
+              assert.ifError(err);
+              assert.equal(res.statusCode, 400);
+              let response = JSON.parse(body);
+              assert.isObject(response);
+              assert.property(response, 'error');
+              done();
+            });
           });
         });
       });

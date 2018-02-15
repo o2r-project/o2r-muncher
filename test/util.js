@@ -36,7 +36,7 @@ const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9y
 
 // TODO rewrite function to start the request here instead of just creating the request object,
 // so that we can pipe the archive, see https://github.com/archiverjs/node-archiver/issues/165#issuecomment-166710026
-module.exports.createCompendiumPostRequest = function (dataPath, cookie, type = 'compendium', done) {
+module.exports.createCompendiumPostRequest = function (dataPath, cookie, type, done) {
   zipHash = hashSortCoerce.hash({ path: dataPath, type: type });
   tmpfile = path.join(os.tmpdir(), 'o2r-muncher-upload_' + zipHash + '.zip');
 
@@ -71,7 +71,7 @@ module.exports.createCompendiumPostRequest = function (dataPath, cookie, type = 
       archive.on('end', function () {
         debug('Created zip file %s (%s total bytes)', tmpfile, archive.pointer());
         reqParams.formData.compendium.value = fs.createReadStream(tmpfile);
-        debug('Created creation request: %O', reqParams);
+        debug('Created creation request: %o', reqParams);
         done(reqParams);
       });
       archive.on('warning', function (err) {
@@ -86,7 +86,7 @@ module.exports.createCompendiumPostRequest = function (dataPath, cookie, type = 
       });
       archive.pipe(output);
 
-      debug('writing files from %s to %s', path, tmpfile);
+      debug('writing files from %s to %s', dataPath, tmpfile);
       archive.directory(dataPath, false);
       archive.finalize();
     } else {
@@ -173,7 +173,7 @@ module.exports.waitForJob = function (job_id, done) {
         }
       }
     });
-  }, 3000);
+  }, 5000);
 
   polling.on('error', function (error) {
     debug("Job %s: %s", job_id, error.message);

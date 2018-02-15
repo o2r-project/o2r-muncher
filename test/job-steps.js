@@ -21,17 +21,16 @@ const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
+const waitForJob = require('./util').waitForJob;
 const startJob = require('./util').startJob;
 const mongojs = require('mongojs');
 const fs = require('fs');
-const sleep = require('sleep');
 const unameCall = require('node-uname');
 const path = require('path');
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
-const sleepSecs = 50;
 
 let Docker = require('dockerode');
 let docker = new Docker();
@@ -113,15 +112,15 @@ describe('API job steps', () => {
     let job_id0, job_id1, job_id2 = '';
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
       this.timeout(90000);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id0 = id;
-            done();
+      createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id0 = id;
+              done();
+            });
           });
         });
       });
@@ -181,13 +180,12 @@ describe('API job steps', () => {
     let compendium_id = '';
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
       this.timeout(90000);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        sleep.sleep(sleepSecs);
-        done();
+      createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          done();
+        });
       });
     });
 
@@ -267,15 +265,16 @@ describe('API job steps', () => {
 
     before(function (done) {
       this.timeout(90000);
-      let req = createCompendiumPostRequest('./test/erc/step_validate_bag', cookie_o2r);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
-            sleep.sleep(sleepSecs);
-            done();
+      createCompendiumPostRequest('./test/erc/step_validate_bag', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              waitForJob(job_id, (finalStatus) => {
+                done();
+              });
+            });
           });
         });
       });
@@ -345,15 +344,16 @@ describe('API job steps', () => {
 
     before(function (done) {
       this.timeout(90000);
-      let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
-            sleep.sleep(sleepSecs);
-            done();
+      createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              waitForJob(job_id, (finalStatus) => {
+                done();
+              });
+            });
           });
         });
       });
@@ -454,63 +454,66 @@ describe('API job steps', () => {
 
   describe('EXECUTION configuration file generation', () => {
     it('should skip steps validate bag and generate configuration, but complete following steps', (done) => {
-      let req = createCompendiumPostRequest('./test/workspace/rmd-configuration-file', cookie_o2r, 'workspace');
-      request(req, (err, res, body) => {
-        assert.ifError(err);
-        let compendium_id = JSON.parse(body).id;
+      createCompendiumPostRequest('./test/workspace/rmd-configuration-file', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          assert.ifError(err);
+          let compendium_id = JSON.parse(body).id;
 
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            let job_id = id;
-            sleep.sleep(sleepSecs);
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              let job_id = id;
 
-            request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-              assert.ifError(err);
-              let response = JSON.parse(body);
+              waitForJob(job_id, (finalStatus) => {
+                request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+                  assert.ifError(err);
+                  let response = JSON.parse(body);
 
-              assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'skip validate bag');
-              assert.propertyVal(response.steps.generate_configuration, 'status', 'skipped', 'skip generate configuration because there is one');
-              assert.propertyVal(response.steps.validate_compendium, 'status', 'success', 'succeed validate compendium');
-              assert.propertyVal(response.steps.image_prepare, 'status', 'success', 'succeed image prepare');
-              assert.propertyVal(response.steps.image_build, 'status', 'success', 'succeed image build');
-              assert.propertyVal(response.steps.image_execute, 'status', 'success', 'succeed image execute');
-              assert.propertyVal(response.steps.cleanup, 'status', 'success', 'succeed cleanup');
+                  assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'skip validate bag');
+                  assert.propertyVal(response.steps.generate_configuration, 'status', 'skipped', 'skip generate configuration because there is one');
+                  assert.propertyVal(response.steps.validate_compendium, 'status', 'success', 'succeed validate compendium');
+                  assert.propertyVal(response.steps.image_prepare, 'status', 'success', 'succeed image prepare');
+                  assert.propertyVal(response.steps.image_build, 'status', 'success', 'succeed image build');
+                  assert.propertyVal(response.steps.image_execute, 'status', 'success', 'succeed image execute');
+                  assert.propertyVal(response.steps.cleanup, 'status', 'success', 'succeed cleanup');
 
-              done();
+                  done();
+                });
+              });
             });
           });
         });
       });
-    }).timeout(sleepSecs * 1000 * 2);;
+    }).timeout(60000);
 
     it('should complete step "generate_configuration" and skip previous steps for minimal-rmd-data', (done) => {
-      let req = createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace');
-      request(req, (err, res, body) => {
-        assert.ifError(err);
-        let compendium_id = JSON.parse(body).id;
+      createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          assert.ifError(err);
+          let compendium_id = JSON.parse(body).id;
 
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            let job_id = id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              let job_id = id;
 
-            sleep.sleep(sleepSecs);
+              waitForJob(job_id, (finalStatus) => {
+                request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
+                  assert.ifError(err);
+                  let response = JSON.parse(body);
 
-            request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
-              assert.ifError(err);
-              let response = JSON.parse(body);
+                  assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'skip validate bag');
+                  assert.propertyVal(response.steps.validate_compendium, 'status', 'success', 'succeed validate compendium');
+                  assert.propertyVal(response.steps.generate_configuration, 'status', 'success', 'succeed generate configuration');
+                  assert.propertyVal(response.steps.check, 'status', 'failure', 'fail check');
+                  assert.isBelow(response.steps.check.images[0].compareResults.differences, 3200, 'fail check because of slight differences in image');
 
-              assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'skip validate bag');
-              assert.propertyVal(response.steps.validate_compendium, 'status', 'success', 'succeed validate compendium');
-              assert.propertyVal(response.steps.generate_configuration, 'status', 'success', 'succeed generate configuration');
-              assert.propertyVal(response.steps.check, 'status', 'failure', 'fail check');
-              assert.isBelow(response.steps.check.images[0].compareResults.differences, 3200, 'fail check because of slight differences in image');
-
-              done();
+                  done();
+                });
+              });
             });
           });
         });
       });
-    }).timeout(sleepSecs * 1000 * 2);
+    }).timeout(60000);
   });
 
   describe('EXECUTION Dockerfile generation for workspace minimal-rmd-data', () => {
@@ -519,15 +522,16 @@ describe('API job steps', () => {
 
     before(function (done) {
       this.timeout(90000);
-      let req = createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace');
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
-            sleep.sleep(sleepSecs);
-            done();
+      createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              waitForJob(job_id, (finalStatus) => {
+                done();
+              });
+            });
           });
         });
       });
@@ -615,15 +619,16 @@ describe('API job steps', () => {
 
     before(function (done) {
       this.timeout(90000);
-      let req = createCompendiumPostRequest('./test/workspace/minimal-script', cookie_o2r, 'workspace');
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
-            sleep.sleep(sleepSecs * 1.5);
-            done();
+      createCompendiumPostRequest('./test/workspace/minimal-script', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              waitForJob(job_id, (finalStatus) => {
+                done();
+              });
+            });
           });
         });
       });
@@ -699,16 +704,17 @@ describe('API job steps', () => {
     let job_id = '';
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_image_prepare', cookie_o2r);
       this.timeout(90000);
-
-      request(req, (err, res, body) => {
-        let compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
-            sleep.sleep(sleepSecs);
-            done();
+      createCompendiumPostRequest('./test/erc/step_image_prepare', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          let compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              waitForJob(job_id, (finalStatus) => {
+                done();
+              });
+            });
           });
         });
       });
@@ -766,16 +772,17 @@ describe('API job steps', () => {
     let compendium_id, job_id = null;
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_image_build', cookie_o2r);
       this.timeout(90000);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
-            sleep.sleep(sleepSecs);
-            done();
+      createCompendiumPostRequest('./test/erc/step_image_build', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              waitForJob(job_id, (finalStatus) => {
+                done();
+              });
+            });
           });
         });
       });
@@ -851,7 +858,7 @@ describe('API job steps', () => {
       } else {
         this.skip();
       }
-    }).timeout(sleepSecs * 1000);
+    }).timeout(60000);
 
     it('should not have tagged an image for the compendium (skipped if images are not kept)', function (done) {
       if (config.bagtainer.keepImages) {
@@ -873,7 +880,7 @@ describe('API job steps', () => {
       } else {
         this.skip();
       }
-    }).timeout(sleepSecs * 1000);
+    }).timeout(60000);
   });
 
   describe('EXECUTION step_image_execute', () => {
@@ -881,15 +888,16 @@ describe('API job steps', () => {
 
     before(function (done) {
       this.timeout(90000);
-      let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
-
-      request(req, (err, res, body) => {
-        let compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
-            sleep.sleep(sleepSecs / 2);
-            done();
+      createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          let compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              waitForJob(job_id, (finalStatus) => {
+                done();
+              });
+            });
           });
         });
       });
@@ -1040,20 +1048,21 @@ describe('API job steps', () => {
     let job_id, compendium_id, job_id2 = '';
 
     before(function (done) {
-      this.timeout(80000);
-      let req = createCompendiumPostRequest('./test/erc/step_check', cookie_o2r);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
-            sleep.sleep(sleepSecs/5);
-
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
             startJob(compendium_id, id => {
-              job_id2 = id;
-              sleep.sleep(sleepSecs/5);
-              done();
+              job_id = id;
+              waitForJob(job_id, (finalStatus) => {
+                startJob(compendium_id, id => {
+                  job_id2 = id;
+                  waitForJob(job_id2, (finalStatus) => {
+                    done();
+                  });
+                });
+              });
             });
           });
         });
@@ -1154,7 +1163,7 @@ describe('API job steps', () => {
       } else {
         this.skip();
       }
-    }).timeout(sleepSecs * 1000);
+    }).timeout(60000);
 
     it('should mention the missing tarball in the image_build logs', function (done) {
       request(global.test_host + '/api/v1/job/' + job_id + '?steps=image_build', (err, res, body) => {
@@ -1174,7 +1183,7 @@ describe('API job steps', () => {
         done();
       });
     });
-    
+
     it('should mention tagging the existing compendium image for the second job', function (done) {
       request(global.test_host + '/api/v1/job/' + job_id2 + '?steps=image_build', (err, res, body) => {
         assert.ifError(err);
@@ -1201,15 +1210,16 @@ describe('API job steps', () => {
 
     before(function (done) {
       this.timeout(90000);
-      let req = createCompendiumPostRequest('./test/workspace/rmd-data-random', cookie_o2r, 'workspace');
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
-            sleep.sleep(sleepSecs);
-            done();
+      createCompendiumPostRequest('./test/workspace/rmd-data-random', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              waitForJob(job_id, (finalStatus) => {
+                done();
+              });
+            });
           });
         });
       });
@@ -1326,15 +1336,16 @@ describe('API job steps', () => {
       this.timeout(90000);
       db.compendia.drop(function (err, doc) {
         db.jobs.drop(function (err, doc) {
-          let req = createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace');
-
-          request(req, (err, res, body) => {
-            let compendium_id = JSON.parse(body).id;
-            publishCandidate(compendium_id, cookie_o2r, () => {
-              startJob(compendium_id, id => {
-                job_id = id;
-                sleep.sleep(sleepSecs);
-                done();
+          createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace', (req) => {
+            request(req, (err, res, body) => {
+              let compendium_id = JSON.parse(body).id;
+              publishCandidate(compendium_id, cookie_o2r, () => {
+                startJob(compendium_id, id => {
+                  job_id = id;
+                  waitForJob(job_id, (finalStatus) => {
+                    done();
+                  });
+                });
               });
             });
           });

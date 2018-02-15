@@ -86,17 +86,17 @@ describe('API Compendium', () => {
   describe('GET /api/v1/compendium with executing compendium loaded and published', () => {
     let compendium_id = '';
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);
       this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/step_image_execute', cookie, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          assert.ifError(err);
+          assert.equal(res.statusCode, 200);
+          response = JSON.parse(body);
+          compendium_id = JSON.parse(body).id;
 
-      request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 200);
-        response = JSON.parse(body);
-        compendium_id = JSON.parse(body).id;
-
-        publishCandidate(compendium_id, cookie, () => {
-          done();
+          publishCandidate(compendium_id, cookie, () => {
+            done();
+          });
         });
       });
     });
@@ -115,14 +115,13 @@ describe('API Compendium', () => {
   describe('GET /api/v1/compendium/<id>', () => {
     let compendium_id = '';
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);
-      this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-
-        publishCandidate(compendium_id, cookie, () => {
-          done();
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/step_image_execute', cookie, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie, () => {
+            done();
+          });
         });
       });
     });
@@ -208,17 +207,17 @@ describe('API Compendium sub-resource /jobs', () => {
   describe('GET /api/v1/compendium/ sub-endpoint /jobs', () => {
     let compendium_id = '';
     before(function (done) {
-      this.timeout(60000);
-      let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie);
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/step_image_execute', cookie, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          response = JSON.parse(body);
+          assert.ifError(err);
+          assert.notProperty(response, 'error');
 
-      request(req, (err, res, body) => {
-        response = JSON.parse(body);
-        assert.ifError(err);
-        assert.notProperty(response, 'error');
-
-        compendium_id = response.id;
-        publishCandidate(compendium_id, cookie, () => {
-          done();
+          compendium_id = response.id;
+          publishCandidate(compendium_id, cookie, () => {
+            done();
+          });
         });
       });
     });

@@ -21,14 +21,13 @@ const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
+const waitForJob = require('./util').waitForJob;
 const mongojs = require('mongojs');
-const sleep = require('sleep');
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 const cookie_uploader = 's:lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO.0iapdV1c85wc5NO3d3h+svorp3Tm56cfqRhhpFJZBnk';
-const waitSecs = 20;
 
 describe('API job filtering', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
@@ -55,20 +54,19 @@ describe('API job filtering', () => {
     let job_count_user_o2r = 0;
     let job_count_user_uploader = 0;
 
-    // upload 1st compendium with final job status "success"
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
       this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        compendium_id_success = JSON.parse(body).id;
-        publishCandidate(compendium_id_success, cookie_o2r, () => {
-          let req_f = createCompendiumPostRequest('./test/erc/step_image_build', cookie_o2r);
-
-          request(req_f, (err, res, body) => {
-            compendium_id_failure = JSON.parse(body).id;
-            publishCandidate(compendium_id_failure, cookie_o2r, () => {
-              done();
+      createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id_success = JSON.parse(body).id;
+          publishCandidate(compendium_id_success, cookie_o2r, () => {
+            createCompendiumPostRequest('./test/erc/step_image_build', cookie_o2r, 'compendium', (req_f) => {
+              request(req_f, (err, res, body) => {
+                compendium_id_failure = JSON.parse(body).id;
+                publishCandidate(compendium_id_failure, cookie_o2r, () => {
+                  done();
+                });
+              });
             });
           });
         });
@@ -197,10 +195,11 @@ describe('API job filtering', () => {
         job_count_failure++;
         job_count_user_uploader++;
 
-        sleep.sleep(waitSecs);
-        done();
+        waitForJob(job_id, (finalStatus) => {
+          done();
+        });
       });
-    }).timeout(waitSecs * 1000 * 2);
+    }).timeout(20000);
 
     it('should list 2 jobs for successful compendium', (done) => {
       request(global.test_host + '/api/v1/job/?compendium_id=' + compendium_id_success, (err, res, body) => {
@@ -222,7 +221,7 @@ describe('API job filtering', () => {
         assert.equal(response.results.length, 3);
         done();
       });
-    }).timeout(waitSecs * 1000 * 2);
+    }).timeout(200000);
 
     it('should list 3 jobs of the test user "orcid_o2r"', (done) => {
       request(global.test_host + '/api/v1/job/?user=0000-0001-6021-1617', (err, res, body) => {
