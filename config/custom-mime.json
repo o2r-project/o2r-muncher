@@ -5,5 +5,26 @@
     "compressible": true,
     "extensions": ["R", "r"],
     "type": "script/x-R"
+  },
+  "text/plain": {
+    "source": "custom",
+    "charset": "UTF-8",
+    "compressible": true,
+    "extensions": ["R", "r"],
+    "type": "script/x-R"
+  },
+  "application/octet-stream": {
+    "source": "custom",
+    "charset":"binary",
+    "compressible": false,
+    "extensions": ["RData", "rdata", "Rdata", "rda"],
+    "type": "application/x-r-data"
+  },
+  "application/x-gzip": {
+    "source": "custom",
+    "charset":"binary",
+    "compressible": false,
+    "extensions": ["RData", "rdata", "Rdata", "rda"],
+    "type": "application/x-r-data"
   }
 }
