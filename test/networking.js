@@ -21,6 +21,7 @@ const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
+const waitForJob = require('./util').waitForJob;
 const startJob = require('./util').startJob;
 const mongojs = require('mongojs');
 const chai = require('chai');
