@@ -8,7 +8,8 @@
     "test_port80": "TEST_HOST=http://localhost DEBUG=*,-modem,-mocha:* mocha",
     "test": "DEBUG=* mocha",
     "test_bail": "DEBUG=*,-modem,-mocha:* mocha --bail",
-    "test_ci": "DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access\""
+    "test_ci": "DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access\"",
+    "test_ci_async_dump": "DEBUG=*,-modem,-mocha:* mocha --require async-dump ./test/ --tags \"not:storage_access\""
   },
   "author": "o2r-project (http://o2r.info)",
   "license": "Apache-2.0",
