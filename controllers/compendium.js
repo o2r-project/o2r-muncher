@@ -333,7 +333,7 @@ exports.listCompendia = (req, res) => {
       res.status(200).send(answer);
     })
     .catch(err => {
-      debug('Rejection during search: \n\t%s', err);
+      debug('Rejection during search: %o', err);
       let status = 500;
       if (err.status) {
         status = err.status;

@@ -153,7 +153,7 @@ c.email.sender = env.MUNCHER_EMAIL_SENDER;
 //
 //  emailTransporter.sendMail(mail, function (error, info) {
 //    if (error) {
-//      debug('Problem sending notification email: %s', error.message);
+//      debug('Problem sending notification email: %o', error);
 //    }
 //    debug('Email sent: %s\n%O', info.response, mail);
 //  });
