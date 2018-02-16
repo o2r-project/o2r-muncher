@@ -62,6 +62,11 @@ module.exports.createCompendiumPostRequest = function (dataPath, cookie, type, d
     timeout: 120000
   };
 
+  createdRequest = (reqParams, callback) => {
+    //debug('Created creation request: %o', reqParams);
+    callback(reqParams);
+  }
+
   fs.access(tmpfile, (err) => {
     if (err) {
       output = fs.createWriteStream(tmpfile);
@@ -71,8 +76,7 @@ module.exports.createCompendiumPostRequest = function (dataPath, cookie, type, d
       archive.on('end', function () {
         debug('Created zip file %s (%s total bytes)', tmpfile, archive.pointer());
         reqParams.formData.compendium.value = fs.createReadStream(tmpfile);
-        debug('Created creation request: %o', reqParams);
-        done(reqParams);
+        createdRequest(reqParams, done);
       });
       archive.on('warning', function (err) {
         if (err.code === 'ENOENT') {
@@ -92,8 +96,7 @@ module.exports.createCompendiumPostRequest = function (dataPath, cookie, type, d
     } else {
       debug('USING CACHED ZIP file for upload: %s | You MUST MANUALLY DELETE IT if the files at %s changed!)', tmpfile, dataPath);
       reqParams.formData.compendium.value = fs.createReadStream(tmpfile);
-      debug('Created creation request: %O', reqParams);
-      done(reqParams);
+      createdRequest(reqParams, done);
     }
   });
 }
@@ -121,7 +124,7 @@ module.exports.publishCandidate = function (compendium_id, cookie, done) {
   request(getMetadata, (err, res, body) => {
     let response = JSON.parse(body);
     if (err) {
-      console.error('error publishing candidate: %s', err);
+      console.error('error publishing candidate: %o', err);
     } else if (response.error) {
       console.error('error publishing candidate: %s', JSON.stringify(response));
       throw new Error('Could not publish candidate, aborting test.');
@@ -148,7 +151,7 @@ module.exports.startJob = function (compendium_id, done) {
     formData: {
       compendium_id: compendium_id
     },
-    timeout: 1000
+    timeout: 10000
   }, (err, res, body) => {
     let response = JSON.parse(body);
     debug("Started job: %o", response);
@@ -176,7 +179,7 @@ module.exports.waitForJob = function (job_id, done) {
   }, 5000);
 
   polling.on('error', function (error) {
-    debug("Job %s: %s", job_id, error.message);
+    //debug("Job %s: %o", job_id, error);
   });
 
   polling.on('result', function (result) {
