@@ -19,8 +19,7 @@ const hook = createHook({
 
 global.asyncDump = module.exports = () => {
   hook.disable();
-  console.error(`
-STUFF STILL IN THE EVENT LOOP:`)
+  console.error(`STUFF STILL IN THE EVENT LOOP:`)
   allResources.forEach(value=> {
     console.error(`Type: ${value.type}`);
     console.error(filterStack(value.stack));
