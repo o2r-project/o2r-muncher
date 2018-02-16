@@ -53,7 +53,7 @@ describe('Delete candidate (using metatainer)', () => {
     let compendium_id = null;
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
@@ -136,7 +136,7 @@ describe('Delete candidate (using metatainer)', () => {
     let compendium_id = null;
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
@@ -174,7 +174,7 @@ describe('Delete candidate (using metatainer)', () => {
     let compendium_id = null;
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
@@ -218,7 +218,7 @@ describe('Delete candidate (using metatainer)', () => {
     let compendium_id = null;
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       createCompendiumPostRequest('./test/erc/metatainer', cookie_admin, 'compendium', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;

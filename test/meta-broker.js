@@ -33,7 +33,7 @@ const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPu
 describe('Brokering compendium metadata', () => {
   let compendium_id = '';
   before(function (done) {
-    this.timeout(60000);
+    this.timeout(90000);
     createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
       request(req, (err, res, body) => {
         assert.ifError(err);

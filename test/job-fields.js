@@ -49,7 +49,7 @@ describe('returned fields in job listing', () => {
 
     // upload 1st compendium with final job status "success"
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
 
         request(req, (err, res, body) => {

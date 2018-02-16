@@ -42,7 +42,7 @@ describe('Container networking', () => {
     let compendium_id, job_id;
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       db.compendia.drop(function (err, doc) {
         db.jobs.drop(function (err, doc) {
 
@@ -114,7 +114,7 @@ describe('Container networking', () => {
     let compendium_id, job_id;
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       db.compendia.drop(function (err, doc) {
 
         createCompendiumPostRequest('./test/workspace/ping_online', cookie_o2r, 'workspace', (req) => {

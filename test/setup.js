@@ -306,7 +306,7 @@ before(function (done) {
 });
 
 after(function (done) {
-    this.timeout(60000);
+    this.timeout(90000);
     delete docker;
     done();
 });

@@ -44,7 +44,7 @@ describe('API compendium filter', () => {
     var test_user = '0000-0001-6021-1617';
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       db.compendia.drop(function (err, doc) {
         createCompendiumPostRequest('./test/erc/metatainer-doi', cookie_o2r, 'compendium', (req) => {
           request(req, (err, res, body) => {
@@ -144,7 +144,7 @@ describe('API compendium filter', () => {
     var test_user = '0000-0001-6021-1617';
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       db.compendia.drop(function (err, doc) {
 
         createCompendiumPostRequest('./test/erc/metatainer-doi', cookie_o2r, 'compendium', (req) => {

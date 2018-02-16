@@ -50,7 +50,7 @@ tags('storage_access')
       let compendium_id = null;
 
       before(function (done) {
-        this.timeout(60000);
+        this.timeout(90000);
         createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie, 'compendium', (req) => {
           request(req, (err, res, body) => {
             compendium_id = JSON.parse(body).id;
@@ -72,7 +72,7 @@ tags('storage_access')
       let compendium_id = null;
 
       before(function (done) {
-        this.timeout(60000);
+        this.timeout(90000);
         createCompendiumPostRequest('./test/erc/step_validate_bag/data', cookie, 'workspace', (req) => {
           request(req, (err, res, body) => {
             compendium_id = JSON.parse(body).id;
@@ -94,7 +94,7 @@ tags('storage_access')
       let job_id = null;
 
       before(function (done) {
-        this.timeout(60000);
+        this.timeout(90000);
         createCompendiumPostRequest('./test/erc/step_image_execute/data', cookie, 'workspace', (req) => {
           request(req, (err, res, body) => {
             let compendium_id = JSON.parse(body).id;
@@ -121,7 +121,7 @@ tags('storage_access')
       let job_id = null;
 
       before(function (done) {
-        this.timeout(60000);
+        this.timeout(90000);
         createCompendiumPostRequest('./test/erc/step_image_execute', cookie, 'compendium', (req) => {
           request(req, (err, res, body) => {
             compendium_id = JSON.parse(body).id;

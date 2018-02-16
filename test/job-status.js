@@ -49,7 +49,7 @@ describe('API job overall status', () => {
     let job_id = '';
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
         request(req, (err, res, body) => {
           let compendium_id = JSON.parse(body).id;
@@ -89,7 +89,7 @@ describe('API job overall status', () => {
     let job_id = '';
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       createCompendiumPostRequest('./test/erc/step_image_prepare', cookie_o2r, 'compendium', (req) => {
         request(req, (err, res, body) => {
           let compendium_id = JSON.parse(body).id;
@@ -129,7 +129,7 @@ describe('API job overall status', () => {
     let job_id = '';
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       createCompendiumPostRequest('./test/erc/step_image_build', cookie_o2r, 'compendium', (req) => {
         request(req, (err, res, body) => {
           let compendium_id = JSON.parse(body).id;
@@ -169,7 +169,7 @@ describe('API job overall status', () => {
     let job_id = '';
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r, 'compendium', (req) => {
         request(req, (err, res, body) => {
           let compendium_id = JSON.parse(body).id;
@@ -208,7 +208,7 @@ describe('API job overall status', () => {
     let job_id = '';
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
         request(req, (err, res, body) => {
           let compendium_id = JSON.parse(body).id;

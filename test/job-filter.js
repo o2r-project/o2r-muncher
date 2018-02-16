@@ -55,7 +55,7 @@ describe('API job filtering', () => {
     let job_count_user_uploader = 0;
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
         request(req, (err, res, body) => {
           compendium_id_success = JSON.parse(body).id;
