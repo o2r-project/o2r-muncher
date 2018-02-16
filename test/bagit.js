@@ -24,6 +24,7 @@ const tags = require('mocha-tags');
 
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
+const waitForJob = require('./util').waitForJob;
 const startJob = require('./util').startJob;
 
 require("./setup");
@@ -47,6 +48,7 @@ tags('storage_access')
 
     describe('bag detection for compendium', function () {
       let compendium_id = null;
+
       before(function (done) {
         this.timeout(60000);
         createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie, 'compendium', (req) => {
@@ -68,6 +70,7 @@ tags('storage_access')
 
     describe('bag detection for workspace', function () {
       let compendium_id = null;
+
       before(function (done) {
         this.timeout(60000);
         createCompendiumPostRequest('./test/erc/step_validate_bag/data', cookie, 'workspace', (req) => {
@@ -89,6 +92,7 @@ tags('storage_access')
 
     describe('bag detection for job on workspace', function () {
       let job_id = null;
+
       before(function (done) {
         this.timeout(60000);
         createCompendiumPostRequest('./test/erc/step_image_execute/data', cookie, 'workspace', (req) => {
@@ -97,7 +101,9 @@ tags('storage_access')
             publishCandidate(compendium_id, cookie, () => {
               startJob(compendium_id, id => {
                 job_id = id;
-                done();
+                waitForJob(job_id, (finalStatus) => {
+                  done();
+                });
               });
             });
           });
@@ -113,14 +119,18 @@ tags('storage_access')
 
     describe('bag detection for job on compendium', function () {
       let job_id = null;
+
       before(function (done) {
+        this.timeout(60000);
         createCompendiumPostRequest('./test/erc/step_image_execute', cookie, 'compendium', (req) => {
           request(req, (err, res, body) => {
             compendium_id = JSON.parse(body).id;
             publishCandidate(compendium_id, cookie, () => {
               startJob(compendium_id, id => {
                 job_id = id;
-                done();
+                waitForJob(job_id, (finalStatus) => {
+                  done();
+                });
               });
             });
           });
@@ -128,8 +138,8 @@ tags('storage_access')
       });
 
       it('should correctly identify a not-bag directory', (done) => {
-        assert.isNotTrue(bagit.jobIsBag(job_id));
-        assert.isFalse(bagit.jobIsBag(job_id));
+        assert.isTrue(bagit.jobIsBag(job_id));
+        assert.isNotFalse(bagit.jobIsBag(job_id));
         done();
       });
     });
