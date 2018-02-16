@@ -132,7 +132,10 @@ module.exports.publishCandidate = function (compendium_id, cookie, done) {
       updateMetadata.json = { o2r: response.metadata.o2r };
 
       request(updateMetadata, (err, res, body) => {
-        debug("Published candidate: %s", JSON.stringify(body).slice(0, 80));
+        if(err) debug('Error publishing metadata: %o', err);
+        if(body) {
+          debug("Published candidate: %s", JSON.stringify(body).slice(0, 80));
+        }
         done();
       });
     }
@@ -176,10 +179,10 @@ module.exports.waitForJob = function (job_id, done) {
         }
       }
     });
-  }, 5000);
+  }, global.test_job_poll_interval);
 
   polling.on('error', function (error) {
-    //debug("Job %s: %o", job_id, error);
+    debug("Job %s: %s", job_id, error.message);
   });
 
   polling.on('result', function (result) {

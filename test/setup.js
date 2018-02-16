@@ -44,7 +44,8 @@ const config = require('../config/config');
 global.test_host = env.TEST_HOST || 'http://localhost:' + config.net.port;
 global.test_host_loader = env.TEST_HOST_UPLOAD || 'http://localhost:8088';
 global.test_host_transporter = env.TEST_HOST_DOWNLOAD || 'http://localhost:8081';
-debug('Testing endpoint at %s using %s for upload', global.test_host, global.test_host_loader);
+global.test_job_poll_interval = parseInt(env.TEST_JOB_POLL_INTERVAL) || 3000;
+debug('Testing endpoint at %s using %s for upload, poll intervall for jobs: %s', global.test_host, global.test_host_loader, global.test_job_poll_interval);
 
 docker = new Docker();
 
