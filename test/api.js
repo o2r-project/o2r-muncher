@@ -35,7 +35,6 @@ describe('API Compendium', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
   before(function (done) {
-    this.timeout(1000);
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) {
         done();

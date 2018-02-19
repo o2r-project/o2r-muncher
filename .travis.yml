@@ -24,6 +24,7 @@ before_script:
   - sleep 10
 script:
   - npm run test_ci_async_dump
+  # - DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access\" --require async-dump
 after_failure:
   - sleep 5
   - docker logs testmuncher
