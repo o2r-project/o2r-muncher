@@ -25,6 +25,7 @@ const waitForJob = require('./util').waitForJob;
 const startJob = require('./util').startJob;
 const mongojs = require('mongojs');
 const chai = require('chai');
+const path = require('path');
 const debug = require('debug')('test:networking');
 
 require("./setup");
@@ -96,6 +97,27 @@ describe('Container networking', () => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response, 'status', 'success');
+        done();
+      });
+    });
+
+    it('should complete step "image_save"', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.image_save, 'status', 'success');
+        done();
+      });
+    });
+    
+    it('should have a reference to the image file in step image_save', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.property(response.steps.image_save, 'file');
+        assert.propertyVal(response.steps.image_save, 'file', config.bagtainer.imageTarballFile);
+        assert.notPropertyVal(response.steps.image_save, 'file', path.join(config.bagit.payloadDirectory, config.bagtainer.imageTarballFile));
         done();
       });
     });

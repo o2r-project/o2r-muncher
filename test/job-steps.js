@@ -516,7 +516,7 @@ describe('API job steps', () => {
     }).timeout(60000);
   });
 
-  describe('EXECUTION Dockerfile generation for workspace minimal-rmd-data', () => {
+  describe('Dockerfile generation and image build for workspace minimal-rmd-data', () => {
     let job_id = '';
     let compendium_id = '';
 
@@ -1106,7 +1106,8 @@ describe('API job steps', () => {
         let response = JSON.parse(body);
 
         assert.property(response.steps.image_save, 'file');
-        assert.propertyVal(response.steps.image_save, 'file', 'image.tar');
+        assert.propertyVal(response.steps.image_save, 'file', path.join(config.bagit.payloadDirectory, config.bagtainer.imageTarballFile));
+        assert.notPropertyVal(response.steps.image_save, 'file', config.bagtainer.imageTarballFile);
         done();
       });
     });
