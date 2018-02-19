@@ -8,7 +8,7 @@
     "test_port80": "TEST_HOST=http://localhost DEBUG=*,-modem,-mocha:* mocha",
     "test": "DEBUG=* mocha",
     "test_bail": "DEBUG=*,-modem,-mocha:* mocha --bail",
-    "test_ci": "DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access\" --exit",
+    "test_ci": "DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access not:image_tarball_upload\" --exit",
     "test_ci_async_dump": "DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access not:image_tarball_upload\" --require test/async-dump"
   },
   "author": "o2r-project (http://o2r.info)",
