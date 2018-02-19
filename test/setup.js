@@ -313,7 +313,6 @@ after(function (done) {
 });
 
 after(function (done) {
-    //debug('Dumping event loop at the end!');
-    global.asyncDump();
+    //global.asyncDump();
     done();
 });
