@@ -1329,7 +1329,6 @@ describe('API job steps', () => {
   });
 
   describe('API job step details filtering', () => {
-    var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
     var job_id;
 
     before(function (done) {
@@ -1351,11 +1350,6 @@ describe('API job steps', () => {
           });
         });
       });
-    });
-
-    after(function (done) {
-      db.close();
-      done();
     });
 
     describe('GET /api/v1/job when "steps" is missing', () => {
