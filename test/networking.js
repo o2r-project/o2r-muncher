@@ -21,17 +21,16 @@ const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
+const waitForJob = require('./util').waitForJob;
 const startJob = require('./util').startJob;
 const mongojs = require('mongojs');
 const chai = require('chai');
-const sleep = require('sleep');
+const path = require('path');
 const debug = require('debug')('test:networking');
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
-
-const sleepSecs = 15;
 
 describe('Container networking', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
@@ -45,18 +44,20 @@ describe('Container networking', () => {
     let compendium_id, job_id;
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       db.compendia.drop(function (err, doc) {
         db.jobs.drop(function (err, doc) {
 
-          let req = createCompendiumPostRequest('./test/workspace/ping', cookie_o2r, 'workspace');
-          request(req, (err, res, body) => {
-            compendium_id = JSON.parse(body).id;
-            publishCandidate(compendium_id, cookie_o2r, () => {
-              startJob(compendium_id, id => {
-                job_id = id;
-                sleep.sleep(sleepSecs);
-                done();
+          createCompendiumPostRequest('./test/workspace/ping', cookie_o2r, 'workspace', (req) => {
+            request(req, (err, res, body) => {
+              compendium_id = JSON.parse(body).id;
+              publishCandidate(compendium_id, cookie_o2r, () => {
+                startJob(compendium_id, id => {
+                  job_id = id;
+                  waitForJob(job_id, (finalStatus) => {
+                    done();
+                  });
+                });
               });
             });
           });
@@ -100,6 +101,27 @@ describe('Container networking', () => {
       });
     });
 
+    it('should complete step "image_save"', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.image_save, 'status', 'success');
+        done();
+      });
+    });
+    
+    it('should have a reference to the image file in step image_save', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.property(response.steps.image_save, 'file');
+        assert.propertyVal(response.steps.image_save, 'file', config.bagtainer.imageTarballFile);
+        assert.notPropertyVal(response.steps.image_save, 'file', path.join(config.bagit.payloadDirectory, config.bagtainer.imageTarballFile));
+        done();
+      });
+    });
+
     it('should include ping messages in the step log', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id + '?steps=image_execute', (err, res, body) => {
         assert.ifError(err);
@@ -115,17 +137,19 @@ describe('Container networking', () => {
     let compendium_id, job_id;
 
     before(function (done) {
-      this.timeout(60000);
+      this.timeout(90000);
       db.compendia.drop(function (err, doc) {
 
-        let req = createCompendiumPostRequest('./test/workspace/ping_online', cookie_o2r, 'workspace');
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id = id;
-              sleep.sleep(sleepSecs);
-              done();
+        createCompendiumPostRequest('./test/workspace/ping_online', cookie_o2r, 'workspace', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              startJob(compendium_id, id => {
+                job_id = id;
+                waitForJob(job_id, (finalStatus) => {
+                  done();
+                });
+              });
             });
           });
         });

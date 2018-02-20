@@ -20,7 +20,7 @@ const assert = require('chai').assert;
 const request = require('request');
 const config = require('../config/config');
 const path = require('path');
-const sleep = require('sleep');
+const mongojs = require('mongojs');
 const chai = require('chai');
 chai.use(require('chai-datetime'));
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
@@ -32,50 +32,29 @@ const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9y
 const cookie_admin = 's:hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i.IEPb0lmtGojn2cVk2edRuomIEanX6Ddz87egE5Pe8UM';
 const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
 
-function assertMimeTypes (files) {
-
-  files.children.forEach(function (file) {
-    if (file.extension) {
-      switch (file.extension) {
-          case (".txt"):
-              assert.propertyVal(file, "type", "text/plain");
-              break;
-          case (".html"):
-              assert.propertyVal(file, "type", "text/html");
-              break;
-          case (".yml"):
-              assert.propertyVal(file, "type", "text/yaml");
-              break;
-          case (".tex"):
-              assert.propertyVal(file, "type", "application/x-tex");
-              break;
-          case (".rdata"):
-          case (".rda"):
-              assert.propertyVal(file, "type", "application/x-r-data");
-              break;
-          case (".r"):
-              assert.propertyVal(file, "type", "script/x-R");
-              break;
-          case (".rmd"):
-              assert.notProperty(file, "type");
-              break;
-          default:
-              break;
-      }
-    }
-  })
-}
-
 describe('compendium metadata', () => {
+  var db = mongojs('localhost/muncher', ['compendia']);
+
+  before(function (done) {
+    db.compendia.drop(function (err, doc) {
+      done();
+    });
+  });
+
+  after(function (done) {
+    db.close();
+    done();
+  });
+
   let compendium_id = '';
   before(function (done) {
-    let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-    this.timeout(60000);
-
-    request(req, (err, res, body) => {
-      compendium_id = JSON.parse(body).id;
-      publishCandidate(compendium_id, cookie_o2r, () => {
-        done();
+    this.timeout(90000);
+    createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+      request(req, (err, res, body) => {
+        compendium_id = JSON.parse(body).id;
+        publishCandidate(compendium_id, cookie_o2r, () => {
+          done();
+        });
       });
     });
   });
@@ -109,9 +88,39 @@ describe('compendium metadata', () => {
 
   describe('checking contents of compendium metadata', () => {
     let metadata = {};
-    let files = {};
     let main_file = 'document.Rmd';
     let display_file = 'document.html';
+
+    function assertMimeType(file) {
+      if (file.extension) {
+        switch (file.extension) {
+          case (".txt"):
+            assert.propertyVal(file, "type", "text/plain");
+            break;
+          case (".html"):
+            assert.propertyVal(file, "type", "text/html");
+            break;
+          case (".yml"):
+            assert.propertyVal(file, "type", "text/yaml");
+            break;
+          case (".tex"):
+            assert.propertyVal(file, "type", "application/x-tex");
+            break;
+          case (".rdata"):
+          case (".rda"):
+            assert.propertyVal(file, "type", "application/x-r-data");
+            break;
+          case (".r"):
+            assert.propertyVal(file, "type", "script/x-R");
+            break;
+          case (".rmd"):
+            assert.notProperty(file, "type");
+            break;
+          default:
+            break;
+        }
+      }
+    }
 
     it('should respond with document', (done) => {
       request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
@@ -120,7 +129,6 @@ describe('compendium metadata', () => {
         assert.property(response, 'metadata');
         assert.property(response.metadata, 'o2r');
         metadata = response.metadata.o2r;
-        files = response.files;
         assert.propertyVal(response, 'id', compendium_id);
         done();
       });
@@ -160,23 +168,26 @@ describe('compendium metadata', () => {
     it('should contain creators array with all author names', (done) => {
       assert.property(metadata, 'creators');
       assert.isArray(metadata.creators);
-      let authorNames = metadata.creators.map(function (author) { return author.name; });
+      authorNames = metadata.creators.map(function (author) { return author.name; });
       assert.include(authorNames, 'Ted Tester');
       assert.include(authorNames, 'Carl Connauthora');
       done();
     });
 
     it('should contain correct mime-types (including custom types) for all files', (done) => {
-        assert.property(files, 'name');
-        assert.propertyVal(files, 'name', compendium_id);
-        assert.isArray(files.children);
-        let files_dirs_Names = files.children.map(function (child) { return child.name; });
-        assert.include(files_dirs_Names, 'data');
-        let erc_files = {};
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+        assert.ifError(err);
+        response = JSON.parse(body);
+        assert.isArray(response.files.children);
+        erc_files = response.files.children.map((child) => {
+          if (child.name == 'data')
+            return (child.children);
+          return [];
+        }).reduce((a, b) => a.concat(b), []);
 
-        files.children.map(function (child) { if (child.name == 'data') { erc_files = child } });
-        assertMimeTypes(erc_files);
+        erc_files.forEach(f => assertMimeType(f));
         done();
+      });
     });
   });
 
@@ -184,12 +195,12 @@ describe('compendium metadata', () => {
     let metadata_uri = '';
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        metadata_uri = global.test_host + '/api/v1/compendium/' + JSON.parse(body).id + '/metadata';
-        done();
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          metadata_uri = global.test_host + '/api/v1/compendium/' + JSON.parse(body).id + '/metadata';
+          done();
+        });
       });
     });
 
@@ -271,13 +282,13 @@ describe('compendium metadata', () => {
   describe('Updating compendium metadata - read test', () => {
     let compendium_id = '';
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          done();
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            done();
+          });
         });
       });
     });
@@ -330,13 +341,13 @@ describe('compendium metadata', () => {
     };
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          done();
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            done();
+          });
         });
       });
     });
@@ -374,14 +385,13 @@ describe('compendium metadata', () => {
     };
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          sleep.sleep(30);
-          done();
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            done();
+          });
         });
       });
     });
@@ -440,13 +450,13 @@ describe('compendium metadata', () => {
     };
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          done();
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            done();
+          });
         });
       });
     });
@@ -489,13 +499,13 @@ describe('compendium metadata', () => {
     };
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          done();
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            done();
+          });
         });
       });
     });
@@ -536,13 +546,13 @@ describe('compendium metadata', () => {
     };
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r);
-      this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          done();
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            done();
+          });
         });
       });
     });

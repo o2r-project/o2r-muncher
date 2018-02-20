@@ -53,13 +53,13 @@ describe('Updating workspace metadata', () => {
   };
 
   before(function (done) {
-    let req = createCompendiumPostRequest('./test/erc/metatainer/data', cookie_o2r, 'workspace');
-    this.timeout(60000);
-
-    request(req, (err, res, body) => {
-      compendium_id = JSON.parse(body).id;
-      publishCandidate(compendium_id, cookie_o2r, () => {
-        done();
+    this.timeout(90000);
+    createCompendiumPostRequest('./test/erc/metatainer/data', cookie_o2r, 'workspace', (req) => {
+      request(req, (err, res, body) => {
+        compendium_id = JSON.parse(body).id;
+        publishCandidate(compendium_id, cookie_o2r, () => {
+          done();
+        });
       });
     });
   });

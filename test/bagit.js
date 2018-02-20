@@ -24,17 +24,18 @@ const tags = require('mocha-tags');
 
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
+const waitForJob = require('./util').waitForJob;
 const startJob = require('./util').startJob;
 
 require("./setup");
 
-const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
+const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 
 tags('storage_access')
   .describe('BagIt functions', () => {
     var db = mongojs('localhost/muncher', ['compendia']);
 
-    before(function(done) {
+    before(function (done) {
       db.compendia.drop(function (err, doc) {
         done();
       });
@@ -45,16 +46,17 @@ tags('storage_access')
       done();
     });
 
-    describe('bag detection for ERC compendium', function () {
+    describe('bag detection for compendium', function () {
       let compendium_id = null;
-      before(function (done) {
-        this.timeout(60000);
-        let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
 
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            done();
+      before(function (done) {
+        this.timeout(90000);
+        createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie, () => {
+              done();
+            });
           });
         });
       });
@@ -66,16 +68,17 @@ tags('storage_access')
       });
     });
 
-    describe('bag detection for workspace compendium', function () {
+    describe('bag detection for workspace', function () {
       let compendium_id = null;
-      before(function (done) {
-        let req = createCompendiumPostRequest('./test/erc/step_validate_bag/data', cookie_o2r, 'workspace');
-        this.timeout(60000);
 
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            done();
+      before(function (done) {
+        this.timeout(90000);
+        createCompendiumPostRequest('./test/erc/step_validate_bag/data', cookie, 'workspace', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie, () => {
+              done();
+            });
           });
         });
       });
@@ -89,16 +92,19 @@ tags('storage_access')
 
     describe('bag detection for job on workspace', function () {
       let job_id = null;
-      before(function (done) {
-        let req = createCompendiumPostRequest('./test/erc/step_image_execute/data', cookie_o2r, 'workspace');
-        this.timeout(60000);
 
-        request(req, (err, res, body) => {
-          let compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id = id;
-              done();
+      before(function (done) {
+        this.timeout(90000);
+        createCompendiumPostRequest('./test/erc/step_image_execute/data', cookie, 'workspace', (req) => {
+          request(req, (err, res, body) => {
+            let compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie, () => {
+              startJob(compendium_id, id => {
+                job_id = id;
+                waitForJob(job_id, (finalStatus) => {
+                  done();
+                });
+              });
             });
           });
         });
@@ -113,24 +119,27 @@ tags('storage_access')
 
     describe('bag detection for job on compendium', function () {
       let job_id = null;
-      before(function (done) {
-        let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
-        this.timeout(60000);
 
-        request(req, (err, res, body) => {
-          let compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id = id;
-              done();
+      before(function (done) {
+        this.timeout(90000);
+        createCompendiumPostRequest('./test/erc/step_image_execute', cookie, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie, () => {
+              startJob(compendium_id, id => {
+                job_id = id;
+                waitForJob(job_id, (finalStatus) => {
+                  done();
+                });
+              });
             });
           });
         });
       });
 
       it('should correctly identify a not-bag directory', (done) => {
-        assert.isNotTrue(bagit.jobIsBag(job_id));
-        assert.isFalse(bagit.jobIsBag(job_id));
+        assert.isTrue(bagit.jobIsBag(job_id));
+        assert.isNotFalse(bagit.jobIsBag(job_id));
         done();
       });
     });

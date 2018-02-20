@@ -21,14 +21,13 @@ const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
+const waitForJob = require('./util').waitForJob;
 const startJob = require('./util').startJob;
 const mongojs = require('mongojs');
-const sleep = require('sleep');
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
-const waitSecs = 3;
 
 describe('API job overall status', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
@@ -50,16 +49,16 @@ describe('API job overall status', () => {
     let job_id = '';
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r);
-      this.timeout(60000);
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          let compendium_id = JSON.parse(body).id;
 
-      request(req, (err, res, body) => {
-        let compendium_id = JSON.parse(body).id;
-
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
-            done();
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              done();
+            });
           });
         });
       });
@@ -75,31 +74,31 @@ describe('API job overall status', () => {
     });
 
     it('should end with overall status "failure"', (done) => {
-      sleep.sleep(waitSecs);
-
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.propertyVal(response, 'status', 'failure');
-        done();
+      waitForJob(job_id, (finalStatus) => {
+        request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+          assert.ifError(err);
+          let response = JSON.parse(body);
+          assert.propertyVal(response, 'status', 'failure');
+          done();
+        });
       });
-    }).timeout(waitSecs * 1000 * 2);
+    }).timeout(60000);
   });
 
   describe('EXECUTION step_image_prepare', () => {
     let job_id = '';
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_image_prepare', cookie_o2r);
-      this.timeout(60000);
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/step_image_prepare', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          let compendium_id = JSON.parse(body).id;
 
-      request(req, (err, res, body) => {
-        let compendium_id = JSON.parse(body).id;
-
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
-            done();
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              done();
+            });
           });
         });
       });
@@ -115,31 +114,31 @@ describe('API job overall status', () => {
     });
 
     it('should end with overall status "failure"', (done) => {
-      sleep.sleep(waitSecs);
-
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.propertyVal(response, 'status', 'failure');
-        done();
+      waitForJob(job_id, (finalStatus) => {
+        request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+          assert.ifError(err);
+          let response = JSON.parse(body);
+          assert.propertyVal(response, 'status', 'failure');
+          done();
+        });
       });
-    }).timeout(waitSecs * 1000 * 2);
+    }).timeout(60000);
   });
 
   describe('EXECUTION step_image_build', () => {
     let job_id = '';
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_image_build', cookie_o2r);
-      this.timeout(60000);
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/step_image_build', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          let compendium_id = JSON.parse(body).id;
 
-      request(req, (err, res, body) => {
-        let compendium_id = JSON.parse(body).id;
-
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
-            done();
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              done();
+            });
           });
         });
       });
@@ -155,30 +154,30 @@ describe('API job overall status', () => {
     });
 
     it('should end with overall status "failure"', (done) => {
-      sleep.sleep(waitSecs);
-
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.propertyVal(response, 'status', 'failure');
-        done();
+      waitForJob(job_id, (finalStatus) => {
+        request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+          assert.ifError(err);
+          let response = JSON.parse(body);
+          assert.propertyVal(response, 'status', 'failure');
+          done();
+        });
       });
-    }).timeout(waitSecs * 1000 * 2);
+    }).timeout(60000);
   });
 
   describe('EXECUTION step_image_execute', () => {
     let job_id = '';
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
-      this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        let compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
-            done();
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          let compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              done();
+            });
           });
         });
       });
@@ -194,30 +193,30 @@ describe('API job overall status', () => {
     });
 
     it('should end with overall status "failure"', (done) => {
-      sleep.sleep(waitSecs);
-
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.propertyVal(response, 'status', 'failure');
-        done();
+      waitForJob(job_id, (finalStatus) => {
+        request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+          assert.ifError(err);
+          let response = JSON.parse(body);
+          assert.propertyVal(response, 'status', 'failure');
+          done();
+        });
       });
-    }).timeout(waitSecs * 1000 * 2);
+    }).timeout(60000);
   });
 
   describe('EXECUTION step_check', () => {
     let job_id = '';
 
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_check', cookie_o2r);
-      this.timeout(60000);
-
-      request(req, (err, res, body) => {
-        let compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          startJob(compendium_id, id => {
-            job_id = id;
-            done();
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
+        request(req, (err, res, body) => {
+          let compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              done();
+            });
           });
         });
       });
@@ -233,15 +232,15 @@ describe('API job overall status', () => {
     });
 
     it('should end with overall status "success"', (done) => {
-      sleep.sleep(waitSecs * 10);
-
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.propertyVal(response, 'status', 'success');
-        done();
+      waitForJob(job_id, (finalStatus) => {
+        request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+          assert.ifError(err);
+          let response = JSON.parse(body);
+          assert.propertyVal(response, 'status', 'success');
+          done();
+        });
       });
-    }).timeout(waitSecs * 1000 * 20);
+    }).timeout(600000);
   });
 
 });

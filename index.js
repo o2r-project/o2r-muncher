@@ -75,11 +75,11 @@ var mongoStore = new MongoDBStore({
   collection: 'sessions'
 }, err => {
   if (err) {
-    debug('Error connecting MongoStore used for session authentication: %s', err);
+    debug('Error connecting MongoStore used for session authentication: %o', err);
   }
 });
 mongoStore.on('error', (err) => {
-  debug('Error with MongoStore used for session authentication: %s', err);
+  debug('Error with MongoStore used for session authentication: %o', err);
   //process.exit(1);
 });
 
@@ -125,7 +125,7 @@ function initApp(callback) {
                 debug('Error pulling meta image: %o', err);
                 reject(err);
               } else {
-                debug('pulled meta tools image: %o', output);
+                debug('pulled meta tools image: %O', output);
                 fulfill();
               }
 
@@ -143,7 +143,7 @@ function initApp(callback) {
     docker2 = new Docker();
     docker2.pull(config.containerit.image, function (err, stream) {
       if (err) {
-        debug('error pulling containerit image: %s', err);
+        debug('error pulling containerit image: %o', err);
         reject(err);
       } else {
         function onFinished(err, output) {
@@ -151,7 +151,7 @@ function initApp(callback) {
             debug('error pulling containerit image: %o', err);
             reject(err);
           } else {
-            debug('pulled containerit tools image:\n%O', output);
+            debug('pulled containerit tools image: %O', output);
             fulfill();
           }
 
@@ -269,7 +269,7 @@ function initApp(callback) {
     let pythonVersionCmd = 'echo $(python --version)';
     exec(pythonVersionCmd, (error, stdout, stderr) => {
       if (error) {
-        debug('Error detecting python version: %s', error);
+        debug('Error detecting python version: %o', error);
       } else {
         let version = stdout.concat(stderr);
         debug('Using "%s" for bagit.py', version.trim());
@@ -316,7 +316,7 @@ dbBackoff.on('ready', function (number, delay) {
   debug('Connect to MongoDB (#%s)', number, delay);
   mongoose.connect(dbURI, dbOptions, (err) => {
     if (err) {
-      debug('Error during connect: %s', err);
+      debug('Error during connect: %o', err);
       mongoose.disconnect(() => {
         debug('Mongoose: Disconnected all connections.');
       });
@@ -326,7 +326,7 @@ dbBackoff.on('ready', function (number, delay) {
       debug('Initial connection open to %s: %s', dbURI, mongoose.connection.readyState);
       initApp((err) => {
         if (err) {
-          debug('Error during init!\n%s', err);
+          debug('Error during init!\n%o', err);
           mongoose.disconnect(() => {
             debug('Mongoose: Disconnected all connections.');
           });

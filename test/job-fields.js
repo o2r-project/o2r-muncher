@@ -21,14 +21,12 @@ const request = require('request');
 const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
+const waitForJob = require('./util').waitForJob;
+const startJob = require('./util').startJob;
 const mongojs = require('mongojs');
-const sleep = require('sleep');
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
-const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
-const cookie_uploader = 's:lTKjca4OEmnahaQIuIdV6tfHq4mVf7mO.0iapdV1c85wc5NO3d3h+svorp3Tm56cfqRhhpFJZBnk';
-
 
 describe('returned fields in job listing', () => {
   db = mongojs('localhost/muncher', ['compendia', 'jobs']);
@@ -51,94 +49,78 @@ describe('returned fields in job listing', () => {
 
     // upload 1st compendium with final job status "success"
     before(function (done) {
-      let req = createCompendiumPostRequest('./test/erc/step_image_execute', cookie_o2r);
-      this.timeout(60000);
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
 
-      request(req, (err, res, body) => {
-        assert.equal(res.statusCode, 200);
-        assert.property(JSON.parse(body), 'id');
-        let compendium_id = JSON.parse(body).id;
+        request(req, (err, res, body) => {
+          assert.equal(res.statusCode, 200);
+          assert.property(JSON.parse(body), 'id');
+          let compendium_id = JSON.parse(body).id;
 
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          let j = request.jar();
-          let ck = request.cookie('connect.sid=' + cookie_o2r);
-          j.setCookie(ck, global.test_host);
-
-          request({
-            uri: global.test_host + '/api/v1/job',
-            method: 'POST',
-            jar: j,
-            formData: {
-              compendium_id: compendium_id
-            },
-            timeout: 10000
-          }, (err, res, body) => {
-            assert.ifError(err);
-            let response = JSON.parse(body);
-
-            assert.equal(res.statusCode, 200);
-            assert.property(response, 'job_id');
-            job_id = response.job_id;
-
-            sleep.sleep(15); // wait for the job to finish
-            done();
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              waitForJob(job_id, (finalStatus) => {
+                done();
+              });
+            });
           });
         });
       });
+    });
 
-      it('should show the status of a job in the list view', (done) => {
-        request(global.test_host + '/api/v1/job/?fields=status', (err, res, body) => {
-          assert.ifError(err);
-          let response = JSON.parse(body);
-          assert.equal(res.statusCode, 200);
-          assert.isArray(response.results);
-          assert.property(response.results[0], 'id');
-          assert.property(response.results[0], 'status');
-          assert.notProperty(response.results[0], 'user');
-          assert.propertyVal(response.results[0], 'status', 'success');
-          done();
-        });
+    it('should show the status of a job in the list view', (done) => {
+      request(global.test_host + '/api/v1/job/?fields=status', (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.equal(res.statusCode, 200);
+        assert.isArray(response.results);
+        assert.property(response.results[0], 'id');
+        assert.property(response.results[0], 'status');
+        assert.notProperty(response.results[0], 'user');
+        assert.propertyVal(response.results[0], 'status', 'success');
+        done();
       });
+    });
 
-      it('should show the user of a job in the list view', (done) => {
-        request(global.test_host + '/api/v1/job/?fields=user', (err, res, body) => {
-          assert.ifError(err);
-          let response = JSON.parse(body);
-          assert.equal(res.statusCode, 200);
-          assert.isArray(response.results);
-          assert.property(response.results[0], 'id');
-          assert.property(response.results[0], 'user');
-          assert.propertyVal(response.results[0], 'status', 'success');
-          done();
-        });
+    it('should show the user of a job in the list view', (done) => {
+      request(global.test_host + '/api/v1/job/?fields=user', (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.equal(res.statusCode, 200);
+        assert.isArray(response.results);
+        assert.property(response.results[0], 'id');
+        assert.property(response.results[0], 'user');
+        assert.notPropertyVal(response.results[0], 'status', 'success');
+        done();
       });
+    });
 
-      it('should show both user and status of a job in the list view', (done) => {
-        request(global.test_host + '/api/v1/job/?fields=user,status', (err, res, body) => {
-          assert.ifError(err);
-          let response = JSON.parse(body);
-          assert.equal(res.statusCode, 200);
-          assert.isArray(response.results);
-          assert.property(response.results[0], 'id');
-          assert.property(response.results[0], 'user');
-          assert.property(response.results[0], 'status');
-          assert.propertyVal(response.results[0], 'status', 'success');
-          done();
-        });
+    it('should show both user and status of a job in the list view when asking for both', (done) => {
+      request(global.test_host + '/api/v1/job/?fields=user,status', (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.equal(res.statusCode, 200);
+        assert.isArray(response.results);
+        assert.property(response.results[0], 'id');
+        assert.property(response.results[0], 'user');
+        assert.property(response.results[0], 'status');
+        assert.propertyVal(response.results[0], 'status', 'success');
+        done();
       });
+    });
 
-      it('should show both status and user of a job in the list view', (done) => {
-        request(global.test_host + '/api/v1/job/?fields=status,user', (err, res, body) => {
-          assert.ifError(err);
-          let response = JSON.parse(body);
-          assert.equal(res.statusCode, 200);
-          assert.isArray(response.results);
-          assert.property(response.results[0], 'id');
-          assert.property(response.results[0], 'status');
-          assert.property(response.results[0], 'user');
-          assert.propertyVal(response.results[0], 'status', 'success');
-          done();
-        });
+    it('should show both status and user of a job in the list view independent of field order', (done) => {
+      request(global.test_host + '/api/v1/job/?fields=status,user', (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.equal(res.statusCode, 200);
+        assert.isArray(response.results);
+        assert.property(response.results[0], 'id');
+        assert.property(response.results[0], 'status');
+        assert.property(response.results[0], 'user');
+        assert.propertyVal(response.results[0], 'status', 'success');
+        done();
       });
     });
 
