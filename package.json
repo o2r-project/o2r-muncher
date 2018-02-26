@@ -1,6 +1,6 @@
 {
   "name": "muncher",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "description": "Node.js implementation of parts of the [o2r web api](http://o2r.info/o2r-web-api).",
   "main": "index.js",
   "scripts": {
@@ -9,7 +9,8 @@
     "test": "DEBUG=* mocha",
     "test_bail": "DEBUG=*,-modem,-mocha:* mocha --bail",
     "test_ci": "DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access not:image_tarball_upload\" --exit",
-    "test_ci_async_dump": "DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access not:image_tarball_upload\" --require test/async-dump"
+    "test_ci_async_dump": "DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access not:image_tarball_upload\" --require test/async-dump",
+    "test_clean_upload_cache": "rm /tmp/o2r-*.zip"
   },
   "author": "o2r-project (http://o2r.info)",
   "license": "Apache-2.0",

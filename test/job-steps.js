@@ -912,7 +912,6 @@ describe('API job steps', () => {
         assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
         assert.propertyVal(response.steps.image_prepare, 'status', 'success');
         assert.propertyVal(response.steps.image_build, 'status', 'success');
-        assert.propertyVal(response.steps.image_execute, 'status', 'success');
         done();
       });
     });
@@ -921,6 +920,16 @@ describe('API job steps', () => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
+        assert.propertyVal(response.steps.image_execute, 'status', 'success');
+        done();
+      });
+    });
+
+    it('should have the display file in the file listing for the job', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.include(JSON.stringify(response.files), 'doc.html');
         done();
       });
     });

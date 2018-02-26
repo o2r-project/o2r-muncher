@@ -78,7 +78,7 @@ describe('returned fields in job listing', () => {
         assert.property(response.results[0], 'id');
         assert.property(response.results[0], 'status');
         assert.notProperty(response.results[0], 'user');
-        assert.propertyVal(response.results[0], 'status', 'success');
+        assert.isNotEmpty(response.results[0].status);
         done();
       });
     });
@@ -91,7 +91,7 @@ describe('returned fields in job listing', () => {
         assert.isArray(response.results);
         assert.property(response.results[0], 'id');
         assert.property(response.results[0], 'user');
-        assert.notPropertyVal(response.results[0], 'status', 'success');
+        assert.isNotEmpty(response.results[0].user);
         done();
       });
     });
@@ -105,7 +105,8 @@ describe('returned fields in job listing', () => {
         assert.property(response.results[0], 'id');
         assert.property(response.results[0], 'user');
         assert.property(response.results[0], 'status');
-        assert.propertyVal(response.results[0], 'status', 'success');
+        assert.isNotEmpty(response.results[0].user);
+        assert.isNotEmpty(response.results[0].status);
         done();
       });
     });
