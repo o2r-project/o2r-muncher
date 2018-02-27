@@ -6,4 +6,7 @@ ENV SECONDS 3
 
 RUN chmod u+s /bin/ping
 
-CMD ping -w $SECONDS $HOST
+WORKDIR /erc/
+
+# creating document is required to fulfill the check
+CMD ping -w $SECONDS $HOST ; echo "<html><body>Am I OK?</body></html>" > display.html

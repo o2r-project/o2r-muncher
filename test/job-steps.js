@@ -925,11 +925,12 @@ describe('API job steps', () => {
       });
     });
 
-    it('should have the display file in the file listing for the job', (done) => {
+    it('should not have the display file in the file listing for the job (execute completes but does not generate a file)', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.include(JSON.stringify(response.files), 'doc.html');
+        assert.notInclude(JSON.stringify(response.files), 'doc.html');
+        assert.notInclude(JSON.stringify(response.files), 'wrongname.html');
         done();
       });
     });
