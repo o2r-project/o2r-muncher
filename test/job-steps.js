@@ -912,7 +912,6 @@ describe('API job steps', () => {
         assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
         assert.propertyVal(response.steps.image_prepare, 'status', 'success');
         assert.propertyVal(response.steps.image_build, 'status', 'success');
-        assert.propertyVal(response.steps.image_execute, 'status', 'success');
         done();
       });
     });
@@ -921,6 +920,17 @@ describe('API job steps', () => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
+        assert.propertyVal(response.steps.image_execute, 'status', 'success');
+        done();
+      });
+    });
+
+    it('should not have the display file in the file listing for the job (execute completes but does not generate a file)', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.notInclude(JSON.stringify(response.files), 'doc.html');
+        assert.notInclude(JSON.stringify(response.files), 'wrongname.html');
         done();
       });
     });

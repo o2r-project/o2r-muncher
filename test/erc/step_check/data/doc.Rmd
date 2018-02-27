@@ -1,9 +1,9 @@
 ---
-author:
-  - name: "o2r testuser"
-    affiliation: ifgi
-    orcid: https://orcid.org/0000-0001-6021-1617
 title: 'test: step image execute'
+author:
+- affiliation: ifgi
+  name: o2r testuser
+  orcid: https://orcid.org/0000-0001-6021-1617
 ---
 
 Nothing to see here.

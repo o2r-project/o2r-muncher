@@ -91,7 +91,7 @@ exports.listJobs = (req, res) => {
       res.status(500).send({ error: 'job query failed' });
     } else {
       if (jobs.length < 1) {
-        debug('Search for jobs has empty result.');
+        debug('Search for jobs has empty result: %o', req.query);
       }
 
       if (requestedFields.length < 1) {

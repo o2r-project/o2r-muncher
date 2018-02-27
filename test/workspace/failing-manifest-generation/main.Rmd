@@ -1,0 +1,12 @@
+---
+title: "Testfile failing manifest generation"
+author:
+    - name: "Daniel Nüst"
+    - affiliation: o2r team
+date: "2017"
+output: html_document
+---
+
+```{r}
+quit(save = "no", status = 1)
+```
