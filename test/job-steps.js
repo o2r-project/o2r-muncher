@@ -599,7 +599,7 @@ describe('API job steps', () => {
       });
     });
 
-    it.only('should have the manifest build log in the compendium metadata files', (done) => {
+    it('should have the manifest build log in the compendium metadata files', (done) => {
       request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
@@ -624,7 +624,7 @@ describe('API job steps', () => {
       });
     });
 
-    it.only('should have the image build log in the compendium metadata files', (done) => {
+    it('should have the image build log in the compendium metadata files', (done) => {
       request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
