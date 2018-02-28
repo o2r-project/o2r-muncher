@@ -516,7 +516,7 @@ describe('API job steps', () => {
     }).timeout(60000);
   });
 
-  describe('Dockerfile generation and image build for workspace minimal-rmd-data', () => {
+  describe('Manifest generation and image build for workspace minimal-rmd-data', () => {
     let job_id = '';
     let compendium_id = '';
 
@@ -599,6 +599,19 @@ describe('API job steps', () => {
       });
     });
 
+    it('should have the manifest build log in the compendium metadata files', (done) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        filePaths = response.files.children
+          .find((element) => { return element.name === '.erc' })
+          .children.map(elem => { return elem.path; });
+        assert.include(filePaths, '/api/v1/compendium/' + compendium_id + '/data/.erc/generate_manifest.log');
+        done();
+      });
+    });
+
     it('should complete build, execute, and cleanup', function (done) {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
@@ -611,9 +624,22 @@ describe('API job steps', () => {
       });
     });
 
+    it('should have the image build log in the compendium metadata files', (done) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        filePaths = response.files.children
+          .find((element) => { return element.name === '.erc' })
+          .children.map(elem => { return elem.path; });
+        assert.include(filePaths, '/api/v1/compendium/' + compendium_id + '/data/.erc/image_build.log');
+        done();
+      });
+    });
+
   });
 
-  describe('EXECUTION Dockerfile generation for workspace minimal-script', () => {
+  describe('Manifest generation for workspace minimal-script', () => {
     let job_id = '';
     let compendium_id = '';
 
