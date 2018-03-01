@@ -88,7 +88,11 @@ c.bagtainer = {};
 c.bagtainer.spec_version = {};
 c.bagtainer.spec_version.supported = ['0.1', '1'];
 c.bagtainer.spec_version.default = '1';
-c.bagtainer.configFile = 'erc.yml';
+c.bagtainer.configFile = {
+  name: 'erc.yml',
+  main_node: 'main',
+  display_node: 'display'
+};
 c.bagtainer.mountLocationInContainer = '/erc';
 c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
 c.bagtainer.keepImages = true;

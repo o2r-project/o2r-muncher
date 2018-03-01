@@ -1,6 +1,6 @@
 {
   "name": "muncher",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "Node.js implementation of parts of the [o2r web api](http://o2r.info/o2r-web-api).",
   "main": "index.js",
   "scripts": {
@@ -19,6 +19,7 @@
     "url": "https://github.com/o2r-project/o2r-muncher.git"
   },
   "dependencies": {
+    "ajv": "^6.2.0",
     "archiver": "^2.1.1",
     "backoff": "^2.5.0",
     "bagit": "^0.0.3",
@@ -39,6 +40,7 @@
     "lodash.get": "^4.4.2",
     "lodash.isstring": "^4.0.1",
     "lodash.pick": "^4.4.0",
+    "lodash.set": "^4.3.2",
     "mimos": "^4.0.0",
     "mongoose": "^5.0.7",
     "mongoose-timestamp": "^0.6.0",
