@@ -23,6 +23,10 @@ const path = require('path');
 const exec = require('child_process').exec;
 const objectPath = require('object-path');
 const urlJoin = require('url-join');
+const yaml = require('yamljs');
+const yamlWriter = require('write-yaml');
+const set = require('lodash.set');
+const get = require('lodash.get');
 
 const dirTree = require('directory-tree');
 const rewriteTree = require('../lib/rewrite-tree');
@@ -408,6 +412,38 @@ updateMetadataFile = function (id, file, metadata) {
   });
 }
 
+// overwrite main and display file settings in compendium configuration file
+updateConfigurationFile = function (compendium) {
+  return new Promise((fulfill, reject) => {
+    file = path.join(config.fs.compendium, compendium.id, config.bagtainer.configFile.name);
+
+    fs.stat(file, (err, stats) => {
+      if (err) {
+        debug('[%s] Configuration file %s does not exist, not updating anything', compendium.id, file);
+        fulfill();
+      } else {
+        debug('[%s] Updating file %s', compendium.id, file);
+
+        let configuration = yaml.load(file);
+        set(configuration, config.bagtainer.configFile.display_node, get(compendium, config.bagtainer.displayFilePath));
+        set(configuration, config.bagtainer.configFile.main_node, get(compendium, config.bagtainer.mainFilePath));
+
+        yamlWriter(file, configuration, function (err) {
+          if (err) {
+            debug('[%s] Error saving file: %s', this.jobId, error);
+            reject(err);
+          } else {
+            fulfill({
+              id: compendium.id,
+              file: file
+            });
+          }
+        });
+      }
+    });
+  });
+}
+
 reloadMetadataFromFile = function (id, metadata_file, targetElement) {
   return new Promise((fulfill, reject) => {
     // read mapped metadata for saving to DB
@@ -530,6 +566,9 @@ exports.updateCompendiumMetadata = (req, res) => {
             updateMetadataFile(id, normative_metadata_file, compendium.metadata.o2r)
               .then(() => {
                 return brokerMetadata(compendium, metadata_dir, normative_metadata_file, config.meta.broker.mappings);
+              })
+              .then(() => {
+                return updateConfigurationFile(compendium);
               })
               .catch((err) => {
                 debug('[%s] Error during brokering, returning HTTP 500 response: %s', id, err);

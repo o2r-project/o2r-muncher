@@ -25,6 +25,8 @@ const chai = require('chai');
 chai.use(require('chai-datetime'));
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
+const waitForJob = require('./util').waitForJob;
+const startJob = require('./util').startJob;
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
@@ -575,5 +577,78 @@ describe('compendium metadata', () => {
         done();
       });
     });
+  });
+
+  describe('Updating compendium metadata must also update compendium configuration file (erc.yml)', () => {
+    let compendium_id = '';
+    before(function (done) {
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              waitForJob(id, (finalStatus) => {
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should have the configuration file with correct content', (done) => {
+      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+        assert.ifError(err);
+        assert.include(body, 'main: main.Rmd');
+        assert.include(body, 'display: display.html');
+        done();
+      });
+    });
+
+    it('should have updated the configuration file after updating the metadata', (done) => {
+      let j2 = request.jar();
+      let ck2 = request.cookie('connect.sid=' + cookie_o2r);
+      j2.setCookie(ck2, global.test_host);
+
+      let req_doc_o2r = {
+        method: 'PUT',
+        jar: j2,
+        json: {
+          'o2r': {
+            'title': 'New title on the block',
+            'mainfile': 'test.R',
+            'displayfile': 'test.html'
+          }
+        },
+        timeout: 10000
+      };
+
+      req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      request(req_doc_o2r, (err, res, body) => {
+        assert.ifError(err);
+        request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+          assert.ifError(err);
+          assert.include(body, 'main: test.R');
+          assert.include(body, 'display: test.html');
+          done();
+        });
+      });
+    }).timeout(30000);
+
+    it('should fail subsequent job (step: check) because of the incorrect configuration file', (done) => {
+      startJob(compendium_id, id => {
+        waitForJob(id, (finalStatus) => {
+          assert.equal(finalStatus, 'failure');
+          request(global.test_host + '/api/v1/job/' + id + '?steps=all', (err, res, body) => {
+            assert.ifError(err);
+            response = JSON.parse(body);
+            assert.include(JSON.stringify(response.steps.check), 'no such file or directory');
+            assert.include(JSON.stringify(response.steps.check), compendium_id + '/test.html');
+            done();
+          });
+        });
+      });
+    }).timeout(30000);
   });
 });
