@@ -580,28 +580,11 @@ describe('compendium metadata', () => {
   });
 
   describe('Updating compendium metadata must also update compendium configuration file (erc.yml)', () => {
-    let compendium_id = '';
-    before(function (done) {
-      this.timeout(90000);
-      createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              waitForJob(id, (finalStatus) => {
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-
     it('should have the configuration file with correct content', (done) => {
-      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
-        assert.include(body, 'main: main.Rmd');
-        assert.include(body, 'display: display.html');
+        assert.include(body, 'main: document.Rmd');
+        assert.include(body, 'display: document.html');
         done();
       });
     });
@@ -627,7 +610,7 @@ describe('compendium metadata', () => {
       req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req_doc_o2r, (err, res, body) => {
         assert.ifError(err);
-        request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+        request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/data/' + config.bagtainer.configFile.name, (err, res, body) => {
           assert.ifError(err);
           assert.include(body, 'main: test.R');
           assert.include(body, 'display: test.html');
@@ -644,7 +627,7 @@ describe('compendium metadata', () => {
             assert.ifError(err);
             response = JSON.parse(body);
             assert.include(JSON.stringify(response.steps.check), 'no such file or directory');
-            assert.include(JSON.stringify(response.steps.check), compendium_id + '/test.html');
+            assert.include(JSON.stringify(response.steps.check), compendium_id + '/data/test.html');
             done();
           });
         });

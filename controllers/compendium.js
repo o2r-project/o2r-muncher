@@ -415,7 +415,11 @@ updateMetadataFile = function (id, file, metadata) {
 // overwrite main and display file settings in compendium configuration file
 updateConfigurationFile = function (compendium) {
   return new Promise((fulfill, reject) => {
-    file = path.join(config.fs.compendium, compendium.id, config.bagtainer.configFile.name);
+    let file;
+    if (bagit.compendiumIsBag(compendium.id))
+      file = path.join(config.fs.compendium, compendium.id, config.bagit.payloadDirectory, config.bagtainer.configFile.name);
+    else
+      file = path.join(config.fs.compendium, compendium.id, config.bagtainer.configFile.name);
 
     fs.stat(file, (err, stats) => {
       if (err) {
