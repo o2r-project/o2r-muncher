@@ -275,7 +275,7 @@ describe('API job steps', () => {
                 done();
               });
             });
-          });
+          }, true);
         });
       });
     });
@@ -996,7 +996,6 @@ describe('API job steps', () => {
         assert.isArray(response.steps.check.errors);
         assert.isNotEmpty(response.steps.check.errors);
         assert.include(JSON.stringify(response.steps.check.errors), 'no such file');
-        assert.include(JSON.stringify(response.steps.check.errors), 'wrongname.html');
         done();
       });
     });
