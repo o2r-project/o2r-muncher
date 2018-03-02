@@ -88,6 +88,10 @@ c.bagtainer = {};
 c.bagtainer.spec_version = {};
 c.bagtainer.spec_version.supported = ['0.1', '1'];
 c.bagtainer.spec_version.default = '1';
+c.bagtainer.id_regex = /^[^-_.][a-z0-9._-]*[^-_.]$/;
+c.bagtainer.id_is_valid = (id) => {
+  return c.bagtainer.id_regex.test(id);
+}
 c.bagtainer.configFile = {
   name: 'erc.yml',
   main_node: 'main',

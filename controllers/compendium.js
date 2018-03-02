@@ -431,7 +431,9 @@ updateConfigurationFile = function (compendium) {
         try {
           let configuration = yaml.load(file);
 
-          // make main and display file relative to payload dir (metadata extraction probably has them starting with data)
+          // save main and display file (make paths relative to payload dir,
+          // because metadata extraction or updates from UI use the bagit root dir 
+          // as the starting point)
           let payloadDir;
           if (bagit.compendiumIsBag(compendium.id))
             payloadDir = path.join(config.fs.compendium, compendium.id, config.bagit.payloadDirectory);
@@ -574,7 +576,6 @@ exports.updateCompendiumMetadata = (req, res) => {
               return;
             }
 
-            // TODO check metadata conformance with profile
             if (passon.user_has_rights) {
               compendium.candidate = false;
               compendium.markModified('candidate');
