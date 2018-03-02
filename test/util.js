@@ -101,7 +101,7 @@ module.exports.createCompendiumPostRequest = function (dataPath, cookie, type, d
   });
 }
 
-// publish a candidate with a direct copy of the metadata
+// publish a candidate with a direct copy of or fixed version of the metadata
 module.exports.publishCandidate = function (compendium_id, cookie, done) {
   let j = request.jar();
   let ck = request.cookie('connect.sid=' + cookie);
@@ -118,7 +118,7 @@ module.exports.publishCandidate = function (compendium_id, cookie, done) {
     uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata',
     method: 'PUT',
     jar: j,
-    timeout: 10000
+    timeout: 30000
   };
 
   request(getMetadata, (err, res, body) => {
@@ -131,12 +131,33 @@ module.exports.publishCandidate = function (compendium_id, cookie, done) {
     } else {
       updateMetadata.json = { o2r: response.metadata.o2r };
 
+      // make metadata from tests valid
+      if(!updateMetadata.json.o2r.title) {
+        updateMetadata.json.o2r.title = compendium_id;
+      }
+      if(!updateMetadata.json.o2r.description) {
+        updateMetadata.json.o2r.description = updateMetadata.json.o2r.title;
+      }
+      if(!updateMetadata.json.o2r.mainfile) {
+        updateMetadata.json.o2r.mainfile = 'fake.R';
+      }
+      if(!updateMetadata.json.o2r.displayfile) {
+        updateMetadata.json.o2r.displayfile = 'fake.html';
+      }
+      if(!updateMetadata.json.o2r.publication_date) {
+        updateMetadata.json.o2r.publication_date = '1970-01-01';
+      }
+      delete updateMetadata.json.o2r.depends;
+
       request(updateMetadata, (err, res, body) => {
         if(err) debug('Error publishing metadata: %o', err);
-        if(body) {
+        if(!body.error) {
           debug("Published candidate: %s", JSON.stringify(body).slice(0, 80));
+          done();
+        } else {
+          debug("Erroneous metadata: %O", updateMetadata.json);
+          throw new Error("Error publishing candidate: " + JSON.stringify(body));
         }
-        done();
       });
     }
   });

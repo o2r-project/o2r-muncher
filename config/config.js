@@ -130,7 +130,7 @@ c.bagtainer.docker.create_options = {
   Env: ['O2R_MUNCHER=true'],
   Memory: 1073741824, // 1G
   MemorySwap: 2147483648, // double of 1G
-  NetworkDisabled : true,
+  NetworkDisabled: true,
   User: env.MUNCHER_CONTAINER_USER || '1000' // user name depends on image, use id to be save
 };
 c.bagtainer.rm = yn(env.EXECUTE_CONTAINER_RM) || true;
@@ -200,6 +200,14 @@ c.meta.broker.mappings = {
   //} 
 };
 c.meta.doiPath = 'metadata.o2r.identifier.doi';
+c.meta.validate = {};
+c.meta.validate.module = 'validate';
+c.meta.validate.schemas = [
+  {
+    file: c.meta.normativeFile,
+    schema: 'schema/json/o2r-meta-schema.json'
+  }
+];
 
 c.checker = {};
 c.checker.display_file_name_html = 'diffHTML.html';

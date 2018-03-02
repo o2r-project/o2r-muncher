@@ -428,21 +428,37 @@ updateConfigurationFile = function (compendium) {
       } else {
         debug('[%s] Updating file %s', compendium.id, file);
 
-        let configuration = yaml.load(file);
-        set(configuration, config.bagtainer.configFile.display_node, get(compendium, config.bagtainer.displayFilePath));
-        set(configuration, config.bagtainer.configFile.main_node, get(compendium, config.bagtainer.mainFilePath));
+        try {
+          let configuration = yaml.load(file);
 
-        yamlWriter(file, configuration, function (err) {
-          if (err) {
-            debug('[%s] Error saving file: %s', this.jobId, error);
-            reject(err);
-          } else {
-            fulfill({
-              id: compendium.id,
-              file: file
-            });
-          }
-        });
+          // make main and display file relative to payload dir (metadata extraction probably has them starting with data)
+          let payloadDir;
+          if (bagit.compendiumIsBag(compendium.id))
+            payloadDir = path.join(config.fs.compendium, compendium.id, config.bagit.payloadDirectory);
+          else
+            payloadDir = path.join(config.fs.compendium, compendium.id);
+
+          fullMain = path.join(config.fs.compendium, compendium.id, get(compendium, config.bagtainer.mainFilePath));
+          fullDisplay = path.join(config.fs.compendium, compendium.id, get(compendium, config.bagtainer.displayFilePath));
+
+          set(configuration, config.bagtainer.configFile.main_node, path.relative(payloadDir, fullMain));
+          set(configuration, config.bagtainer.configFile.display_node, path.relative(payloadDir, fullDisplay));
+
+          yamlWriter(file, configuration, function (err) {
+            if (err) {
+              debug('[%s] Error saving file: %s', this.jobId, error);
+              reject(err);
+            } else {
+              fulfill({
+                id: compendium.id,
+                file: file
+              });
+            }
+          });
+        } catch (err) {
+          debug('[%s] Error processing paths: %o', compendium.id, err);
+          reject(err);
+        }
       }
     });
   });
@@ -466,6 +482,10 @@ reloadMetadataFromFile = function (id, metadata_file, targetElement) {
       }
     });
   });
+}
+
+validateMetadata = function (compendium, metadata_file) {
+  return meta.validate(compendium.id, metadata_file);
 }
 
 brokerMetadata = function (compendium, metadata_dir, metadata_file, mappings) {
@@ -498,18 +518,7 @@ brokerMetadata = function (compendium, metadata_dir, metadata_file, mappings) {
                 result.metadata);
             });
             debug('[%s] Reloaded metadata from %s files:', compendium.id, reloadResults.length, reloadResults.map(obj => { return obj.file }).join(', '));
-
-            // FINALLY persist the metadata update to the database
-            compendium.markModified('metadata');
-            compendium.save((err, doc) => {
-              if (err) {
-                debug('[%s] ERROR saving new compendium: %s', compendium.id, err);
-                reject(err);
-              } else {
-                debug('[%s] Updated compendium, now is: %o', compendium.id, doc);
-                fulfill(doc);
-              }
-            });
+            fulfill(compendium);
           });
       })
       .catch(err => {
@@ -518,6 +527,22 @@ brokerMetadata = function (compendium, metadata_dir, metadata_file, mappings) {
         err.message = errorMessageHelper(errors[errors.length - 1]);
         reject(err);
       });
+  });
+}
+
+saveCompendium = function (compendium) {
+  return new Promise((fulfill, reject) => {
+    // FINALLY persist the metadata update to the database
+    compendium.markModified('metadata');
+    compendium.save((err, doc) => {
+      if (err) {
+        debug('[%s] ERROR saving new compendium: %s', compendium.id, err);
+        reject(err);
+      } else {
+        debug('[%s] Updated compendium, now is: %o', compendium.id, doc);
+        fulfill(doc);
+      }
+    });
   });
 }
 
@@ -532,64 +557,81 @@ exports.updateCompendiumMetadata = (req, res) => {
   }
   let user_id = req.user.orcid;
 
-  Compendium.findOne({ id }).select('id metadata user').exec((err, compendium) => {
-    // eslint-disable-next-line no-eq-null, eqeqeq
-    if (err || compendium == null) {
-      res.status(404).send({ error: 'no compendium with this id' });
-    } else {
-      detect_rights(user_id, compendium, config.user.level.edit_metadata)
-        .then(function (passon) {
-          if (!req.body.hasOwnProperty('o2r')) {
-            debug('[%s] invalid metadata provided: no o2r root element: %O', id, req.body);
-            res.status(422).send({ error: "JSON with root element 'o2r' required" });
-            return;
-          }
+  try {
+    Compendium.findOne({ id }).select('id metadata user').exec((err, compendium) => {
+      // eslint-disable-next-line no-eq-null, eqeqeq
+      if (err || compendium == null) {
+        res.status(404).send({ error: 'no compendium with this id' });
+      } else {
+        detect_rights(user_id, compendium, config.user.level.edit_metadata)
+          .then(function (passon) {
+            if (!req.body.hasOwnProperty('o2r')) {
+              debug('[%s] invalid metadata provided: no o2r root element: %O', id, req.body);
+              res.status(422).send({ error: "JSON with root element 'o2r' required" });
+              return;
+            }
 
-          // TODO check metadata conformance with profile
-          if (passon.user_has_rights) {
-            compendium.candidate = false;
-            compendium.markModified('candidate');
-          }
+            // TODO check metadata conformance with profile
+            if (passon.user_has_rights) {
+              compendium.candidate = false;
+              compendium.markModified('candidate');
+            }
 
-          compendium.metadata.o2r = req.body.o2r;
-          answer.metadata = {};
-          answer.metadata.o2r = compendium.metadata.o2r;
+            compendium.metadata.o2r = req.body.o2r;
+            answer.metadata = {};
+            answer.metadata.o2r = compendium.metadata.o2r;
 
-          let compendium_path = path.join(config.fs.compendium, id);
-          let metadata_dir;
-          if (bagit.compendiumIsBag(id)) {
-            metadata_dir = path.join(compendium_path, config.bagit.payloadDirectory, config.meta.dir);
-          } else {
-            metadata_dir = path.join(compendium_path, config.meta.dir);
-          }
+            let compendium_path = path.join(config.fs.compendium, id);
+            let metadata_dir;
+            if (bagit.compendiumIsBag(id)) {
+              metadata_dir = path.join(compendium_path, config.bagit.payloadDirectory, config.meta.dir);
+            } else {
+              metadata_dir = path.join(compendium_path, config.meta.dir);
+            }
 
-          let normative_metadata_file = path.join(metadata_dir, config.meta.normativeFile);
+            let normative_metadata_file = path.join(metadata_dir, config.meta.normativeFile);
 
-          if (compendium.metadata && compendium.metadata.o2r) {
+            if (compendium.metadata && compendium.metadata.o2r) {
 
-            updateMetadataFile(id, normative_metadata_file, compendium.metadata.o2r)
-              .then(() => {
-                return brokerMetadata(compendium, metadata_dir, normative_metadata_file, config.meta.broker.mappings);
-              })
-              .then(() => {
-                return updateConfigurationFile(compendium);
-              })
-              .catch((err) => {
-                debug('[%s] Error during brokering, returning HTTP 500 response: %s', id, err);
-                res.status(500).send({ error: 'Error updating normative metadata file' });
-              })
-              .then(() => {
-                debug('[%s] completed metadata update, sending answer.', id);
-                res.status(200).send(answer);
-              });
+              updateMetadataFile(id, normative_metadata_file, compendium.metadata.o2r)
+                .then(() => {
+                  return validateMetadata(compendium, normative_metadata_file);
+                })
+                .then(() => {
+                  return brokerMetadata(compendium, metadata_dir, normative_metadata_file, config.meta.broker.mappings);
+                })
+                .then((updated_compendium) => {
+                  return saveCompendium(updated_compendium);
+                })
+                .then((updated_compendium) => {
+                  return updateConfigurationFile(updated_compendium);
+                })
+                .then(() => {
+                  debug('[%s] completed metadata update, sending answer.', id);
+                  res.status(200).send(answer);
+                })
+                .catch((err) => {
+                  response = { error: 'Error updating metadata file, see log for details' };
+                  status = 500;
+                  if (err.log) {
+                    response.log = err.log;
+                    status = 400;
+                  }
+                  debug('[%s] Error during metadata update, returning error: %o', id, response);
+                  res.status(status).send(response);
+                });
 
-          } else {
-            debug('[%s] No metadata provided that could be brokered!', id);
-            res.status(500).send({ error: 'Error updating metadata: no metadata found.' });
-          }
-        }, function (passon) {
-          res.status(401).send(passon);
-        });
-    }
-  });
+            } else {
+              debug('[%s] No metadata provided that could be brokered!', id);
+              res.status(500).send({ error: 'Error updating metadata: no metadata found.' });
+            }
+          }, function (passon) {
+            res.status(401).send(passon);
+          });
+      }
+    });
+  } catch (err) {
+    debug('Internal error updating metadata: %O', err);
+    res.status(500).send({ error: err.message });
+  }
 };

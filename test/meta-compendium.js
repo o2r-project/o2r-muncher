@@ -580,7 +580,7 @@ describe('compendium metadata', () => {
   });
 
   describe('Updating compendium metadata must also update compendium configuration file (erc.yml)', () => {
-    it('should have the configuration file with correct content', (done) => {
+    it('should have the configuration file with correct content after first publish', (done) => {
       request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
         assert.include(body, 'main: document.Rmd');
@@ -599,9 +599,18 @@ describe('compendium metadata', () => {
         jar: j2,
         json: {
           'o2r': {
+            'access_right': 'fake',
+            'creators': [],
+            'description': 'fake',
+            'identifier': null,
             'title': 'New title on the block',
-            'mainfile': 'test.R',
-            'displayfile': 'test.html'
+            'keywords': [],
+            'communities': null,
+            'license': null,
+            'publication_date': '1970-01-01',
+            'publication_type': 'test',
+            'mainfile': 'data/test.R',
+            'displayfile': 'data/test.html'
           }
         },
         timeout: 10000
