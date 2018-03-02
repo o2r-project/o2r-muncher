@@ -91,7 +91,8 @@ c.bagtainer.spec_version.default = '1';
 c.bagtainer.configFile = {
   name: 'erc.yml',
   main_node: 'main',
-  display_node: 'display'
+  display_node: 'display',
+  licenses_node: 'licenses'
 };
 c.bagtainer.mountLocationInContainer = '/erc';
 c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
@@ -104,6 +105,7 @@ c.bagtainer.failOnValidationError = true;
 c.bagtainer.manifestFile = 'Dockerfile';
 c.bagtainer.mainFilePath = 'metadata.o2r.mainfile';
 c.bagtainer.displayFilePath = 'metadata.o2r.displayfile';
+c.bagtainer.licensesPath = 'metadata.o2r.license';
 
 c.bagit = {};
 c.bagit.detectionFileName = 'bagit.txt';

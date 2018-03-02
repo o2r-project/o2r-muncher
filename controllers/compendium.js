@@ -444,6 +444,9 @@ updateConfigurationFile = function (compendium) {
           set(configuration, config.bagtainer.configFile.main_node, path.relative(payloadDir, fullMain));
           set(configuration, config.bagtainer.configFile.display_node, path.relative(payloadDir, fullDisplay));
 
+          // save licenses
+          set(configuration, config.bagtainer.configFile.licenses_node, get(compendium, config.bagtainer.licensesPath));
+
           yamlWriter(file, configuration, function (err) {
             if (err) {
               debug('[%s] Error saving file: %s', this.jobId, error);
