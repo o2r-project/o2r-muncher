@@ -27,6 +27,7 @@ const mongojs = require('mongojs');
 const fs = require('fs');
 const unameCall = require('node-uname');
 const path = require('path');
+const sleep = require('sleep');
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
@@ -49,6 +50,10 @@ describe('API job steps', () => {
   after(function (done) {
     db.close();
     done();
+  });
+
+  beforeEach('take a short break (1s)', function() {
+    sleep.sleep(1);
   });
 
   describe('GET /api/v1/job (with no job started)', () => {

@@ -46,7 +46,9 @@ describe('Updating workspace metadata', () => {
       'title': 'New metadata',
       'keywords': [],
       'communities': null,
-      'license': null,
+      'license': {
+        'data': 'wtf license'
+      },
       'publication_date': '1970-01-01',
       'publication_type': 'test',
       'mainfile': 'test.R',
@@ -114,7 +116,7 @@ describe('Updating workspace metadata', () => {
         assert.ifError(err);
         assert.equal(res.statusCode, 400);
         assert.isObject(body);
-        assert.include(body, 'invalid');
+        assert.include(body.log, '!invalid');
         done();
       });
     }).timeout(metadataRequestTimeout * 2);
@@ -164,7 +166,9 @@ describe('Updating workspace metadata', () => {
             'title': 'New title on the block',
             'keywords': [],
             'communities': null,
-            'license': null,
+            'license': {
+              'data': 'wtf license'
+            },
             'publication_date': '1970-01-01',
             'publication_type': 'test',
             'mainfile': 'test.R',
@@ -193,8 +197,7 @@ describe('Updating workspace metadata', () => {
           request(global.test_host + '/api/v1/job/' + id + '?steps=all', (err, res, body) => {
             assert.ifError(err);
             response = JSON.parse(body);
-            assert.include(JSON.stringify(response.steps.check), 'no such file or directory');
-            assert.include(JSON.stringify(response.steps.check), compendium_id + '/test.html');
+            assert.propertyVal(response.steps.check, 'checkSuccessful', false);
             done();
           });
         });
@@ -235,8 +238,9 @@ describe('Publishing workspace metadata', () => {
       request(updateMetadata, (err, res, body) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 422);
-        assert.isObject(JSON.parse(body));
-        assert.include(body, 'root element');
+        assert.isObject(body);
+        assert.property(body, 'error');
+        assert.include(body.error, 'root element');
         done();
       });
     }).timeout(metadataRequestTimeout * 2);
@@ -342,7 +346,9 @@ describe('Publishing workspace metadata', () => {
               "code": null
             },
             "publication_type": "other",
-            "publication_date": "2018-03-01"
+            "publication_date": "2018-03-01",
+            "mainfile": "document.Rmd",
+            "displayfile": "document.html"
           }
         }
       };

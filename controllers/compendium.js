@@ -440,6 +440,7 @@ updateConfigurationFile = function (compendium) {
           else
             payloadDir = path.join(config.fs.compendium, compendium.id);
 
+          // could add a check here for existance of mainfile and displayfile, but better solution is https://github.com/o2r-project/o2r-meta/issues/94
           fullMain = path.join(config.fs.compendium, compendium.id, get(compendium, config.bagtainer.mainFilePath));
           fullDisplay = path.join(config.fs.compendium, compendium.id, get(compendium, config.bagtainer.displayFilePath));
 

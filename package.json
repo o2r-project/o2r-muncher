@@ -6,7 +6,7 @@
   "scripts": {
     "start": "DEBUG=muncher,muncher:*,executor:* node index.js",
     "test_port80": "TEST_HOST=http://localhost DEBUG=*,-modem,-mocha:* mocha",
-    "test": "DEBUG=* mocha",
+    "test": "DEBUG=*,-modem,-mocha:* mocha",
     "test_bail": "DEBUG=*,-modem,-mocha:* mocha --bail",
     "test_ci": "DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access not:image_tarball_upload\" --exit",
     "test_ci_async_dump": "DEBUG=*,-modem,-mocha:* mocha ./test/ --tags \"not:storage_access not:image_tarball_upload\" --require test/async-dump",
@@ -67,6 +67,7 @@
     "mongojs": "^2.5.0",
     "node-object-hash": "^1.3.0",
     "node-uname": "^1.0.1",
-    "request": "^2.83.0"
+    "request": "^2.83.0",
+    "sleep": "^5.1.1"
   }
 }
