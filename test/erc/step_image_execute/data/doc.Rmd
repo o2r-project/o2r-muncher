@@ -8,4 +8,4 @@ date: "2017"
 output: html_document
 ---
 
-Nothing to see here at `r date()`.
+Nothing to see here, the Dockerfile will not produce the output file.

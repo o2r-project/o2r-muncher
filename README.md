@@ -57,17 +57,18 @@ Most commonly, the default configuration will be used, i.e. the local Docker soc
 
 ## Testing
 
-Testing is based on mocha integration tests. A MongoDB database must be running at the default port for the tests to work and must be started manually.
+Testing is based on mocha integration tests.
+A MongoDB database must be running at the default port for the tests to work and must be started manually.
+Also `o2r-loader` and `o2r-transporter` must be running at their default ports.
 
-**Attention:** The database is cleared completely several times during tests!
-
-To be able to test job execution and compendia metadata update, the tests _may_ automatically start a Docker container of o2r-loader.
+**Attention:** The database is cleared completely several times during the tests!
 
 ```bash
 # must start with replica set for oplog (finder) to work, see https://docs.mongodb.com/manual/tutorial/convert-standalone-to-replica-set/ and https://docs.mongodb.com/manual/tutorial/deploy-replica-set-for-testing/
 mongod --dbpath ./db --replSet rso2r --smallfiles;
 
 # start o2r-loader
+# start o2r-transporter
 
 # run tests
 npm test
@@ -77,6 +78,17 @@ TEST_HOST=http://localhost:80 npm test
 
 # stop tests after the first failing one
 npm run test_bail
+```
+
+The archives created to upload workspaces and compendia for testing are cached.
+Be aware that when you edit files in test workspaces and compendia, you must manually delete the cached files, e.g. `/tmp/o2r-muncher-upload_<hash>.zip`.
+You can use the hash to identify tests that use the same files on Travis, as multiple tests may fail if one compendium/workspace is faulty.
+
+To run single tests on Travis (and thereby reducing the logs of loader and muncher to only the ones of interest) you can use [_custom builds_](https://blog.travis-ci.com/2017-08-24-trigger-custom-build) and overwrite only the required `run` command:
+
+```
+script:
+  - DEBUG=*,mocha:*,-modem mocha ./test/ --grep "<name of the test>"
 ```
 
 ## Development
@@ -103,7 +115,7 @@ The following steps assume that you have all the required projects (`o2r-content
 mkdir /tmp/o2r-mongodb-data
 mongod --dbpath /tmp/o2r-mongodb-data
 
-# new termine: start loader (default port 8088)
+# new terminal: start loader (default port 8088)
 
 # new terminal: start muncher (default port 8080)
 cd ../o2r-muncher

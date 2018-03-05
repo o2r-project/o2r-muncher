@@ -26,7 +26,7 @@ c.fs = {};
 c.oauth = {};
 var env = process.env;
 
-debug('Configuring loader with environment variables %s', Object
+debug('Configuring muncher with environment variables %o', Object
   .keys(env)
   .filter(k => k.startsWith("MUNCHER"))
   .map(k => { return k + "=" + env[k]; })
@@ -88,7 +88,16 @@ c.bagtainer = {};
 c.bagtainer.spec_version = {};
 c.bagtainer.spec_version.supported = ['0.1', '1'];
 c.bagtainer.spec_version.default = '1';
-c.bagtainer.configFile = 'erc.yml';
+c.bagtainer.id_regex = /^[^-_.][a-zA-Z0-9._-]*[^-_.]$/;
+c.bagtainer.id_is_valid = (id) => {
+  return c.bagtainer.id_regex.test(id);
+}
+c.bagtainer.configFile = {
+  name: 'erc.yml',
+  main_node: 'main',
+  display_node: 'display',
+  licenses_node: 'licenses'
+};
 c.bagtainer.mountLocationInContainer = '/erc';
 c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
 c.bagtainer.keepImages = true;
@@ -100,6 +109,7 @@ c.bagtainer.failOnValidationError = true;
 c.bagtainer.manifestFile = 'Dockerfile';
 c.bagtainer.mainFilePath = 'metadata.o2r.mainfile';
 c.bagtainer.displayFilePath = 'metadata.o2r.displayfile';
+c.bagtainer.licensesPath = 'metadata.o2r.license';
 
 c.bagit = {};
 c.bagit.detectionFileName = 'bagit.txt';
@@ -126,7 +136,7 @@ c.bagtainer.docker.create_options = {
   Env: ['O2R_MUNCHER=true'],
   Memory: 1073741824, // 1G
   MemorySwap: 2147483648, // double of 1G
-  NetworkDisabled : true,
+  NetworkDisabled: true,
   User: env.MUNCHER_CONTAINER_USER || '1000' // user name depends on image, use id to be save
 };
 c.bagtainer.rm = yn(env.EXECUTE_CONTAINER_RM) || true;
@@ -196,6 +206,14 @@ c.meta.broker.mappings = {
   //} 
 };
 c.meta.doiPath = 'metadata.o2r.identifier.doi';
+c.meta.validate = {};
+c.meta.validate.module = 'validate';
+c.meta.validate.schemas = [
+  {
+    file: c.meta.normativeFile,
+    schema: 'schema/json/o2r-meta-schema.json'
+  }
+];
 
 c.checker = {};
 c.checker.display_file_name_html = 'diffHTML.html';

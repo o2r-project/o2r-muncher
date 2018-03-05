@@ -1,0 +1,14 @@
+---
+title: "Test with erc.yml"
+author:
+    - name: "Daniel Nüst"
+    - affiliation: o2r team
+date: "2017"
+output: html_document
+---
+
+```{r plot, echo=FALSE}
+set.seed(nchar("o2r project"))
+plot(c(1:10), sample(c(1:100), size = 10), xlab = "the xs", ylab = "the ys",
+     main = "the xs and the ys")
+```

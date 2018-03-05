@@ -25,6 +25,8 @@ const chai = require('chai');
 chai.use(require('chai-datetime'));
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
+const waitForJob = require('./util').waitForJob;
+const startJob = require('./util').startJob;
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
@@ -274,8 +276,20 @@ describe('compendium metadata', () => {
 
   let newMetadata = {
     'o2r': {
-      'title': 'New title on the block',
-      'author': 'npm test!'
+      'access_right': 'fake',
+      'creators': [],
+      'description': 'fake',
+      'identifier': null,
+      'title': 'New metadata',
+      'keywords': [],
+      'communities': null,
+      'license': {
+        'data': 'wtf license'
+      },
+      'publication_date': '1970-01-01',
+      'publication_type': 'test',
+      'mainfile': 'test.R',
+      'displayfile': 'test.html'
     }
   };
 
@@ -410,7 +424,7 @@ describe('compendium metadata', () => {
       request(req_doc_o2r, (err, res, body) => {
         assert.ifError(err);
         assert.isObject(body);
-        assert.include(body.metadata.o2r.title, 'New title on the block');
+        assert.include(body.metadata.o2r.title, 'New metadata');
         done();
       });
     }).timeout(20000);
@@ -423,9 +437,7 @@ describe('compendium metadata', () => {
         assert.property(response.metadata, 'o2r');
         assert.property(response.metadata, 'raw');
         assert.property(response.metadata.o2r, 'title');
-        //assert.property(response.metadata.o2r, 'author');
-        assert.propertyVal(response.metadata.o2r, 'title', 'New title on the block');
-        //assert.propertyVal(response.metadata.o2r, 'author', 'npm test!');
+        assert.propertyVal(response.metadata.o2r, 'title', 'New metadata');
         assert.notProperty(response.metadata.o2r, 'abstract');
         done();
       });
@@ -442,8 +454,20 @@ describe('compendium metadata', () => {
       jar: j3,
       json: {
         'o2r': {
-          'title': 'New edited title on the block',
-          'author': 'editor!'
+          'access_right': 'fake',
+          'creators': [],
+          'description': 'fake',
+          'identifier': null,
+          'title': 'New metadata by editor',
+          'keywords': [],
+          'communities': null,
+          'license': {
+            'data': 'wtf license'
+          },
+          'publication_date': '1970-01-01',
+          'publication_type': 'test',
+          'mainfile': 'test.R',
+          'displayfile': 'test.html'
         }
       },
       timeout: 10000
@@ -466,15 +490,16 @@ describe('compendium metadata', () => {
       request(req_doc_editor, (err, res, body) => {
         assert.ifError(err);
         assert.isObject(body);
-        assert.include(body.metadata.o2r.title, 'New edited title on the block');
+        assert.include(body.metadata.o2r.title, 'New metadata by editor');
         done();
       });
     }).timeout(20000);
+
     it('should have the updated metadata in the metadata section', (done) => {
       request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.propertyVal(response.metadata.o2r, 'title', 'New edited title on the block');
+        assert.propertyVal(response.metadata.o2r, 'title', 'New metadata by editor');
         done();
       });
     }).timeout(20000);
@@ -575,5 +600,112 @@ describe('compendium metadata', () => {
         done();
       });
     });
+  });
+});
+
+describe('compendium metadata and the compendium configuration file', () => {
+  var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
+
+  before(function (done) {
+    db.compendia.drop(function (err, doc) {
+      db.jobs.drop(function (err, doc) {
+        done();
+      });
+    });
+  });
+
+  after(function (done) {
+    db.close();
+    done();
+  });
+
+  let compendium_id = '';
+  before(function (done) {
+    this.timeout(90000);
+    createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
+      request(req, (err, res, body) => {
+        compendium_id = JSON.parse(body).id;
+        publishCandidate(compendium_id, cookie_o2r, () => {
+          done();
+        });
+      });
+    });
+  });
+
+  describe('Updating compendium metadata must also update compendium configuration file (erc.yml)', () => {
+    it('should have the configuration file with correct content after publish', (done) => {
+      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+        assert.ifError(err);
+        assert.include(body, 'main: doc.Rmd');
+        assert.include(body, 'display: test.html');
+        done();
+      });
+    });
+
+    it('should complete a job', (done) => {
+      startJob(compendium_id, id => {
+        waitForJob(id, (finalStatus) => {
+          assert.equal(finalStatus, 'success');
+          done();
+        });
+      });
+    }).timeout(90000);
+
+    it('should have updated the configuration file after updating the metadata', (done) => {
+      let j2 = request.jar();
+      let ck2 = request.cookie('connect.sid=' + cookie_o2r);
+      j2.setCookie(ck2, global.test_host);
+
+      let req_doc_o2r = {
+        method: 'PUT',
+        jar: j2,
+        json: {
+          'o2r': {
+            'access_right': 'fake',
+            'creators': [],
+            'description': 'fake',
+            'identifier': null,
+            'title': 'New title on the block',
+            'keywords': [],
+            'communities': null,
+            'license': {
+              'data': 'wtf license'
+            },
+            'publication_date': '1970-01-01',
+            'publication_type': 'test',
+            'mainfile': 'data/test.R',
+            'displayfile': 'data/wrongUpdate.html'
+          }
+        },
+        timeout: 60000
+      };
+
+      req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
+      request(req_doc_o2r, (err, res, body) => {
+        assert.ifError(err);
+
+        request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+          assert.ifError(err);
+          assert.include(body, 'main: test.R');
+          assert.include(body, 'display: wrongUpdate.html');
+          done();
+        });
+      });
+    }).timeout(60000);
+
+    it('should fail subsequent job (step: check) because of the incorrect configuration file', (done) => {
+      startJob(compendium_id, id => {
+        waitForJob(id, (finalStatus) => {
+          assert.equal(finalStatus, 'failure');
+          request(global.test_host + '/api/v1/job/' + id + '?steps=all', (err, res, body) => {
+            assert.ifError(err);
+            response = JSON.parse(body);
+            assert.propertyVal(response.steps.check, 'checkSuccessful', false);
+            assert.include(JSON.stringify(response.steps.check.errors), 'wrongUpdate.html');
+            done();
+          });
+        });
+      });
+    }).timeout(90000);
   });
 });

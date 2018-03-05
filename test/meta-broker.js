@@ -42,8 +42,21 @@ describe('Brokering compendium metadata', () => {
         compendium_id = response.id;
 
         let data = {
-          o2r: {
-            title: 'New brokered title on the block'
+          'o2r': {
+            'access_right': 'fake',
+            'creators': [],
+            'description': 'fake',
+            'identifier': null,
+            'title': 'New brokered title',
+            'keywords': ['zen', 'o', 'do'],
+            'communities': null,
+            'license': {
+              'data': 'wtf license'
+            },
+            'publication_date': '1970-01-01',
+            'publication_type': 'test',
+            'mainfile': 'test.R',
+            'displayfile': 'test.html'
           }
         };
         let j2 = request.jar();
@@ -75,7 +88,8 @@ describe('Brokering compendium metadata', () => {
         assert.property(response.metadata, 'zenodo');
         assert.property(response.metadata.zenodo, 'metadata');
         assert.property(response.metadata.zenodo.metadata, 'title');
-        assert.propertyVal(response.metadata.zenodo.metadata, 'title', 'New brokered title on the block');
+        assert.propertyVal(response.metadata.zenodo.metadata, 'title', 'New brokered title');
+        assert.includeMembers(response.metadata.zenodo.metadata.keywords, ['zen', 'do']);
         done();
       });
     }).timeout(20000);
