@@ -677,7 +677,7 @@ describe('compendium metadata and the compendium configuration file', () => {
             'displayfile': 'data/wrongUpdate.html'
           }
         },
-        timeout: 10000
+        timeout: 60000
       };
 
       req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
@@ -691,7 +691,7 @@ describe('compendium metadata and the compendium configuration file', () => {
           done();
         });
       });
-    }).timeout(30000);
+    }).timeout(60000);
 
     it('should fail subsequent job (step: check) because of the incorrect configuration file', (done) => {
       startJob(compendium_id, id => {
