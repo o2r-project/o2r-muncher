@@ -26,7 +26,7 @@ c.fs = {};
 c.oauth = {};
 var env = process.env;
 
-debug('Configuring loader with environment variables %s', Object
+debug('Configuring muncher with environment variables %o', Object
   .keys(env)
   .filter(k => k.startsWith("MUNCHER"))
   .map(k => { return k + "=" + env[k]; })
