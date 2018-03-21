@@ -45,7 +45,7 @@ describe('API job overall status', () => {
     done();
   });
 
-  describe('EXECUTION step_validate_compendium', () => {
+  describe('step_validate_compendium status', () => {
     let job_id = '';
 
     before(function (done) {
@@ -85,7 +85,7 @@ describe('API job overall status', () => {
     }).timeout(60000);
   });
 
-  describe('EXECUTION step_image_prepare', () => {
+  describe('step_image_prepare status', () => {
     let job_id = '';
 
     before(function (done) {
@@ -125,7 +125,7 @@ describe('API job overall status', () => {
     }).timeout(60000);
   });
 
-  describe('EXECUTION step_image_build', () => {
+  describe('step_image_build status', () => {
     let job_id = '';
 
     before(function (done) {
@@ -165,7 +165,7 @@ describe('API job overall status', () => {
     }).timeout(60000);
   });
 
-  describe('EXECUTION step_image_execute', () => {
+  describe('step_image_execute status', () => {
     let job_id = '';
 
     before(function (done) {
@@ -204,7 +204,7 @@ describe('API job overall status', () => {
     }).timeout(60000);
   });
 
-  describe('EXECUTION step_check', () => {
+  describe('step_check status', () => {
     let job_id = '';
 
     before(function (done) {

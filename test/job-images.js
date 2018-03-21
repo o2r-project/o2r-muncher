@@ -61,7 +61,7 @@ tags('image_tarball_upload')
       imageTarballFile = path.join(workspacePath, config.bagtainer.imageTarballFile);
 
       before(function (done) {
-        this.timeout(240000);
+        this.timeout(360000);
         createCompendiumPostRequest(workspacePath, cookie_o2r, 'workspace', (requestData) => {
           fs.access(imageTarballFile, (err) => {
             if (err) {

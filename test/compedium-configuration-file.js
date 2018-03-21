@@ -244,12 +244,4 @@ describe('configuration file (erc.yml)', () => {
       });
     });
   });
-
-  describe('licenses are correctly identified from erc.yml', () => {
-    it('should have the correct data license');
-    it('should have the correct code license');
-    it('should have the correct text license');
-    it('should have the correct ui license');
-    it('should have the correct md license');
-  });
 });

@@ -75,6 +75,7 @@ tags('storage_access')
         this.timeout(90000);
         createCompendiumPostRequest('./test/erc/step_validate_bag/data', cookie, 'workspace', (req) => {
           request(req, (err, res, body) => {
+            assert.equal(res.statusCode, 200);
             compendium_id = JSON.parse(body).id;
             publishCandidate(compendium_id, cookie, () => {
               done();

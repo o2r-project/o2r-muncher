@@ -79,7 +79,7 @@ describe('Brokering compendium metadata', () => {
     });
   });
 
-  describe('PUT /api/v1/compendium/<id of loaded compendium>/metadata with author user', () => {
+  describe('Metadata after publishing', () => {
     it('should have the brokered metadata for Zenodo', (done) => {
       request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
         assert.ifError(err);
