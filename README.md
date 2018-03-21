@@ -51,6 +51,8 @@ You can override these environment variables (configured in `config/config.js`) 
   The user within the container, which must match the used image (see previous setting), defaults to `rstudio`, which is suitable for images in the `rocker/verse` stack of images. _Change this for usage with `docker-compose`!
 - `MUNCHER_FAIL_ON_NO_FILES`
   Should an error be thrown when files for a compendium that exists in the database are _not found_? Defaults to `false` (useful for testing).
+- `MUNCHER_ALLOW_INVALID_METADATA`
+  Should an error be return when invalid metadata is stored? Defaults to `false`.
 
 The connection to the Docker API is build on [dockerode](https://www.npmjs.com/package/dockerode) which allows execution on any Docker host that exposes the port.
 Most commonly, the default configuration will be used, i.e. the local Docker socket is mounted at the default location into the container running muncher (see [above](#run))

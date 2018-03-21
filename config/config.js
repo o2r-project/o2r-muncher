@@ -207,6 +207,7 @@ c.meta.broker.mappings = {
 };
 c.meta.doiPath = 'metadata.o2r.identifier.doi';
 c.meta.validate = {};
+c.meta.validate.allowInvalid = yn(env.MUNCHER_ALLOW_INVALID_METADATA) || false;
 c.meta.validate.module = 'validate';
 c.meta.validate.schemas = [
   {
