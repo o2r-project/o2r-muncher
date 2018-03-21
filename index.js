@@ -135,11 +135,13 @@ function initApp(callback) {
                 debug('pulled meta tools image: %O', output);
                 fulfill();
               }
-
               delete docker;
             }
+            function onProgress(event) {
+              debug('%o', event);
+            }
 
-            docker.modem.followProgress(stream, onFinished);
+            docker.modem.followProgress(stream, onFinished, onProgress);
           }
         });
       }
