@@ -118,7 +118,14 @@ function initApp(callback) {
         docker.pull(config.meta.container.image, function (err, stream) {
           if (err) {
             debug('error pulling meta image: %o', err);
-            reject(err);
+
+            if(config.meta.container.image.indexOf('/') !== -1) {
+              debug('meta image is remote, aborting startup!'.red);
+              reject(err);
+            } else {
+              debug('meta image is not remote, ignoring pull error'.yellow);
+              fulfill();
+            }
           } else {
             function onFinished(err, output) {
               if (err) {
