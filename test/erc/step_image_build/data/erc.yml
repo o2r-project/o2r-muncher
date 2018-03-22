@@ -1,7 +1,7 @@
 ---
 id: KIbebWnPlx
 spec_version: 1
-display: erc.yml
-main: erc.yml
+display: view.txt
+main: view.txt
 command: "sessionInfo();"
 description: "step 04 - build image"

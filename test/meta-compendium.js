@@ -130,47 +130,47 @@ describe('compendium metadata', () => {
         let response = JSON.parse(body);
         assert.property(response, 'metadata');
         assert.property(response.metadata, 'o2r');
-        metadata = response.metadata.o2r;
+        metadata = response.metadata;
         assert.propertyVal(response, 'id', compendium_id);
         done();
       });
     });
 
     it('should contain correct non-empty title', (done) => {
-      assert.property(metadata, 'title');
-      assert.isNotEmpty(metadata, 'title');
-      assert.include(metadata.title, 'This is the title');
+      assert.property(metadata.o2r, 'title');
+      assert.isNotEmpty(metadata.o2r, 'title');
+      assert.include(metadata.o2r.title, 'This is the title');
       done();
     });
 
     it('should contain correct description', (done) => {
-      assert.property(metadata, 'description');
-      assert.include(metadata.description, 'Suspendisse ac ornare ligula.');
+      assert.property(metadata.o2r, 'description');
+      assert.include(metadata.o2r.description, 'Suspendisse ac ornare ligula.');
       done();
     });
 
     it('should contain correct main file', (done) => {
-      assert.property(metadata, 'mainfile');
-      assert.propertyVal(metadata, 'mainfile', path.join(config.bagit.payloadDirectory, main_file));
+      assert.property(metadata.o2r, 'mainfile');
+      assert.propertyVal(metadata.o2r, 'mainfile', path.join(config.bagit.payloadDirectory, main_file));
       done();
     });
 
     it('should contain correct display file', (done) => {
-      assert.property(metadata, 'displayfile');
-      assert.propertyVal(metadata, 'displayfile', path.join(config.bagit.payloadDirectory, display_file));
+      assert.property(metadata.o2r, 'displayfile');
+      assert.propertyVal(metadata.o2r, 'displayfile', path.join(config.bagit.payloadDirectory, display_file));
       done();
     });
 
-    it('should contain the correct erc identifier', (done) => {
-      assert.property(metadata, 'ercIdentifier');
-      assert.propertyVal(metadata, 'ercIdentifier', compendium_id);
+    it('should contain the correctly extracted compendium identifier in the raw metadata', (done) => {
+      assert.property(metadata.raw, 'id');
+      assert.propertyVal(metadata.raw, 'id', '66b173cb682d6');
       done();
     });
 
     it('should contain creators array with all author names', (done) => {
-      assert.property(metadata, 'creators');
-      assert.isArray(metadata.creators);
-      authorNames = metadata.creators.map(function (author) { return author.name; });
+      assert.property(metadata.o2r, 'creators');
+      assert.isArray(metadata.o2r.creators);
+      authorNames = metadata.o2r.creators.map(function (author) { return author.name; });
       assert.include(authorNames, 'Ted Tester');
       assert.include(authorNames, 'Carl Connauthora');
       done();
@@ -708,4 +708,77 @@ describe('compendium metadata and the compendium configuration file', () => {
       });
     }).timeout(90000);
   });
+});
+
+describe('compendium metadata extraction from the compendium configuration file', () => {
+  var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
+
+  before(function (done) {
+    db.compendia.drop(function (err, doc) {
+      db.jobs.drop(function (err, doc) {
+        done();
+      });
+    });
+  });
+
+  after(function (done) {
+    db.close();
+    done();
+  });
+
+  let compendium_id = '';
+  before(function (done) {
+    this.timeout(90000);
+    createCompendiumPostRequest('./test/erc/metatainer-licenses', cookie_o2r, 'compendium', (req) => {
+      request(req, (err, res, body) => {
+        compendium_id = JSON.parse(body).id;
+        done();
+      });
+    });
+  });
+
+  let metadata_o2r = {};
+  let j = request.jar();
+  let ck = request.cookie('connect.sid=' + cookie_o2r);
+  j.setCookie(ck, global.test_host);
+
+  it('should have the found the configured licenses and brokered them from raw to o2r metadata during load', (done) => {
+    request({
+      method: 'GET',
+      uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata',
+      jar: j
+    }, (err, res, body) => {
+      assert.ifError(err);
+      response = JSON.parse(body);
+      metadata_o2r.o2r = response.metadata.o2r;
+
+      assert.property(response.metadata.o2r, 'license');
+      assert.propertyVal(response.metadata.o2r.license, 'code', 'Apache-2.0');
+      assert.propertyVal(response.metadata.o2r.license, 'data', 'ODbL-1.0');
+      assert.propertyVal(response.metadata.o2r.license, 'text', 'CC0-1.0');
+      assert.propertyVal(response.metadata.o2r.license, 'ui_bindings', 'proprietary license');
+      assert.propertyVal(response.metadata.o2r.license, 'metadata', 'license-md.txt');
+      done();
+    });
+  });
+
+  it('should be possible to publish the compendium without any metadata editing', (done) => {
+    let updateMetadata = {
+      uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata',
+      method: 'PUT',
+      jar: j,
+      timeout: 10000,
+      json: metadata_o2r
+    };
+    request(updateMetadata, (err, res, body) => {
+      assert.ifError(err);
+      assert.equal(res.statusCode, 200);
+      assert.isObject(body);
+      assert.doesNotHaveAnyKeys(body, ['error', 'log']);
+      assert.notInclude(JSON.stringify(body), '!invalid');
+      assert.propertyVal(body, 'id', compendium_id);
+      done();
+    });
+  }).timeout(20000);
+
 });

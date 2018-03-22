@@ -110,7 +110,7 @@ describe('configuration file (erc.yml)', () => {
     });
   });
 
-  describe('job fails with valid id in configuration file', () => {
+  describe('job fails with invalid id in configuration file', () => {
     let job_id;
 
     before(function (done) {

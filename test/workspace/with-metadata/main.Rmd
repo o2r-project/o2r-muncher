@@ -1,0 +1,17 @@
+---
+title: "Test with metadata in Rmd header"
+author:
+  - name: "Daniel Nüst"
+  - affiliation: o2r team
+date: "2017"
+abstract: "just a test with Rmd header"
+output: html_document
+licenses:
+  code: codelicense
+  data: datalicense
+  text: textlicense
+  ui_bindings: bindingslicense
+  metadata: metadatalicense
+---
+
+...
