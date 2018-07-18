@@ -75,11 +75,11 @@ var mongoStore = new MongoDBStore({
   collection: 'sessions'
 }, err => {
   if (err) {
-    debug('Error connecting MongoStore used for session authentication: %o', err);
+    debug('Error connecting MongoStore used for session authentication: %o'.red, err);
   }
 });
 mongoStore.on('error', (err) => {
-  debug('Error with MongoStore used for session authentication: %o', err);
+  debug('Error with MongoStore used for session authentication: %o'.red, err);
   //process.exit(1);
 });
 
@@ -117,10 +117,10 @@ function initApp(callback) {
 
         docker.pull(config.meta.container.image, function (err, stream) {
           if (err) {
-            debug('error pulling meta image: %o', err);
+            debug('error pulling meta image: %o'.yellow, err);
 
             if(config.meta.container.image.indexOf('/') !== -1) {
-              debug('meta image is remote, aborting startup!'.red);
+              debug('meta image is remote, raising error!'.yellow);
               reject(err);
             } else {
               debug('meta image is not remote, ignoring pull error'.yellow);
@@ -129,10 +129,10 @@ function initApp(callback) {
           } else {
             function onFinished(err, output) {
               if (err) {
-                debug('Error pulling meta image: %o', err);
+                debug('Error pulling meta image: %o'.yellow, err);
                 reject(err);
               } else {
-                debug('pulled meta tools image: %O', output);
+                debug('pulled meta tools image (%s): %O', config.meta.container.image, output);
                 fulfill();
               }
               delete docker;
@@ -152,15 +152,15 @@ function initApp(callback) {
     docker2 = new Docker();
     docker2.pull(config.containerit.image, function (err, stream) {
       if (err) {
-        debug('error pulling containerit image: %o', err);
+        debug('error pulling containerit image: %o'.yellow, err);
         reject(err);
       } else {
         function onFinished(err, output) {
           if (err) {
-            debug('error pulling containerit image: %o', err);
+            debug('error pulling containerit image: %o'.yellow, err);
             reject(err);
           } else {
-            debug('pulled containerit tools image: %O', output);
+            debug('pulled containerit tools image (%s): %O', config.containerit.image, output);
             fulfill();
           }
 
@@ -302,7 +302,7 @@ function initApp(callback) {
     let pythonVersionCmd = 'echo $(python --version)';
     exec(pythonVersionCmd, (error, stdout, stderr) => {
       if (error) {
-        debug('Error detecting python version: %o', error);
+        debug('Error detecting python version: %o'.yellow, error);
       } else {
         let version = stdout.concat(stderr);
         debug('Using "%s" for bagit.py', version.trim());
@@ -353,7 +353,7 @@ dbBackoff.on('ready', function (number, delay) {
   debug('Connect to MongoDB (#%s)', number, delay);
   mongoose.connect(dbURI, dbOptions, (err) => {
     if (err) {
-      debug('Error during connect: %o', err);
+      debug('Error during connect: %o'.red, err);
       mongoose.disconnect(() => {
         debug('Mongoose: Disconnected all connections.');
       });
@@ -363,7 +363,7 @@ dbBackoff.on('ready', function (number, delay) {
       debug('Initial connection open to %s: %s', dbURI, mongoose.connection.readyState);
       initApp((err) => {
         if (err) {
-          debug('Error during init!\n%o', err);
+          debug('Error during init!\n%o'.red, err);
           mongoose.disconnect(() => {
             debug('Mongoose: Disconnected all connections.');
           });

@@ -80,6 +80,12 @@ TEST_HOST=http://localhost:80 npm test
 
 # stop tests after the first failing one
 npm run test_bail
+
+# run specific test file only
+DEBUG=*,-modem,-mocha:* mocha --bail test/job-manifest.js
+
+# only run tests matching a text until first fails
+DEBUG=*,-modem,-mocha:* mocha --bail --grep manifest
 ```
 
 The archives created to upload workspaces and compendia for testing are cached.
