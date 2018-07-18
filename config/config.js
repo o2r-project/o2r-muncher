@@ -228,7 +228,8 @@ c.containerit.default_create_options = {
   MemorySwap: 1073741824 * 4,
   User: env.MUNCHER_CONTAINERIT_USER || 'rstudio' // IMPORTANT: this must fit the used image!
 };
-c.containerit.baseImage = 'rocker/r-ver:3.4.3';
+c.containerit.baseImage = env.MUNCHER_CONTAINERIT_BASE_IMAGE || 'rocker/geospatial:3.4.4';
+c.containerit.filterBaseImagePkgs = (yn(env.MUNCHER_CONTAINERIT_FILTER_BASE_IMAGE_PKGS) || false).toString().toUpperCase();
 c.containerit.maintainer = 'o2r';
 c.containerit.rm = yn(env.MUNCHER_CONTAINERIT_CONTAINER_RM) || true;
 
