@@ -172,6 +172,30 @@ function initApp(callback) {
     });
   });
 
+  pullContaineritBaseimage = new Promise((fulfill, reject) => {
+    docker3 = new Docker();
+    docker3.pull(config.containerit.baseImage, function (err, stream) {
+      if (err) {
+        debug('error pulling base image used by containerit: %o', err);
+        reject(err);
+      } else {
+        function onFinished(err, output) {
+          if (err) {
+            debug('error pulling base image used by containerit: %o', err);
+            reject(err);
+          } else {
+            debug('pulled base image used by containerit (%s): %O', config.containerit.baseImage, output);
+            fulfill();
+          }
+
+          delete docker3;
+        }
+
+        docker3.modem.followProgress(stream, onFinished);
+      }
+    });
+  });
+
   configureExpressApp = new Promise((fulfill, reject) => {
     app.use(session({
       secret: config.sessionSecret,
@@ -298,6 +322,10 @@ function initApp(callback) {
 
   checkDockerAndPullMetaContainer
     .then(pullContaineritContainer)
+    .then(pullContaineritBaseimage)
+    .catch((err) => {
+      debug('ERROR pulling secondary images, this may result in problems later: %o'.yellow, err);
+    })
     .then(logVersions)
     .then(configureEmailTransporter)
     .then(configureExpressApp)
