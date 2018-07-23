@@ -171,7 +171,6 @@ describe('configuration file (erc.yml)', () => {
                   'code': 'a_test_code_license',
                   'data': 'ODbL-1.0',
                   'text': 'licenses.txt',
-                  'ui_bindings': 'ui',
                   'metadata': 'CC'
                 },
                 'publication_date': '1970-01-01',
@@ -199,7 +198,7 @@ describe('configuration file (erc.yml)', () => {
       request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
         configuration = yaml.parse(body);
-        assert.hasAllKeys(configuration.licenses, ['code', 'data', 'text', 'ui_bindings', 'metadata']);
+        assert.hasAllKeys(configuration.licenses, ['code', 'data', 'text', 'metadata']);
         done();
       });
     });
@@ -224,14 +223,6 @@ describe('configuration file (erc.yml)', () => {
       request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
         assert.include(body, 'text: licenses.txt');
-        done();
-      });
-    });
-
-    it('should have correct ui bindings license in configuration file', (done) => {
-      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
-        assert.ifError(err);
-        assert.include(body, 'ui_bindings: ui');
         done();
       });
     });

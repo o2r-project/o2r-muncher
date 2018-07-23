@@ -1,4 +1,4 @@
 Bag-Size: 0.5 KB
 Bagging-Date: 2017-04-03
 External-Identifier: o2r-integration-test-step-02
-Payload-Oxum: 228.2
+Payload-Oxum: 197.2

@@ -10,7 +10,6 @@ licenses:
   code: codelicense
   data: datalicense
   text: textlicense
-  ui_bindings: bindingslicense
   metadata: metadatalicense
 ---
 

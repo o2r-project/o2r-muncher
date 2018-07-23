@@ -7,6 +7,5 @@ licenses:
   code: Apache-2.0
   data: ODbL-1.0
   text: CC0-1.0
-  ui_bindings: "proprietary license"
   metadata: license-md.txt
 convention: https://github.com/ropensci/rrrpkg

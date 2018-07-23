@@ -424,7 +424,6 @@ describe('Publishing workspace without editing metadata', () => {
         assert.propertyVal(response.metadata.o2r.license, 'code', 'Apache-2.0');
         assert.propertyVal(response.metadata.o2r.license, 'data', 'ODbL-1.0');
         assert.propertyVal(response.metadata.o2r.license, 'text', 'CC0-1.0');
-        assert.propertyVal(response.metadata.o2r.license, 'ui_bindings', 'proprietary license');
         assert.propertyVal(response.metadata.o2r.license, 'metadata', 'license-md.txt');
         done();
       });
@@ -486,7 +485,6 @@ describe('Publishing workspace without editing metadata', () => {
         assert.propertyVal(response.metadata.o2r.license, 'code', 'codelicense');
         assert.propertyVal(response.metadata.o2r.license, 'data', 'datalicense');
         assert.propertyVal(response.metadata.o2r.license, 'text', 'textlicense');
-        assert.propertyVal(response.metadata.o2r.license, 'ui_bindings', 'bindingslicense');
         assert.propertyVal(response.metadata.o2r.license, 'metadata', 'metadatalicense');
         
         assert.propertyVal(response.metadata.o2r, 'title', 'Test with metadata in Rmd header');

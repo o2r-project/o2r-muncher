@@ -756,7 +756,6 @@ describe('compendium metadata extraction from the compendium configuration file'
       assert.propertyVal(response.metadata.o2r.license, 'code', 'Apache-2.0');
       assert.propertyVal(response.metadata.o2r.license, 'data', 'ODbL-1.0');
       assert.propertyVal(response.metadata.o2r.license, 'text', 'CC0-1.0');
-      assert.propertyVal(response.metadata.o2r.license, 'ui_bindings', 'proprietary license');
       assert.propertyVal(response.metadata.o2r.license, 'metadata', 'license-md.txt');
       done();
     });
