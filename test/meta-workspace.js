@@ -339,7 +339,6 @@ describe('Publishing workspace metadata', () => {
               }
             ],
             "license": {
-              "uibindings": null,
               "text": null,
               "md": null,
               "data": null,
