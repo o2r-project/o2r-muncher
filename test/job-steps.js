@@ -25,9 +25,11 @@ const waitForJob = require('./util').waitForJob;
 const startJob = require('./util').startJob;
 const mongojs = require('mongojs');
 const fs = require('fs');
+const fse = require('fs-extra');
 const unameCall = require('node-uname');
 const path = require('path');
 const sleep = require('sleep');
+const debug = require('debug')('test:job-steps');
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
@@ -52,7 +54,7 @@ describe('API job steps', () => {
     done();
   });
 
-  beforeEach('take a short break (1s)', function() {
+  beforeEach('take a short break (1s)', function () {
     sleep.sleep(1);
   });
 
@@ -640,6 +642,16 @@ describe('API job steps', () => {
       });
     });
 
+    it('should have an image hash in the step metadata, which must be sha256', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.property(response.steps.image_build, 'imageId');
+        assert.match(response.steps.image_build.imageId, /^sha256:[a-z0-9]+$/g);
+        done();
+      });
+    });
+
     it('should fail step "image_execute" with a status code "1"', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
         assert.ifError(err);
@@ -878,18 +890,28 @@ describe('API job steps', () => {
     let job_id, compendium_id, job_id2 = '';
 
     before(function (done) {
-      this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id = id;
-              waitForJob(job_id, (finalStatus) => {
+      this.timeout(180000); // takes quite long because of image saving and deleting compendium + image
+
+      db.compendia.drop(function (err, doc) {
+        fse.removeSync(path.join(config.fs.compendium, 'KIbebWnPlx-check'));
+
+        docker.getImage('erc:KIbebWnPlx-check').remove(function(err, data) {
+          if(err) debug('Error removing image: %o', err);
+          else debug('%o', data);
+
+          createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
+            request(req, (err, res, body) => {
+              compendium_id = JSON.parse(body).id;
+              publishCandidate(compendium_id, cookie_o2r, () => {
                 startJob(compendium_id, id => {
-                  job_id2 = id;
-                  waitForJob(job_id2, (finalStatus) => {
-                    done();
+                  job_id = id;
+                  waitForJob(job_id, (finalStatus) => {
+                    startJob(compendium_id, id => {
+                      job_id2 = id;
+                      waitForJob(job_id2, (finalStatus) => {
+                        done();
+                      });
+                    });
                   });
                 });
               });
@@ -899,18 +921,29 @@ describe('API job steps', () => {
       });
     });
 
-    it('should complete all other steps (and skip bag validation)', (done) => {
+    it('should complete specific steps', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
-        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'validate bag');
         assert.propertyVal(response.steps.validate_compendium, 'status', 'success', 'validate compendium');
+        assert.propertyVal(response.steps.generate_manifest, 'status', 'success', 'generate manifest');
         assert.propertyVal(response.steps.image_prepare, 'status', 'success', 'image prepare');
         assert.propertyVal(response.steps.image_build, 'status', 'success', 'image build');
         assert.propertyVal(response.steps.image_execute, 'status', 'success', 'image execute');
         assert.propertyVal(response.steps.image_save, 'status', 'success', 'image save');
         assert.propertyVal(response.steps.cleanup, 'status', 'success', 'cleanup');
+        done();
+      });
+    });
+
+    it('should skip specific steps', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'validate bag');
+        assert.propertyVal(response.steps.generate_configuration, 'status', 'skipped', 'generate configuration');
         done();
       });
     });
@@ -1006,11 +1039,24 @@ describe('API job steps', () => {
       });
     });
 
-    it.skip('should mention the overwriting of the image tarball when running a second job', function (done) {
+    it('should skip further steps for the 2nd job', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id2, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'validate bag');
+        assert.propertyVal(response.steps.generate_configuration, 'status', 'skipped', 'generate configuration');
+        assert.propertyVal(response.steps.generate_manifest, 'status', 'skipped', 'generate manifest');
+        assert.propertyVal(response.steps.image_save, 'status', 'skipped', 'image save');
+        done();
+      });
+    });
+
+    it('should not overwrite the image tarball when running a second job', function (done) {
       request(global.test_host + '/api/v1/job/' + job_id2 + '?steps=image_save', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.include(JSON.stringify(response.steps.image_save.text), 'Deleting existing image tarball file');
+        assert.include(JSON.stringify(response.steps.image_save.text), 'image digests match');
         done();
       });
     });

@@ -53,6 +53,8 @@ You can override these environment variables (configured in `config/config.js`) 
   Should an error be thrown when files for a compendium that exists in the database are _not found_? Defaults to `false` (useful for testing).
 - `MUNCHER_ALLOW_INVALID_METADATA`
   Should an error be return when invalid metadata is stored? Defaults to `false`.
+- `MUNCHER_SAVE_IMAGE_TARBALL`
+  Save the image tarball into the compendium after successful execution. Defaults to `true`, but useful to deactivate during development.
 
 The connection to the Docker API is build on [dockerode](https://www.npmjs.com/package/dockerode) which allows execution on any Docker host that exposes the port.
 Most commonly, the default configuration will be used, i.e. the local Docker socket is mounted at the default location into the container running muncher (see [above](#run))
