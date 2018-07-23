@@ -55,7 +55,7 @@ c.fs.incoming = path.join(c.fs.base, 'incoming');
 c.fs.compendium = path.join(c.fs.base, 'compendium');
 c.fs.job = path.join(c.fs.base, 'job');
 c.fs.delete_inc = true;
-c.fs.fail_on_no_files = yn(env.MUNCHER_FAIL_ON_NO_FILES) || false;
+c.fs.fail_on_no_files = yn(env.MUNCHER_FAIL_ON_NO_FILES || 'false');
 
 c.fs.volume = env.MUNCHER_VOLUME || null;
 
@@ -101,7 +101,7 @@ c.bagtainer.configFile = {
 c.bagtainer.mountLocationInContainer = '/erc';
 c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
 c.bagtainer.keepImages = true;
-c.bagtainer.saveImageTarball = true;
+c.bagtainer.saveImageTarball = yn(env.MUNCHER_SAVE_IMAGE_TARBALL || 'true');
 c.bagtainer.imageTarballFile = 'image.tar';
 c.bagtainer.validateBagBeforeExecute = true; // bag validation will fail, gut useful to highlight the changes in compendium
 c.bagtainer.validateCompendiumBeforeExecute = true;
@@ -139,7 +139,7 @@ c.bagtainer.docker.create_options = {
   NetworkDisabled: true,
   User: env.MUNCHER_CONTAINER_USER || '1000' // user name depends on image, use id to be save
 };
-c.bagtainer.rm = yn(env.EXECUTE_CONTAINER_RM) || true;
+c.bagtainer.rm = yn(env.EXECUTE_CONTAINER_RM || 'true');
 
 // https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#start-a-container
 c.bagtainer.docker.start_options = {
@@ -184,7 +184,7 @@ c.meta.container.default_create_options = {
   MemorySwap: 2147483648, // double of 1G
   User: env.MUNCHER_META_TOOL_CONTAINER_USER || 'o2r' // or '1000', could be left away because of USER o2r command in o2r-meta's Dockerfile, but better safe than sorry.
 };
-c.meta.container.rm = yn(env.MUNCHER_META_TOOL_CONTAINER_RM) || true;
+c.meta.container.rm = yn(env.MUNCHER_META_TOOL_CONTAINER_RM || 'true');
 
 c.meta.broker = {};
 c.meta.broker.module = 'broker';
@@ -207,7 +207,7 @@ c.meta.broker.mappings = {
 };
 c.meta.doiPath = 'metadata.o2r.identifier.doi';
 c.meta.validate = {};
-c.meta.validate.allowInvalid = yn(env.MUNCHER_ALLOW_INVALID_METADATA) || false;
+c.meta.validate.allowInvalid = yn(env.MUNCHER_ALLOW_INVALID_METADATA || 'false');
 c.meta.validate.module = 'validate';
 c.meta.validate.schemas = [
   {
@@ -229,9 +229,9 @@ c.containerit.default_create_options = {
   User: env.MUNCHER_CONTAINERIT_USER || 'rstudio' // IMPORTANT: this must fit the used image!
 };
 c.containerit.baseImage = env.MUNCHER_CONTAINERIT_BASE_IMAGE || 'rocker/geospatial:3.4.4';
-c.containerit.filterBaseImagePkgs = (yn(env.MUNCHER_CONTAINERIT_FILTER_BASE_IMAGE_PKGS) || false).toString().toUpperCase();
+c.containerit.filterBaseImagePkgs = (yn(env.MUNCHER_CONTAINERIT_FILTER_BASE_IMAGE_PKGS) || 'false').toString().toUpperCase();
 c.containerit.maintainer = 'o2r';
-c.containerit.rm = yn(env.MUNCHER_CONTAINERIT_CONTAINER_RM) || true;
+c.containerit.rm = yn(env.MUNCHER_CONTAINERIT_CONTAINER_RM || 'true');
 
 c.payload = {};
 c.payload.tarball = {};
