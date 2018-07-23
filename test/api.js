@@ -86,15 +86,17 @@ describe('API Compendium', () => {
     let compendium_id = '';
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/step_image_execute', cookie, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          assert.ifError(err);
-          assert.equal(res.statusCode, 200);
-          response = JSON.parse(body);
-          compendium_id = JSON.parse(body).id;
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/step_image_execute', cookie, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            assert.ifError(err);
+            assert.equal(res.statusCode, 200);
+            response = JSON.parse(body);
+            compendium_id = JSON.parse(body).id;
 
-          publishCandidate(compendium_id, cookie, () => {
-            done();
+            publishCandidate(compendium_id, cookie, () => {
+              done();
+            });
           });
         });
       });
@@ -115,11 +117,13 @@ describe('API Compendium', () => {
     let compendium_id = '';
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/step_image_execute', cookie, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie, () => {
-            done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/step_image_execute', cookie, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie, () => {
+              done();
+            });
           });
         });
       });

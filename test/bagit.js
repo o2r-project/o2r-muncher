@@ -35,12 +35,6 @@ tags('storage_access')
   .describe('BagIt functions', () => {
     var db = mongojs('localhost/muncher', ['compendia']);
 
-    before(function (done) {
-      db.compendia.drop(function (err, doc) {
-        done();
-      });
-    });
-
     after(function (done) {
       db.close();
       done();
@@ -51,11 +45,13 @@ tags('storage_access')
 
       before(function (done) {
         this.timeout(90000);
-        createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie, 'compendium', (req) => {
-          request(req, (err, res, body) => {
-            compendium_id = JSON.parse(body).id;
-            publishCandidate(compendium_id, cookie, () => {
-              done();
+        db.compendia.drop(function (err, doc) {
+          createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie, 'compendium', (req) => {
+            request(req, (err, res, body) => {
+              compendium_id = JSON.parse(body).id;
+              publishCandidate(compendium_id, cookie, () => {
+                done();
+              });
             });
           });
         });
@@ -73,12 +69,14 @@ tags('storage_access')
 
       before(function (done) {
         this.timeout(90000);
-        createCompendiumPostRequest('./test/erc/step_validate_bag/data', cookie, 'workspace', (req) => {
-          request(req, (err, res, body) => {
-            assert.equal(res.statusCode, 200);
-            compendium_id = JSON.parse(body).id;
-            publishCandidate(compendium_id, cookie, () => {
-              done();
+        db.compendia.drop(function (err, doc) {
+          createCompendiumPostRequest('./test/erc/step_validate_bag/data', cookie, 'workspace', (req) => {
+            request(req, (err, res, body) => {
+              assert.equal(res.statusCode, 200);
+              compendium_id = JSON.parse(body).id;
+              publishCandidate(compendium_id, cookie, () => {
+                done();
+              });
             });
           });
         });
@@ -96,14 +94,16 @@ tags('storage_access')
 
       before(function (done) {
         this.timeout(90000);
-        createCompendiumPostRequest('./test/erc/step_image_execute/data', cookie, 'workspace', (req) => {
-          request(req, (err, res, body) => {
-            let compendium_id = JSON.parse(body).id;
-            publishCandidate(compendium_id, cookie, () => {
-              startJob(compendium_id, id => {
-                job_id = id;
-                waitForJob(job_id, (finalStatus) => {
-                  done();
+        db.compendia.drop(function (err, doc) {
+          createCompendiumPostRequest('./test/erc/step_image_execute/data', cookie, 'workspace', (req) => {
+            request(req, (err, res, body) => {
+              let compendium_id = JSON.parse(body).id;
+              publishCandidate(compendium_id, cookie, () => {
+                startJob(compendium_id, id => {
+                  job_id = id;
+                  waitForJob(job_id, (finalStatus) => {
+                    done();
+                  });
                 });
               });
             });
@@ -123,14 +123,16 @@ tags('storage_access')
 
       before(function (done) {
         this.timeout(90000);
-        createCompendiumPostRequest('./test/erc/step_image_execute', cookie, 'compendium', (req) => {
-          request(req, (err, res, body) => {
-            compendium_id = JSON.parse(body).id;
-            publishCandidate(compendium_id, cookie, () => {
-              startJob(compendium_id, id => {
-                job_id = id;
-                waitForJob(job_id, (finalStatus) => {
-                  done();
+        db.compendia.drop(function (err, doc) {
+          createCompendiumPostRequest('./test/erc/step_image_execute', cookie, 'compendium', (req) => {
+            request(req, (err, res, body) => {
+              compendium_id = JSON.parse(body).id;
+              publishCandidate(compendium_id, cookie, () => {
+                startJob(compendium_id, id => {
+                  job_id = id;
+                  waitForJob(job_id, (finalStatus) => {
+                    done();
+                  });
                 });
               });
             });
