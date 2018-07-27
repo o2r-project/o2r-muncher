@@ -42,10 +42,8 @@ describe('API job steps', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
   before(function (done) {
-    db.compendia.drop(function (err, doc) {
-      db.jobs.drop(function (err, doc) {
-        done();
-      });
+    db.jobs.drop(function (err, doc) {
+      done();
     });
   });
 
@@ -120,13 +118,16 @@ describe('API job steps', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id0 = id;
-              done();
+
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              startJob(compendium_id, id => {
+                job_id0 = id;
+                done();
+              });
             });
           });
         });
@@ -188,10 +189,12 @@ describe('API job steps', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            done();
+          });
         });
       });
     });
@@ -272,17 +275,19 @@ describe('API job steps', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/step_validate_bag', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id = id;
-              waitForJob(job_id, (finalStatus) => {
-                done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/step_validate_bag', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              startJob(compendium_id, id => {
+                job_id = id;
+                waitForJob(job_id, (finalStatus) => {
+                  done();
+                });
               });
-            });
-          }, true);
+            }, true);
+          });
         });
       });
     });
@@ -351,14 +356,16 @@ describe('API job steps', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id = id;
-              waitForJob(job_id, (finalStatus) => {
-                done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              startJob(compendium_id, id => {
+                job_id = id;
+                waitForJob(job_id, (finalStatus) => {
+                  done();
+                });
               });
             });
           });
@@ -890,13 +897,13 @@ describe('API job steps', () => {
     let job_id, compendium_id, job_id2 = '';
 
     before(function (done) {
-      this.timeout(180000); // takes quite long because of image saving and deleting compendium + image
+      this.timeout(240000); // takes quite long because of image saving and deleting compendium + image
 
       db.compendia.drop(function (err, doc) {
         fse.removeSync(path.join(config.fs.compendium, 'KIbebWnPlx-check'));
 
-        docker.getImage('erc:KIbebWnPlx-check').remove(function(err, data) {
-          if(err) debug('Error removing image: %o', err);
+        docker.getImage('erc:KIbebWnPlx-check').remove(function (err, data) {
+          if (err) debug('Error removing image: %o', err);
           else debug('%o', data);
 
           createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {

@@ -27,6 +27,7 @@ const createCompendiumPostRequest = require('./util').createCompendiumPostReques
 const publishCandidate = require('./util').publishCandidate;
 const waitForJob = require('./util').waitForJob;
 const startJob = require('./util').startJob;
+const deleteCompendium = require('./util').deleteCompendium;
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
@@ -37,31 +38,28 @@ const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPu
 describe('compendium metadata', () => {
   var db = mongojs('localhost/muncher', ['compendia']);
 
-  before(function (done) {
-    db.compendia.drop(function (err, doc) {
-      done();
-    });
-  });
-
   after(function (done) {
     db.close();
     done();
   });
 
-  let compendium_id = '';
-  before(function (done) {
-    this.timeout(90000);
-    createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        publishCandidate(compendium_id, cookie_o2r, () => {
-          done();
+  describe('GET /api/v1/compendium/<id> and checking contents of compendium metadata', () => {
+    let compendium_id = '';
+
+    before(function (done) {
+      this.timeout(90000);
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              done();
+            });
+          });
         });
       });
     });
-  });
 
-  describe('GET /api/v1/compendium/<id>', () => {
     it('should respond with HTTP 200 OK', (done) => {
       request(global.test_host + '/api/v1/compendium', (err, res) => {
         assert.ifError(err);
@@ -86,9 +84,7 @@ describe('compendium metadata', () => {
         done();
       });
     });
-  });
 
-  describe('checking contents of compendium metadata', () => {
     let metadata = {};
     let main_file = 'document.Rmd';
     let display_file = 'document.html';
@@ -198,10 +194,13 @@ describe('compendium metadata', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          metadata_uri = global.test_host + '/api/v1/compendium/' + JSON.parse(body).id + '/metadata';
-          done();
+
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            metadata_uri = global.test_host + '/api/v1/compendium/' + JSON.parse(body).id + '/metadata';
+            done();
+          });
         });
       });
     });
@@ -297,11 +296,13 @@ describe('compendium metadata', () => {
     let compendium_id = '';
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              done();
+            });
           });
         });
       });
@@ -356,11 +357,13 @@ describe('compendium metadata', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              done();
+            });
           });
         });
       });
@@ -400,11 +403,13 @@ describe('compendium metadata', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              done();
+            });
           });
         });
       });
@@ -475,11 +480,13 @@ describe('compendium metadata', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              done();
+            });
           });
         });
       });
@@ -525,11 +532,13 @@ describe('compendium metadata', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              done();
+            });
           });
         });
       });
@@ -572,11 +581,13 @@ describe('compendium metadata', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              done();
+            });
           });
         });
       });

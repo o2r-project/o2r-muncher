@@ -21,6 +21,9 @@ const request = require('request');
 const assert = require('chai').assert;
 const bagit = require('../lib/bagit');
 const tags = require('mocha-tags');
+const fse = require('fs-extra');
+const path = require('path');
+const config = require('../config/config');
 
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
@@ -37,6 +40,9 @@ tags('storage_access')
 
     after(function (done) {
       db.close();
+      fse.removeSync(path.join(config.fs.compendium, 'KIbebWnPlx-validate-comp'));
+      fse.removeSync(path.join(config.fs.compendium, 'KIbebWnPlx-execute'));
+
       done();
     });
 
@@ -70,7 +76,7 @@ tags('storage_access')
       before(function (done) {
         this.timeout(90000);
         db.compendia.drop(function (err, doc) {
-          createCompendiumPostRequest('./test/erc/step_validate_bag/data', cookie, 'workspace', (req) => {
+          createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie, 'workspace', (req) => {
             request(req, (err, res, body) => {
               assert.equal(res.statusCode, 200);
               compendium_id = JSON.parse(body).id;
@@ -95,7 +101,7 @@ tags('storage_access')
       before(function (done) {
         this.timeout(90000);
         db.compendia.drop(function (err, doc) {
-          createCompendiumPostRequest('./test/erc/step_image_execute/data', cookie, 'workspace', (req) => {
+          createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie, 'workspace', (req) => {
             request(req, (err, res, body) => {
               let compendium_id = JSON.parse(body).id;
               publishCandidate(compendium_id, cookie, () => {
@@ -140,7 +146,7 @@ tags('storage_access')
         });
       });
 
-      it('should correctly identify a not-bag directory', (done) => {
+      it('should not find a bag in the job', (done) => {
         assert.isTrue(bagit.jobIsBag(job_id));
         assert.isNotFalse(bagit.jobIsBag(job_id));
         done();

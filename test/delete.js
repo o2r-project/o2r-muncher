@@ -38,9 +38,7 @@ describe('Delete candidate (using metatainer)', () => {
 
   before(function (done) {
     db.compendia.drop(function (err, doc) {
-      db.jobs.drop(function (err, doc) {
-        done();
-      });
+      done();
     });
   });
 
@@ -54,7 +52,7 @@ describe('Delete candidate (using metatainer)', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+      createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
           done();
@@ -137,7 +135,7 @@ describe('Delete candidate (using metatainer)', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+      createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
           done();
@@ -175,7 +173,7 @@ describe('Delete candidate (using metatainer)', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+      createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
           done();
@@ -219,7 +217,7 @@ describe('Delete candidate (using metatainer)', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/metatainer', cookie_admin, 'compendium', (req) => {
+      createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_admin, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
           done();
@@ -270,7 +268,7 @@ describe('Delete candidate (using metatainer)', () => {
     });
 
     it('should return HTTP 400 with valid JSON and error response when trying to delete non-candidate compendium', (done) => {
-      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+      createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace', (req) => {
         let compendium_id = null;
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
@@ -299,6 +297,3 @@ describe('Delete candidate (using metatainer)', () => {
   });
 
 });
-
-
-

@@ -110,37 +110,6 @@ describe('configuration file (erc.yml)', () => {
     });
   });
 
-  describe('job fails with invalid id in configuration file', () => {
-    let job_id;
-
-    before(function (done) {
-      this.timeout(90000);
-      createCompendiumPostRequest('./test/workspace/with-invalid-erc-yml', cookie_o2r, 'workspace', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id = id;
-              waitForJob(job_id, (finalStatus) => {
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-
-    it('should fail validate compendium', (done) => {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-
-        assert.propertyVal(response.steps.validate_compendium, 'status', 'failure');
-        done();
-      });
-    });
-  });
-
   describe('licenses are in created configuration file', () => {
     let job_id;
 

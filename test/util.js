@@ -169,6 +169,21 @@ module.exports.publishCandidate = function (compendium_id, cookie, done, compend
   });
 }
 
+module.exports.deleteCompendium = function (compendium_id, cookie, done) {
+  j = request.jar();
+  ck = request.cookie('connect.sid=' + cookie);
+  j.setCookie(ck, global.test_host);
+
+  request({
+    uri: global.test_host + '/api/v1/compendium/' + compendium_id,
+    method: 'DELETE',
+    jar: j
+  }, (err, res, body) => {
+    debug("Deleted compendium: %o", body);
+    done(body);
+  });
+}
+
 module.exports.startJob = function (compendium_id, done) {
   let j = request.jar();
   let ck = request.cookie('connect.sid=' + cookie_plain);
