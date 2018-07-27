@@ -51,12 +51,14 @@
     "randomstring": "^1.1.5",
     "starwars": "1.0.0",
     "tar": "^4.4.4",
+    "tmp": "0.0.33",
     "url-join": "^4.0.0",
     "write-yaml": "^1.0.0",
     "yamljs": "^0.3.0",
     "yn": "^2.0.0"
   },
   "devDependencies": {
+    "adm-zip": "^0.4.11",
     "async": "^2.6.1",
     "async-polling": "^0.2.1",
     "chai": "^4.1.2",
@@ -68,6 +70,7 @@
     "node-object-hash": "^1.4.1",
     "node-uname": "^1.0.1",
     "request": "^2.87.0",
-    "sleep": "^5.1.1"
+    "sleep": "^5.1.1",
+    "tar-stream": "^1.6.1"
   }
 }
