@@ -28,7 +28,7 @@ You can override these environment variables (configured in `config/config.js`) 
 - `MUNCHER_PORT`
   Define on which Port muncher should listen. Defaults to `8080`.
 - `MUNCHER_MONGODB` __Required__
-  Location for the mongo db. Defaults to `mongodb://localhost/`. You will very likely need to change this.
+  Location for the mongo db. Defaults to `mongodb://localhost:27017/`. You will very likely need to change this.
 - `MUNCHER_MONGODB_DATABASE`
   Which database inside the MongoDB should be used? Defaults to `muncher`.
 - `MUNCHER_BASEPATH`

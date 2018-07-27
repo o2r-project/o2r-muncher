@@ -41,10 +41,11 @@ var dbOptions = {
   reconnectTries: Number.MAX_VALUE,
   keepAlive: 30000,
   socketTimeoutMS: 30000,
-  promiseLibrary: mongoose.Promise // use ES6 promises for mongoose
+  promiseLibrary: mongoose.Promise, // use ES6 promises for mongoose
+  useNewUrlParser: true
 };
 mongoose.connection.on('error', (err) => {
-  debug('Could not connect to MongoDB @ %s: %s'.yellow, dbURI, err);
+  debug('Could not connect to MongoDB @ %s: %s'.red, dbURI, err);
 });
 // If the Node process ends, close the Mongoose connection 
 process.on('SIGINT', function () {
