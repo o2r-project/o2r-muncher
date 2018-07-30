@@ -45,6 +45,7 @@ describe('compendium metadata', () => {
 
   describe('GET /api/v1/compendium/<id> and checking contents of compendium metadata', () => {
     let compendium_id = '';
+    let metadata = {};
 
     before(function (done) {
       this.timeout(90000);
@@ -53,7 +54,12 @@ describe('compendium metadata', () => {
           request(req, (err, res, body) => {
             compendium_id = JSON.parse(body).id;
             publishCandidate(compendium_id, cookie_o2r, () => {
-              done();
+              request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+                assert.ifError(err);
+                let response = JSON.parse(body);
+                metadata = response.metadata;
+                done();
+              });
             });
           });
         });
@@ -84,10 +90,6 @@ describe('compendium metadata', () => {
         done();
       });
     });
-
-    let metadata = {};
-    let main_file = 'document.Rmd';
-    let display_file = 'document.html';
 
     function assertMimeType(file) {
       if (file.extension) {
@@ -120,18 +122,6 @@ describe('compendium metadata', () => {
       }
     }
 
-    it('should respond with document', (done) => {
-      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.property(response, 'metadata');
-        assert.property(response.metadata, 'o2r');
-        metadata = response.metadata;
-        assert.propertyVal(response, 'id', compendium_id);
-        done();
-      });
-    });
-
     it('should contain correct non-empty title', (done) => {
       assert.property(metadata.o2r, 'title');
       assert.isNotEmpty(metadata.o2r, 'title');
@@ -147,13 +137,13 @@ describe('compendium metadata', () => {
 
     it('should contain correct main file', (done) => {
       assert.property(metadata.o2r, 'mainfile');
-      assert.propertyVal(metadata.o2r, 'mainfile', path.join(config.bagit.payloadDirectory, main_file));
+      assert.propertyVal(metadata.o2r, 'mainfile', path.join(config.bagit.payloadDirectory, 'document.Rmd'));
       done();
     });
 
     it('should contain correct display file', (done) => {
       assert.property(metadata.o2r, 'displayfile');
-      assert.propertyVal(metadata.o2r, 'displayfile', path.join(config.bagit.payloadDirectory, display_file));
+      assert.propertyVal(metadata.o2r, 'displayfile', path.join(config.bagit.payloadDirectory, 'document.html'));
       done();
     });
 
@@ -739,7 +729,7 @@ describe('compendium metadata extraction from the compendium configuration file'
 
   let compendium_id = '';
   before(function (done) {
-    this.timeout(90000);
+    this.timeout(180000);
     createCompendiumPostRequest('./test/erc/metatainer-licenses', cookie_o2r, 'compendium', (req) => {
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;

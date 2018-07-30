@@ -173,7 +173,7 @@ describe('Manifest creation during a job', () => {
     let compendium_id = '';
 
     before(function (done) {
-      this.timeout(90000);
+      this.timeout(240000); // image tarball saving takes time
       createCompendiumPostRequest('./test/workspace/minimal-script', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
