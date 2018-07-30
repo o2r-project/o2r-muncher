@@ -610,19 +610,15 @@ describe('compendium metadata and the compendium configuration file', () => {
   before(function (done) {
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) {
+        db.close();
         done();
       });
     });
   });
 
-  after(function (done) {
-    db.close();
-    done();
-  });
-
   let compendium_id = '';
   before(function (done) {
-    this.timeout(90000);
+    this.timeout(180000);
     createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -650,7 +646,7 @@ describe('compendium metadata and the compendium configuration file', () => {
           done();
         });
       });
-    }).timeout(90000);
+    }).timeout(180000);
 
     it('should have updated the configuration file after updating the metadata', (done) => {
       let j2 = request.jar();
@@ -714,34 +710,26 @@ describe('compendium metadata and the compendium configuration file', () => {
 describe('compendium metadata extraction from the compendium configuration file', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
-  before(function (done) {
-    db.compendia.drop(function (err, doc) {
-      db.jobs.drop(function (err, doc) {
-        done();
-      });
-    });
-  });
-
-  after(function (done) {
-    db.close();
-    done();
-  });
-
   let compendium_id = '';
-  before(function (done) {
-    this.timeout(180000);
-    createCompendiumPostRequest('./test/erc/metatainer-licenses', cookie_o2r, 'compendium', (req) => {
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        done();
-      });
-    });
-  });
-
   let metadata_o2r = {};
   let j = request.jar();
   let ck = request.cookie('connect.sid=' + cookie_o2r);
   j.setCookie(ck, global.test_host);
+
+  before(function (done) {
+    this.timeout(180000);
+    db.compendia.drop(function (err, doc) {
+      db.jobs.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/metatainer-licenses', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            db.close();
+            done();
+          });
+        });
+      });
+    });
+  });
 
   it('should have the found the configured licenses and brokered them from raw to o2r metadata during load', (done) => {
     request({
