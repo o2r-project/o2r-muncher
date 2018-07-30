@@ -110,37 +110,6 @@ describe('configuration file (erc.yml)', () => {
     });
   });
 
-  describe('job fails with valid id in configuration file', () => {
-    let job_id;
-
-    before(function (done) {
-      this.timeout(90000);
-      createCompendiumPostRequest('./test/workspace/with-invalid-erc-yml', cookie_o2r, 'workspace', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id = id;
-              waitForJob(job_id, (finalStatus) => {
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-
-    it('should fail validate compendium', (done) => {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-
-        assert.propertyVal(response.steps.validate_compendium, 'status', 'failure');
-        done();
-      });
-    });
-  });
-
   describe('licenses are in created configuration file', () => {
     let job_id;
 
@@ -171,7 +140,6 @@ describe('configuration file (erc.yml)', () => {
                   'code': 'a_test_code_license',
                   'data': 'ODbL-1.0',
                   'text': 'licenses.txt',
-                  'ui_bindings': 'ui',
                   'metadata': 'CC'
                 },
                 'publication_date': '1970-01-01',
@@ -199,7 +167,7 @@ describe('configuration file (erc.yml)', () => {
       request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
         configuration = yaml.parse(body);
-        assert.hasAllKeys(configuration.licenses, ['code', 'data', 'text', 'ui_bindings', 'metadata']);
+        assert.hasAllKeys(configuration.licenses, ['code', 'data', 'text', 'metadata']);
         done();
       });
     });
@@ -224,14 +192,6 @@ describe('configuration file (erc.yml)', () => {
       request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
         assert.include(body, 'text: licenses.txt');
-        done();
-      });
-    });
-
-    it('should have correct ui bindings license in configuration file', (done) => {
-      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
-        assert.ifError(err);
-        assert.include(body, 'ui_bindings: ui');
         done();
       });
     });

@@ -1,0 +1,11 @@
+---
+id: 1a2b3c
+spec_version: 1
+main: document.Rmd
+display: document.html
+licenses:
+  code: Apache-2.0
+  data: ODbL-1.0
+  text: CC0-1.0
+  metadata: license-md.txt
+convention: https://github.com/ropensci/rrrpkg

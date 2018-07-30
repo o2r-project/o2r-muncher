@@ -2,7 +2,7 @@
 title: "Capacity of container ships in seaborne trade from 1980 to 2016 (in million dwt)*"
 author:
     - name: "Daniel Nüst"
-    - affiliation: o2r team
+      affiliation: o2r team
 date: "2017"
 output: html_document
 abstract: |
@@ -12,7 +12,7 @@ keywords:
     - ship
     - trade
     - statistic
-doi: http://dx.doi.org/10.5555/666655554444
+doi: 'http://dx.doi.org/10.5555/666655554444'
 ---
 
 ```{r plot, echo=FALSE}

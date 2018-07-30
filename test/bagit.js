@@ -21,6 +21,9 @@ const request = require('request');
 const assert = require('chai').assert;
 const bagit = require('../lib/bagit');
 const tags = require('mocha-tags');
+const fse = require('fs-extra');
+const path = require('path');
+const config = require('../config/config');
 
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
@@ -35,14 +38,11 @@ tags('storage_access')
   .describe('BagIt functions', () => {
     var db = mongojs('localhost/muncher', ['compendia']);
 
-    before(function (done) {
-      db.compendia.drop(function (err, doc) {
-        done();
-      });
-    });
-
     after(function (done) {
       db.close();
+      fse.removeSync(path.join(config.fs.compendium, 'KIbebWnPlx-validate-comp'));
+      fse.removeSync(path.join(config.fs.compendium, 'KIbebWnPlx-execute'));
+
       done();
     });
 
@@ -51,11 +51,13 @@ tags('storage_access')
 
       before(function (done) {
         this.timeout(90000);
-        createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie, 'compendium', (req) => {
-          request(req, (err, res, body) => {
-            compendium_id = JSON.parse(body).id;
-            publishCandidate(compendium_id, cookie, () => {
-              done();
+        db.compendia.drop(function (err, doc) {
+          createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie, 'compendium', (req) => {
+            request(req, (err, res, body) => {
+              compendium_id = JSON.parse(body).id;
+              publishCandidate(compendium_id, cookie, () => {
+                done();
+              });
             });
           });
         });
@@ -73,12 +75,14 @@ tags('storage_access')
 
       before(function (done) {
         this.timeout(90000);
-        createCompendiumPostRequest('./test/erc/step_validate_bag/data', cookie, 'workspace', (req) => {
-          request(req, (err, res, body) => {
-            assert.equal(res.statusCode, 200);
-            compendium_id = JSON.parse(body).id;
-            publishCandidate(compendium_id, cookie, () => {
-              done();
+        db.compendia.drop(function (err, doc) {
+          createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie, 'workspace', (req) => {
+            request(req, (err, res, body) => {
+              assert.equal(res.statusCode, 200);
+              compendium_id = JSON.parse(body).id;
+              publishCandidate(compendium_id, cookie, () => {
+                done();
+              });
             });
           });
         });
@@ -96,14 +100,16 @@ tags('storage_access')
 
       before(function (done) {
         this.timeout(90000);
-        createCompendiumPostRequest('./test/erc/step_image_execute/data', cookie, 'workspace', (req) => {
-          request(req, (err, res, body) => {
-            let compendium_id = JSON.parse(body).id;
-            publishCandidate(compendium_id, cookie, () => {
-              startJob(compendium_id, id => {
-                job_id = id;
-                waitForJob(job_id, (finalStatus) => {
-                  done();
+        db.compendia.drop(function (err, doc) {
+          createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie, 'workspace', (req) => {
+            request(req, (err, res, body) => {
+              let compendium_id = JSON.parse(body).id;
+              publishCandidate(compendium_id, cookie, () => {
+                startJob(compendium_id, id => {
+                  job_id = id;
+                  waitForJob(job_id, (finalStatus) => {
+                    done();
+                  });
                 });
               });
             });
@@ -123,14 +129,16 @@ tags('storage_access')
 
       before(function (done) {
         this.timeout(90000);
-        createCompendiumPostRequest('./test/erc/step_image_execute', cookie, 'compendium', (req) => {
-          request(req, (err, res, body) => {
-            compendium_id = JSON.parse(body).id;
-            publishCandidate(compendium_id, cookie, () => {
-              startJob(compendium_id, id => {
-                job_id = id;
-                waitForJob(job_id, (finalStatus) => {
-                  done();
+        db.compendia.drop(function (err, doc) {
+          createCompendiumPostRequest('./test/erc/step_image_execute', cookie, 'compendium', (req) => {
+            request(req, (err, res, body) => {
+              compendium_id = JSON.parse(body).id;
+              publishCandidate(compendium_id, cookie, () => {
+                startJob(compendium_id, id => {
+                  job_id = id;
+                  waitForJob(job_id, (finalStatus) => {
+                    done();
+                  });
                 });
               });
             });
@@ -138,7 +146,7 @@ tags('storage_access')
         });
       });
 
-      it('should correctly identify a not-bag directory', (done) => {
+      it('should not find a bag in the job', (done) => {
         assert.isTrue(bagit.jobIsBag(job_id));
         assert.isNotFalse(bagit.jobIsBag(job_id));
         done();

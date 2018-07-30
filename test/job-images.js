@@ -25,10 +25,13 @@ const waitForJob = require('./util').waitForJob;
 const startJob = require('./util').startJob;
 const mongojs = require('mongojs');
 const fs = require('fs');
-const unameCall = require('node-uname');
 const path = require('path');
 const tags = require('mocha-tags');
 const debug = require('debug')('test:job-images');
+const tmp = require('tmp');
+const AdmZip = require('adm-zip');
+const tarStream = require('tar-stream');
+const stream = require('stream');
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
@@ -37,7 +40,7 @@ let Docker = require('dockerode');
 let docker = new Docker();
 
 tags('image_tarball_upload')
-  .describe('Workspaces with images in the upload', () => {
+  .describe('Images in uploads and downloads', () => {
     var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
     before(function (done) {
@@ -122,7 +125,7 @@ tags('image_tarball_upload')
         });
       });
 
-      it('should complete most steps and skip bag validation, manifest generation, and image build', (done) => {
+      it('should complete most steps and skip bag validation, manifest generation', (done) => {
         request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
           if (err) throw err;
           assert.ifError(err);
@@ -136,6 +139,16 @@ tags('image_tarball_upload')
           assert.propertyVal(response.steps.check, 'status', 'success', 'check');
           assert.propertyVal(response.steps.image_save, 'status', 'skipped', 'image save');
           assert.propertyVal(response.steps.cleanup, 'status', 'success', 'cleanup');
+          done();
+        });
+      });
+
+      it('should not have a reference to the image digest in step image_build', function (done) {
+        request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
+          assert.ifError(err);
+          let response = JSON.parse(body);
+
+          assert.notProperty(response.steps.image_save, 'imageId');
           done();
         });
       });
@@ -156,7 +169,7 @@ tags('image_tarball_upload')
           let response = JSON.parse(body);
 
           assert.property(response.steps.image_build, 'text');
-          assert.include(JSON.stringify(response.steps.image_build.text), 'Image tarball found! Loading it');
+          assert.include(JSON.stringify(response.steps.image_build.text), 'Image tarball found');
           assert.include(JSON.stringify(response.steps.image_build.text), 'Loaded image tarball from file ' + config.bagtainer.imageTarballFile);
           done();
         });
@@ -168,7 +181,8 @@ tags('image_tarball_upload')
           let response = JSON.parse(body);
 
           assert.property(response.steps.image_save, 'text');
-          assert.include(JSON.stringify(response.steps.image_save.text), 'file already exists');
+          assert.include(JSON.stringify(response.steps.image_save.text), 'Existing image tarball file found');
+          assert.include(JSON.stringify(response.steps.image_save.text), 'not overwriting tarball');
           done();
         });
       });
@@ -197,6 +211,131 @@ tags('image_tarball_upload')
         }
       }).timeout(30000);
 
+    });
+
+    describe('Image tags tarballs', function () {
+      before(function (done) {
+        this.timeout(30000);
+
+        createCompendiumPostRequest('./test/workspace/dummy', cookie_o2r, 'workspace', (requestData) => {
+
+          request(requestData, (err, res, body) => {
+            assert.ifError(err);
+            compendium_id = JSON.parse(body).id;
+
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              startJob(compendium_id, id => {
+                assert.ok(id);
+                job_id = id;
+                waitForJob(job_id, (finalStatus) => {
+                  done();
+                });
+              })
+            });
+          });
+        });
+      });
+
+      it('should have the correct job tag on the image in tarball', (done) => {
+        let tmpfile = tmp.tmpNameSync() + '.zip';
+        let url = global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '.zip';
+        request.get(url)
+          .on('error', function (err) {
+            done(err);
+          })
+          .pipe(fs.createWriteStream(tmpfile))
+          .on('finish', function () {
+            let zip = new AdmZip(tmpfile);
+
+            zip.getEntries().forEach(function (entry) {
+              if (entry.entryName === 'image.tar') {
+                let manifestJson = null;
+                let extractTar = tarStream.extract();
+                let manifests = 0;
+
+                extractTar.on('entry', function (header, stream, next) {
+                  if (header.name == 'manifest.json') {
+                    manifests++;
+                    const chunks = [];
+                    stream.on('data', function (chunk) {
+                      chunks.push(chunk);
+                    });
+                    stream.on('end', function () {
+                      manifestJson = JSON.parse(chunks)[0];
+                      next();
+                    });
+                  } else {
+                    stream.on('end', function () {
+                      next();
+                    })
+                  }
+                  stream.resume();
+                });
+                extractTar.on('finish', function () {
+                  assert.oneOf('job:' + job_id, manifestJson.RepoTags, '"job:<job_id>" tag is in RepoTags list');
+                  assert.equal(manifests, 2, 'two manifest files, only the newest will be extracted'); // see also https://github.com/npm/node-tar/issues/149
+                  done();
+                });
+                extractTar.on('error', function (e) {
+                  done(e);
+                });
+
+                let bufferStream = new stream.PassThrough();
+                bufferStream.end(new Buffer(entry.getData()));
+                bufferStream.pipe(extractTar);
+              }
+            });
+          });
+      }).timeout(60000);
+
+      it('should have the correct compendium tag on the image in tarball', (done) => {
+        let tmpfile = tmp.tmpNameSync() + '.zip';
+        let url = global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '.zip';
+        request.get(url)
+          .on('error', function (err) {
+            done(err);
+          })
+          .pipe(fs.createWriteStream(tmpfile))
+          .on('finish', function () {
+            let zip = new AdmZip(tmpfile);
+
+            zip.getEntries().forEach(function (entry) {
+              if (entry.entryName === 'image.tar') {
+                let manifestJson = null;
+                let extractTar = tarStream.extract();
+                extractTar.on('entry', function (header, stream, next) {
+                  if (header.name == 'manifest.json') {
+                    const chunks = [];
+                    stream.on('data', function (chunk) {
+                      chunks.push(chunk);
+                    });
+                    stream.on('end', function () {
+                      manifestJson = JSON.parse(chunks)[0];
+                      next();
+                    });
+                  } else {
+                    stream.on('end', function () {
+                      next();
+                    })
+                  }
+                  stream.resume();
+                });
+                extractTar.on('finish', function () {
+                  assert.oneOf('erc:' + compendium_id, manifestJson.RepoTags, '"erc:<erc_id>" tag is in RepoTags list');
+
+                  done();
+                });
+                extractTar.on('error', function (e) {
+                  done(e);
+                });
+
+                let bufferStream = new stream.PassThrough();
+                bufferStream.end(new Buffer(entry.getData()));
+                bufferStream.pipe(extractTar);
+              }
+            });
+          });
+      }).timeout(60000);
     });
 
   });

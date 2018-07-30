@@ -12,7 +12,7 @@ keywords:
     - ship
     - trade
     - statistic
-doi: http://dx.doi.org/10.5555/666655554444
+doi: 'http://dx.doi.org/10.5555/666655554444'
 ---
 
 ```{r plot, echo=FALSE}

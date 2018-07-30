@@ -339,7 +339,6 @@ describe('Publishing workspace metadata', () => {
               }
             ],
             "license": {
-              "uibindings": null,
               "text": null,
               "md": null,
               "data": null,
@@ -362,4 +361,136 @@ describe('Publishing workspace metadata', () => {
       });
     }).timeout(metadataRequestTimeout * 2);
   });
+});
+
+describe('Publishing workspace without editing metadata', () => {
+  let j = request.jar();
+  let ck = request.cookie('connect.sid=' + cookie_o2r);
+  j.setCookie(ck, global.test_host);
+
+  describe('with licenses in the compendium configuration file', () => {
+    let compendium_id = '';
+    let metadata_o2r = {};
+
+    before(function (done) {
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/erc/metatainer-licenses/data', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+
+          request({
+            method: 'GET',
+            uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata',
+            jar: j
+          }, (err, res, body) => {
+            assert.ifError(err);
+            response = JSON.parse(body);
+            metadata_o2r.o2r = response.metadata.o2r;
+            done();
+          });
+        });
+      });
+    });
+
+    it('should work with just returning the o2r metadata for publishing the candidate', (done) => {
+      let updateMetadata = {
+        url: global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata',
+        method: 'PUT',
+        jar: j,
+        timeout: metadataRequestTimeout,
+        json: metadata_o2r
+      };
+
+      request(updateMetadata, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        assert.isObject(body);
+        assert.doesNotHaveAnyKeys(['error', 'log']);
+        assert.notInclude(JSON.stringify(body), '!invalid');
+        done();
+      });
+    }).timeout(metadataRequestTimeout * 2);
+
+    it('should have all the fields from the compendium configuration file', (done) => {
+      request({
+        url: global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata'
+      }, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        response = JSON.parse(body);
+        assert.isObject(response);
+        assert.property(response.metadata.o2r, 'license');
+        assert.propertyVal(response.metadata.o2r.license, 'code', 'Apache-2.0');
+        assert.propertyVal(response.metadata.o2r.license, 'data', 'ODbL-1.0');
+        assert.propertyVal(response.metadata.o2r.license, 'text', 'CC0-1.0');
+        assert.propertyVal(response.metadata.o2r.license, 'metadata', 'license-md.txt');
+        done();
+      });
+    });
+  });
+
+  describe('with licenses in the Rmd header', () => {
+    let compendium_id = '';
+    let metadata_o2r = {};
+
+    before(function (done) {
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/workspace/with-metadata', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+
+          request({
+            method: 'GET',
+            uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata',
+            jar: j
+          }, (err, res, body) => {
+            assert.ifError(err);
+            response = JSON.parse(body);
+            metadata_o2r.o2r = response.metadata.o2r;
+            done();
+          });
+        });
+      });
+    });
+
+    it('should work with just returning the o2r metadata for publishing the candidate', (done) => {
+      let updateMetadata = {
+        url: global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata',
+        method: 'PUT',
+        jar: j,
+        timeout: metadataRequestTimeout,
+        json: metadata_o2r
+      };
+
+      request(updateMetadata, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        assert.isObject(body);
+        assert.doesNotHaveAnyKeys(['error', 'log']);
+        assert.notInclude(JSON.stringify(body), '!invalid');
+        done();
+      });
+    }).timeout(metadataRequestTimeout * 2);
+
+    it('should have all the fields from the Rmd header', (done) => {
+      request({
+        url: global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata'
+      }, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        response = JSON.parse(body);
+        assert.isObject(response);
+        assert.property(response.metadata.o2r, 'license');
+        assert.propertyVal(response.metadata.o2r.license, 'code', 'codelicense');
+        assert.propertyVal(response.metadata.o2r.license, 'data', 'datalicense');
+        assert.propertyVal(response.metadata.o2r.license, 'text', 'textlicense');
+        assert.propertyVal(response.metadata.o2r.license, 'metadata', 'metadatalicense');
+        
+        assert.propertyVal(response.metadata.o2r, 'title', 'Test with metadata in Rmd header');
+        assert.propertyVal(response.metadata.o2r, 'description', 'just a test with Rmd header');
+        done();
+      });
+    });
+  });
+
 });

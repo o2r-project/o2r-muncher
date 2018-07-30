@@ -1,0 +1,17 @@
+---
+author:
+  - name: "Ted Tester"
+    affiliation: University of Munster
+    email: ted.tester@awebsite8372930.org
+  - name: "Carl Connauthora"
+    affiliation: N.O.N.E
+title: 'Compendium has metadata'
+abstract: >
+  Text is less important if the metadata is good.
+keywords:
+  # at least one keyword must be supplied
+  formatted: [lorem, ipsum, dolor , sit, amet]
+  plain:     [lorem, ipsum, dolor , sit, amet]
+---
+
+Test document - metadata matters!

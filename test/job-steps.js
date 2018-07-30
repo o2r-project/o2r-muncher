@@ -25,9 +25,11 @@ const waitForJob = require('./util').waitForJob;
 const startJob = require('./util').startJob;
 const mongojs = require('mongojs');
 const fs = require('fs');
+const fse = require('fs-extra');
 const unameCall = require('node-uname');
 const path = require('path');
 const sleep = require('sleep');
+const debug = require('debug')('test:job-steps');
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
@@ -40,10 +42,8 @@ describe('API job steps', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
   before(function (done) {
-    db.compendia.drop(function (err, doc) {
-      db.jobs.drop(function (err, doc) {
-        done();
-      });
+    db.jobs.drop(function (err, doc) {
+      done();
     });
   });
 
@@ -52,7 +52,7 @@ describe('API job steps', () => {
     done();
   });
 
-  beforeEach('take a short break (1s)', function() {
+  beforeEach('take a short break (1s)', function () {
     sleep.sleep(1);
   });
 
@@ -118,13 +118,16 @@ describe('API job steps', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id0 = id;
-              done();
+
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              startJob(compendium_id, id => {
+                job_id0 = id;
+                done();
+              });
             });
           });
         });
@@ -186,10 +189,12 @@ describe('API job steps', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            done();
+          });
         });
       });
     });
@@ -270,17 +275,19 @@ describe('API job steps', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/step_validate_bag', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id = id;
-              waitForJob(job_id, (finalStatus) => {
-                done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/step_validate_bag', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              startJob(compendium_id, id => {
+                job_id = id;
+                waitForJob(job_id, (finalStatus) => {
+                  done();
+                });
               });
-            });
-          }, true);
+            }, true);
+          });
         });
       });
     });
@@ -349,14 +356,16 @@ describe('API job steps', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id = id;
-              waitForJob(job_id, (finalStatus) => {
-                done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              startJob(compendium_id, id => {
+                job_id = id;
+                waitForJob(job_id, (finalStatus) => {
+                  done();
+                });
               });
             });
           });
@@ -521,216 +530,6 @@ describe('API job steps', () => {
     }).timeout(60000);
   });
 
-  describe('Manifest generation and image build for workspace minimal-rmd-data', () => {
-    let job_id = '';
-    let compendium_id = '';
-
-    before(function (done) {
-      this.timeout(90000);
-      createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id = id;
-              waitForJob(job_id, (finalStatus) => {
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-
-    it('should skip previous steps', (done) => {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-
-        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
-        assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
-        done();
-      });
-    });
-
-    it('should complete step "generate_manifest"', (done) => {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.propertyVal(response.steps.generate_manifest, 'status', 'success');
-        done();
-      });
-    });
-
-    it('show have the manifest file in the job files', (done) => {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-
-        filePaths = response.files.children.map(elem => { return elem.path; });
-        assert.include(filePaths, '/api/v1/job/' + job_id + '/data/Dockerfile');
-        done();
-      });
-    });
-
-    it('should have the manifest file in the compendium files', (done) => {
-      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-
-        filePaths = response.files.children.map(elem => { return elem.path; });
-        assert.include(filePaths, '/api/v1/compendium/' + compendium_id + '/data/Dockerfile');
-        done();
-      });
-    });
-
-    it('should have the expected content in the manifest file via the job', function (done) {
-      request(global.test_host_transporter + '/api/v1/job/' + job_id + '/data/Dockerfile', (err, res, body) => {
-        assert.ifError(err);
-        assert.isNotObject(body, 'response is not JSON');
-        assert.include(body, 'FROM rocker/r-ver:3.4.3');
-        assert.include(body, 'rmarkdown::render(input = \\"/erc/main.Rmd\\"');
-        done();
-      });
-    });
-
-    it('should have the expected content in the manifest file via the compendium', function (done) {
-      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/Dockerfile', (err, res, body) => {
-        assert.ifError(err);
-        assert.isNotObject(body, 'response is not JSON');
-        assert.include(body, 'FROM rocker/r-ver:3.4.3');
-        assert.include(body, 'rmarkdown::render(input = \\"/erc/main.Rmd\\"');
-        done();
-      });
-    });
-
-    it('should have the manifest build log in the compendium metadata files', (done) => {
-      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-
-        filePaths = response.files.children
-          .find((element) => { return element.name === '.erc' })
-          .children.map(elem => { return elem.path; });
-        assert.include(filePaths, '/api/v1/compendium/' + compendium_id + '/data/.erc/generate_manifest.log');
-        done();
-      });
-    });
-
-    it('should complete build, execute, and cleanup', function (done) {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-
-        assert.propertyVal(response.steps.image_build, 'status', 'success');
-        assert.propertyVal(response.steps.image_execute, 'status', 'success');
-        assert.propertyVal(response.steps.cleanup, 'status', 'success');
-        done();
-      });
-    });
-
-    it('should have the image build log in the compendium metadata files', (done) => {
-      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-
-        filePaths = response.files.children
-          .find((element) => { return element.name === '.erc' })
-          .children.map(elem => { return elem.path; });
-        assert.include(filePaths, '/api/v1/compendium/' + compendium_id + '/data/.erc/image_build.log');
-        done();
-      });
-    });
-
-  });
-
-  describe('Manifest generation for workspace minimal-script', () => {
-    let job_id = '';
-    let compendium_id = '';
-
-    before(function (done) {
-      this.timeout(90000);
-      createCompendiumPostRequest('./test/workspace/minimal-script', cookie_o2r, 'workspace', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id = id;
-              waitForJob(job_id, (finalStatus) => {
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-
-    it('should skip validation steps because it is a workspace', (done) => {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-
-        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped');
-        assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
-        done();
-      });
-    });
-
-    it('should complete step "generate_manifest"', (done) => {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.propertyVal(response.steps.generate_manifest, 'status', 'success');
-        done();
-      });
-    });
-
-    it('show have the manifest file in the job files', (done) => {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-
-        filePaths = response.files.children.map(elem => { return elem.path; });
-        assert.include(filePaths, '/api/v1/job/' + job_id + '/data/Dockerfile');
-        done();
-      });
-    });
-
-    it('should have the manifest file in the compendium files', (done) => {
-      request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-
-        filePaths = response.files.children.map(elem => { return elem.path; });
-        assert.include(filePaths, '/api/v1/compendium/' + compendium_id + '/data/Dockerfile');
-        done();
-      });
-    });
-
-    it('should have the expected content in the manifest', function (done) {
-      request(global.test_host_transporter + '/api/v1/job/' + job_id + '/data/Dockerfile', (err, res, body) => {
-        assert.ifError(err);
-        assert.isNotObject(body, 'response is not JSON');
-        assert.notInclude(body, 'COPY', 'no COPY statement, because files are mounted');
-        assert.include(body, 'CMD ["R", "--vanilla", "-f", "main.R"]');
-        done();
-      });
-    });
-
-    it('should complete build, execute, and cleanup', function (done) {
-      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-
-        assert.propertyVal(response.steps.image_build, 'status', 'success');
-        assert.propertyVal(response.steps.image_execute, 'status', 'success');
-        assert.propertyVal(response.steps.cleanup, 'status', 'success');
-        done();
-      });
-    });
-
-  });
-
   describe('EXECUTION step_image_prepare', () => {
     let job_id = '';
 
@@ -846,6 +645,16 @@ describe('API job steps', () => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.propertyVal(response.steps.image_build, 'status', 'success');
+        done();
+      });
+    });
+
+    it('should have an image hash in the step metadata, which must be sha256', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.property(response.steps.image_build, 'imageId');
+        assert.match(response.steps.image_build.imageId, /^sha256:[a-z0-9]+$/g);
         done();
       });
     });
@@ -1088,18 +897,28 @@ describe('API job steps', () => {
     let job_id, compendium_id, job_id2 = '';
 
     before(function (done) {
-      this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
-          publishCandidate(compendium_id, cookie_o2r, () => {
-            startJob(compendium_id, id => {
-              job_id = id;
-              waitForJob(job_id, (finalStatus) => {
+      this.timeout(240000); // takes quite long because of image saving and deleting compendium + image
+
+      db.compendia.drop(function (err, doc) {
+        fse.removeSync(path.join(config.fs.compendium, 'KIbebWnPlx-check'));
+
+        docker.getImage('erc:KIbebWnPlx-check').remove(function (err, data) {
+          if (err) debug('Error removing image: %o', err);
+          else debug('%o', data);
+
+          createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
+            request(req, (err, res, body) => {
+              compendium_id = JSON.parse(body).id;
+              publishCandidate(compendium_id, cookie_o2r, () => {
                 startJob(compendium_id, id => {
-                  job_id2 = id;
-                  waitForJob(job_id2, (finalStatus) => {
-                    done();
+                  job_id = id;
+                  waitForJob(job_id, (finalStatus) => {
+                    startJob(compendium_id, id => {
+                      job_id2 = id;
+                      waitForJob(job_id2, (finalStatus) => {
+                        done();
+                      });
+                    });
                   });
                 });
               });
@@ -1109,18 +928,29 @@ describe('API job steps', () => {
       });
     });
 
-    it('should complete all other steps (and skip bag validation)', (done) => {
+    it('should complete specific steps', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
-        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'validate bag');
         assert.propertyVal(response.steps.validate_compendium, 'status', 'success', 'validate compendium');
+        assert.propertyVal(response.steps.generate_manifest, 'status', 'success', 'generate manifest');
         assert.propertyVal(response.steps.image_prepare, 'status', 'success', 'image prepare');
         assert.propertyVal(response.steps.image_build, 'status', 'success', 'image build');
         assert.propertyVal(response.steps.image_execute, 'status', 'success', 'image execute');
         assert.propertyVal(response.steps.image_save, 'status', 'success', 'image save');
         assert.propertyVal(response.steps.cleanup, 'status', 'success', 'cleanup');
+        done();
+      });
+    });
+
+    it('should skip specific steps', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'validate bag');
+        assert.propertyVal(response.steps.generate_configuration, 'status', 'skipped', 'generate configuration');
         done();
       });
     });
@@ -1216,11 +1046,24 @@ describe('API job steps', () => {
       });
     });
 
-    it.skip('should mention the overwriting of the image tarball when running a second job', function (done) {
+    it('should skip further steps for the 2nd job', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id2, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.validate_bag, 'status', 'skipped', 'validate bag');
+        assert.propertyVal(response.steps.generate_configuration, 'status', 'skipped', 'generate configuration');
+        assert.propertyVal(response.steps.generate_manifest, 'status', 'skipped', 'generate manifest');
+        assert.propertyVal(response.steps.image_save, 'status', 'skipped', 'image save');
+        done();
+      });
+    });
+
+    it('should not overwrite the image tarball when running a second job', function (done) {
       request(global.test_host + '/api/v1/job/' + job_id2 + '?steps=image_save', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
-        assert.include(JSON.stringify(response.steps.image_save.text), 'Deleting existing image tarball file');
+        assert.include(JSON.stringify(response.steps.image_save.text), 'image digests match');
         done();
       });
     });

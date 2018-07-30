@@ -1,2 +1,2 @@
-7a49b0d4ab73c231341a4add378757b6  data/erc.yml
+1d0f02ce66fa26259ec45679f264a79e  data/erc.yml
 26c8f3fb10f42f5e2988ef87ee78793f  data/test.txt
