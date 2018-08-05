@@ -1,0 +1,54 @@
+---
+title: "Inline data checking"
+author:
+    - name: "Daniel Nüst"
+      affiliation: o2r team
+date: "2018"
+output:
+    html_document:
+        theme: null
+        highlight: null
+        mathjax: null
+licenses:
+  code: CC-BY-3.0
+  data: CC-BY-3.0
+  text: CC-BY-3.0
+---
+
+This document demonstrates the text diff during check.
+There are no images to compare, only text with *numbers* and a _quote_.
+
+```{r numbers}
+numbers <- round(runif(n = 100, max = 100), digits = 0)
+
+set.seed(2018)
+seeded_numbers <- runif(n = 100, max = 100)
+```
+
+## Random numbers
+
+The following numbers are generated randomly: `r numbers[1]`, `r numbers[2]`, `r numbers[3]`
+
+- `` `r numbers[30] * numbers[60]` ``
+- **`r numbers[40]`**
+- _`r numbers[50]`_
+
+### `r numbers[70]` is also a number
+
+## Seeded numbers
+
+`r seeded_numbers[1]` and `r seeded_numbers[2]` and `r seeded_numbers[3]`!
+
+## Wisdom
+
+```{r words, message=FALSE, warning=FALSE, include=FALSE}
+words <- rep(c("data", "information"), length.out = 100)
+set.seed(numbers[numbers[42]])
+```
+
+_You can have `r words[numbers[1]]` without `r words[numbers[2]]`, but you cannot have `r words[numbers[3]]` without `r words[numbers[1]]`._
+-- after Daniel Keys Moran
+
+```{r quote, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+fortunes::fortune()
+```

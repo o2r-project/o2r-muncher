@@ -122,13 +122,14 @@ module.exports.publishCandidate = function (compendium_id, cookie, done, compend
   };
 
   request(getMetadata, (err, res, body) => {
-    let response = JSON.parse(body);
     if (err) {
       console.error('error publishing candidate: %o', err);
-    } else if (response.error) {
-      console.error('error publishing candidate: %s', JSON.stringify(response));
+    } else if (body.error) {
+      console.error('error publishing candidate: %o', body);
       throw new Error('Could not publish candidate, aborting test.');
     } else {
+      let response = JSON.parse(body);
+
       updateMetadata.json = { o2r: response.metadata.o2r };
 
       // make metadata from tests valid

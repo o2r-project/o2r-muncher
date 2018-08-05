@@ -1212,6 +1212,100 @@ describe('API job steps', () => {
     });
   });
 
+  describe('EXECUTION check with random result in text', () => {
+    let job_id = '';
+    let compendium_id = '';
+
+    before(function (done) {
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/workspace/rmd-textdiff', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              waitForJob(job_id, (finalStatus) => {
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should complete generate configuration, validate compendium, generate manifest, image build, image execute, and cleanup', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.generate_configuration, 'status', 'success');
+        assert.propertyVal(response.steps.validate_compendium, 'status', 'success');
+        assert.propertyVal(response.steps.generate_manifest, 'status', 'success');
+        assert.propertyVal(response.steps.image_build, 'status', 'success');
+        assert.propertyVal(response.steps.image_execute, 'status', 'success');
+        assert.propertyVal(response.steps.cleanup, 'status', 'success');
+        done();
+      });
+    });
+
+    it('should fail the step check', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.check, 'status', 'failure');
+        done();
+      });
+    });
+
+    it('should skip the step image_save', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.propertyVal(response.steps.image_save, 'status', 'skipped');
+        done();
+      });
+    });
+
+    it('should have empty errors array in the step check', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=check', (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.property(response.steps.check, 'errors');
+        assert.isArray(response.steps.check.errors)
+        assert.isEmpty(response.steps.check.errors);
+        done();
+      });
+    });
+
+    it('should have a reference to a diff file in step check', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=check', (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.property(response.steps.check, 'display');
+        assert.property(response.steps.check.display, 'diff');
+        assert.propertyVal(response.steps.check.display, 'diff', '/api/v1/job/' + job_id + '/data/' + config.checker.diffFileName);
+        done();
+      });
+    });
+
+    it('should list a number of text differences in step details', function (done) {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=check', (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+
+        assert.property(response.steps.check, 'numTextDifferrences');
+        assert.isNumber(response.steps.check.numTextDifferrences);
+        assert.isAtLeast(response.steps.check.numTextDifferrences, 8);
+        done();
+      });
+    });
+    
+  });
+
   describe('API job step details filtering', () => {
     var job_id;
 
