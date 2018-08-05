@@ -126,7 +126,7 @@ describe('Updating workspace metadata', () => {
     let compendium_id = '';
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace', (req) => {
+      createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
           publishCandidate(compendium_id, cookie_o2r, () => {

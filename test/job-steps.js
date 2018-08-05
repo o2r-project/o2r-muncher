@@ -500,7 +500,7 @@ describe('API job steps', () => {
     }).timeout(60000);
 
     it('should complete step "generate_configuration" and skip previous steps for minimal-rmd-data', (done) => {
-      createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace', (req) => {
+      createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           assert.ifError(err);
           let compendium_id = JSON.parse(body).id;
@@ -1088,7 +1088,7 @@ describe('API job steps', () => {
 
   });
 
-  describe('EXECUTION check with random result in HTML', () => {
+  describe('EXECUTION check with random result in figure', () => {
     let job_id = '';
     let compendium_id = '';
 
@@ -1219,7 +1219,7 @@ describe('API job steps', () => {
       this.timeout(90000);
       db.compendia.drop(function (err, doc) {
         db.jobs.drop(function (err, doc) {
-          createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie_o2r, 'workspace', (req) => {
+          createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {
             request(req, (err, res, body) => {
               let compendium_id = JSON.parse(body).id;
               publishCandidate(compendium_id, cookie_o2r, () => {
