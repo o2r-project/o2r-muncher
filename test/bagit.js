@@ -76,7 +76,7 @@ tags('storage_access')
       before(function (done) {
         this.timeout(90000);
         db.compendia.drop(function (err, doc) {
-          createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie, 'workspace', (req) => {
+          createCompendiumPostRequest('./test/workspace/rmd-data', cookie, 'workspace', (req) => {
             request(req, (err, res, body) => {
               assert.equal(res.statusCode, 200);
               compendium_id = JSON.parse(body).id;
@@ -101,7 +101,7 @@ tags('storage_access')
       before(function (done) {
         this.timeout(90000);
         db.compendia.drop(function (err, doc) {
-          createCompendiumPostRequest('./test/workspace/minimal-rmd-data', cookie, 'workspace', (req) => {
+          createCompendiumPostRequest('./test/workspace/rmd-data', cookie, 'workspace', (req) => {
             request(req, (err, res, body) => {
               let compendium_id = JSON.parse(body).id;
               publishCandidate(compendium_id, cookie, () => {

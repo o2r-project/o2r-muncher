@@ -147,15 +147,15 @@ describe('API compendium filter', () => {
       this.timeout(90000);
       db.compendia.drop(function (err, doc) {
 
-        createCompendiumPostRequest('./test/workspace/minimal-script', cookie_o2r, 'workspace', (req) => {
+        createCompendiumPostRequest('./test/workspace/script', cookie_o2r, 'workspace', (req) => {
           request(req, (err, res, body) => {
             compendium1_id = JSON.parse(body).id;
             publishCandidate(compendium1_id, cookie_o2r, () => {
-              createCompendiumPostRequest('./test/workspace/minimal-script', cookie_o2r, 'workspace', (req) => {
+              createCompendiumPostRequest('./test/workspace/script', cookie_o2r, 'workspace', (req) => {
                 request(req, (err, res, body2) => {
                   compendium2_id = JSON.parse(body2).id;
                   publishCandidate(compendium2_id, cookie_o2r, () => {
-                    createCompendiumPostRequest('./test/workspace/minimal-script', cookie_editor, 'workspace', (req) => {
+                    createCompendiumPostRequest('./test/workspace/script', cookie_editor, 'workspace', (req) => {
                       request(req, (err, res, body3) => {
                         compendium3_id = JSON.parse(body3).id;
                         publishCandidate(compendium3_id, cookie_editor, () => {

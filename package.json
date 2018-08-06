@@ -1,6 +1,6 @@
 {
   "name": "muncher",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "description": "Node.js implementation of parts of the [o2r web api](http://o2r.info/o2r-web-api).",
   "main": "index.js",
   "scripts": {
@@ -32,7 +32,7 @@
     "debug": "^3.1.0",
     "directory-tree": "^2.1.0",
     "dockerode": "^2.5.5",
-    "erc-checker": "github:o2r-project/erc-checker#91bd93d",
+    "erc-checker": "^1.2.0",
     "express": "^4.16.3",
     "express-session": "^1.15.6",
     "filesize": "^3.6.1",

@@ -217,7 +217,7 @@ c.meta.validate.schemas = [
 ];
 
 c.checker = {};
-c.checker.display_file_name_html = 'diffHTML.html';
+c.checker.diffFileName = 'check.html';
 
 c.containerit = {};
 c.containerit.image = env.MUNCHER_CONTAINERIT_IMAGE || 'o2rproject/containerit:geospatial';

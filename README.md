@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/o2r-project/o2r-muncher.svg?branch=master)](https://travis-ci.org/o2r-project/o2r-muncher) [![](https://images.microbadger.com/badges/image/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own version badge on microbadger.com")
 
-Node.js implementation of the endpoints `/api/v1/compendium` (reading and metadata update) and `/api/v1/jobs` of the [o2r-web-api](http://o2r.info/o2r-web-api/).
+Node.js implementation of the endpoints `/api/v1/compendium` (reading and metadata update) and `/api/v1/jobs` of the [o2r-web-api](https://o2r.info/o2r-web-api/).
 
 Requirements:
 
@@ -147,7 +147,7 @@ Alternatively, start the component(s) under development from your IDE(s).
 
 You can authenticate locally with OAuth via ORCID using the required configuration parameters (see project [reference-implementation](https://github.com/o2r-project/reference-implementation)).
 
-If you want to upload from the command line, make sure the account has the required [level](http://o2r.info/o2r-web-api/user/#user-levels) (it should [by default](https://github.com/o2r-project/o2r-bouncer#available-environment-variables)), get the session cookie `connect.sid` content out of the browser and use it in the `curl` request:
+If you want to upload from the command line, make sure the account has the required [level](https://o2r.info/o2r-web-api/user/#user-levels) (it should [by default](https://github.com/o2r-project/o2r-bouncer#available-environment-variables)), get the session cookie `connect.sid` content out of the browser and use it in the `curl` request:
 
 ```bash
 curl --cookie connect.sid=s:S1oH7... -F "compendium=@/<path to compendium.zip>;type=application/zip" -F "content_type=compendium"

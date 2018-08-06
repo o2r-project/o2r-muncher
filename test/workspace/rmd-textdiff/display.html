@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<meta name="date" content="2018-01-01" />
+
+<title>Inline data checking</title>
+
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Inline data checking</h1>
+<h4 class="author"><em>Daniel Nüst</em></h4>
+<address class="author_afil">
+o2r team<br><h4 class="date"><em>2018</em></h4>
+
+
+
+<p>This document demonstrates the text diff during check. There are no images to compare, only text with <em>numbers</em> and a <em>quote</em>.</p>
+<pre class="r"><code>numbers &lt;- round(runif(n = 100, max = 100), digits = 0)
+
+set.seed(2018)
+seeded_numbers &lt;- runif(n = 100, max = 100)</code></pre>
+<div id="random-numbers" class="section level2">
+<h2>Random numbers</h2>
+<p>The following numbers are generated randomly: 37, 70, 98</p>
+<ul>
+<li><code>3104</code></li>
+<li><strong>19</strong></li>
+<li><em>93</em></li>
+</ul>
+<div id="is-also-a-number" class="section level3">
+<h3>70 is also a number</h3>
+</div>
+</div>
+<div id="seeded-numbers" class="section level2">
+<h2>Seeded numbers</h2>
+<p>33.6153471 and 46.372327 and 6.0585386!</p>
+</div>
+<div id="wisdom" class="section level2">
+<h2>Wisdom</h2>
+<p><em>You can have data without information, but you cannot have information without data.</em> – after Daniel Keys Moran</p>
+<p>David Winsemius: Any of your staff can view the (open) source code just as any other member of the human race. Uwe Ligges: I do not think the GPL excludes other species… – David Winsemius and Uwe Ligges (following a request for access to the R sources) R-help (December 2011)</p>
+</div>
+
+
+
+
+</body>
+</html>
