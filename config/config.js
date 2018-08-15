@@ -220,7 +220,7 @@ c.checker = {};
 c.checker.diffFileName = 'check.html';
 
 c.containerit = {};
-c.containerit.image = env.MUNCHER_CONTAINERIT_IMAGE || 'o2rproject/containerit:geospatial';
+c.containerit.image = env.MUNCHER_CONTAINERIT_IMAGE || 'o2rproject/containerit:geospatial-0.5.0.9000';
 c.containerit.default_create_options = {
   CpuShares: 256,
   Env: ['O2R_MUNCHER=true', 'O2R_MUNCHER_VERSION=' + c.version],
