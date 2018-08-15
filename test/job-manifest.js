@@ -255,4 +255,48 @@ describe('Manifest creation during a job', () => {
 
   });
 
+  describe.skip('Manifest generation with skipping base images (only run manually against containerised muncher, otherwise permission issues)', () => {
+    let job_id = '';
+    let compendium_id = '';
+
+    before(function (done) {
+      this.timeout(240000); // image tarball saving takes time
+      createCompendiumPostRequest('./test/workspace/rmd-geospatial', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              job_id = id;
+              waitForJob(job_id, (finalStatus) => {
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should complete step "generate_manifest"', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.generate_manifest, 'status', 'success');
+        done();
+      });
+    });
+
+    it('should have the expected content in the manifest', function (done) {
+      request(global.test_host_transporter + '/api/v1/job/' + job_id + '/data/Dockerfile', (err, res, body) => {
+        assert.ifError(err);
+        assert.isNotObject(body, 'response is not JSON');
+        assert.include(body, 'RUN ["install2.r", "here", "lwgeom"]', 'lwgeom and here packages installed in Dockerfile');
+        assert.include(body, 'Packages skipped');
+        assert.match(body, '^# Packages skipped.*sf', 'skip sf package');
+        assert.match(body, '^# Packages skipped.*rmarkdown', 'skip rmarkdown package');
+        assert.match(body, '^# Packages skipped.*yaml', 'skip yaml package');
+        done();
+      });
+    });
+  });
+
 });

@@ -1,0 +1,19 @@
+---
+title: "Test for R package skipping"
+author:
+    - name: "Daniel Nüst"
+      affiliation: o2r team
+date: 2018-08-08
+output: html_document
+abstract: "Test workspace"
+---
+
+```{r packages}
+library("lubridate")
+library("units")
+library("sf")
+library("lwgeom")
+library("here")
+```
+
+No content.

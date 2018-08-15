@@ -226,10 +226,16 @@ c.containerit.default_create_options = {
   Env: ['O2R_MUNCHER=true', 'O2R_MUNCHER_VERSION=' + c.version],
   Memory: 1073741824 * 2, // 2G
   MemorySwap: 1073741824 * 4,
-  User: env.MUNCHER_CONTAINERIT_USER || 'rstudio' // IMPORTANT: this must fit the used image!
+  User: env.MUNCHER_CONTAINERIT_USER || 'rstudio' // this must fit the used image, so that files outside the container for local testing can be deleted
+                                                  // and must be 'root' (or a user who can run Docḱer) for package filtering > extra setting below!
 };
 c.containerit.baseImage = env.MUNCHER_CONTAINERIT_BASE_IMAGE || 'rocker/geospatial:3.4.4';
-c.containerit.filterBaseImagePkgs = (yn(env.MUNCHER_CONTAINERIT_FILTER_BASE_IMAGE_PKGS) || 'false').toString().toUpperCase();
+c.containerit.filterBaseImagePkgs = {
+  r_parameter_value:  (yn(env.MUNCHER_CONTAINERIT_FILTER_BASE_IMAGE_PKGS) || 'false').toString().toUpperCase(),
+  enabled: yn(env.MUNCHER_CONTAINERIT_FILTER_BASE_IMAGE_PKGS || 'false'),
+  user: 'root' // needs access to Docker
+};
+c.containerit.dInDBind = '/var/run/docker.sock:/var/run/docker.sock';
 c.containerit.maintainer = 'o2r';
 c.containerit.rm = yn(env.MUNCHER_CONTAINERIT_CONTAINER_RM || 'true');
 

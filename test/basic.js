@@ -61,7 +61,7 @@ describe('API', () => {
       request(path, (err, res, body) => {
         let response = JSON.parse(body);
         assert.ifError(err);
-        assert.equal(response.about, "http://o2r.info");
+        assert.equal(response.about, "https://o2r.info");
         assert.isOk(response.versions);
         assert.isOk(response.versions.current);
         current = response.versions.current;

@@ -219,7 +219,7 @@ function initApp(callback) {
     });
 
     const indexResponse = {};
-    indexResponse.about = 'http://o2r.info';
+    indexResponse.about = 'https://o2r.info';
     indexResponse.versions = {};
     indexResponse.versions.current = '/api/v1';
     indexResponse.versions.v1 = '/api/v1';

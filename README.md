@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/o2r-project/o2r-muncher.svg?branch=master)](https://travis-ci.org/o2r-project/o2r-muncher) [![](https://images.microbadger.com/badges/image/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own version badge on microbadger.com")
 
-Node.js implementation of the endpoints `/api/v1/compendium` (reading and metadata update) and `/api/v1/jobs` of the [o2r-web-api](https://o2r.info/o2r-web-api/).
+Node.js implementation of the endpoints `/api/v1/compendium` (reading and metadata update) and `/api/v1/jobs` of the [o2r API](https://o2r.info/api/).
 
 Requirements:
 
@@ -48,7 +48,9 @@ You can override these environment variables (configured in `config/config.js`) 
 - `MUNCHER_CONTAINERIT_IMAGE`
   Docker image name and tag for containerit tool, defaults to running Rocker's [geospatial](https://github.com/rocker-org/geospatial/) image with [containerit](https://github.com/o2r-project/containerit/) pre-installed, i.e. `o2rproject/containerit:geospatial`.
 - `MUNCHER_CONTAINERIT_USER`
-  The user within the container, which must match the used image (see previous setting), defaults to `rstudio`, which is suitable for images in the `rocker/verse` stack of images. _Change this for usage with `docker-compose`!
+  The user within the container, which must match the used image (see previous setting), defaults to `rstudio`, which is suitable for images in the `rocker/verse` stack of images. _Change this_ when running muncher inside a container, or with `docker-compose`!
+- `MUNCHER_CONTAINERIT_FILTER_BASE_IMAGE_PKGS`
+  Gives the `containerit` container access to the Docker socket so that it can extract the packages installed in a container and not install them redundantly, see also [related issue](https://github.com/o2r-project/o2r-muncher/issues/105). _Only works when running muncher inside a container_, or with `docker-compose`!
 - `MUNCHER_FAIL_ON_NO_FILES`
   Should an error be thrown when files for a compendium that exists in the database are _not found_? Defaults to `false` (useful for testing).
 - `MUNCHER_ALLOW_INVALID_METADATA`
@@ -147,7 +149,7 @@ Alternatively, start the component(s) under development from your IDE(s).
 
 You can authenticate locally with OAuth via ORCID using the required configuration parameters (see project [reference-implementation](https://github.com/o2r-project/reference-implementation)).
 
-If you want to upload from the command line, make sure the account has the required [level](https://o2r.info/o2r-web-api/user/#user-levels) (it should [by default](https://github.com/o2r-project/o2r-bouncer#available-environment-variables)), get the session cookie `connect.sid` content out of the browser and use it in the `curl` request:
+If you want to upload from the command line, make sure the account has the required [level](https://o2r.info/api/user/#user-levels) (it should [by default](https://github.com/o2r-project/o2r-bouncer#available-environment-variables)), get the session cookie `connect.sid` content out of the browser and use it in the `curl` request:
 
 ```bash
 curl --cookie connect.sid=s:S1oH7... -F "compendium=@/<path to compendium.zip>;type=application/zip" -F "content_type=compendium"

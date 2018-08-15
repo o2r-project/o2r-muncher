@@ -73,7 +73,7 @@ ARG META_VERSION
 # Metadata http://label-schema.org/rc1/
 LABEL maintainer="o2r-project <https://o2r.info>" \
   org.label-schema.vendor="o2r project" \
-  org.label-schema.url="http://o2r.info" \
+  org.label-schema.url="https://o2r.info" \
   org.label-schema.name="o2r muncher" \
   org.label-schema.description="ERC execution and CRUD" \
   org.label-schema.version=$VERSION \
