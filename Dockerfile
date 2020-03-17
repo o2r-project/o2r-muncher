@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM node:8-alpine
+FROM node:12-alpine
 
 # Python, based on frolvlad/alpine-python3
 RUN apk add --no-cache \
