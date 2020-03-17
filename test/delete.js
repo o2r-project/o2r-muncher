@@ -31,10 +31,11 @@ require("./setup");
 
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
+const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
 const cookie_admin = 's:hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i.IEPb0lmtGojn2cVk2edRuomIEanX6Ddz87egE5Pe8UM';
 
-describe('Delete candidate (using metatainer)', () => {
-  var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
+describe('Delete candidate', () => {
+  var db = mongojs('localhost/muncher', ['compendia']);
 
   before(function (done) {
     db.compendia.drop(function (err, doc) {
@@ -212,6 +213,46 @@ describe('Delete candidate (using metatainer)', () => {
     });
   });
 
+  describe('as editor user', () => {
+    let compendium_id = null;
+
+    before(function (done) {
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          done();
+        });
+      });
+    });
+
+    it('should return HTTP code 204 with empty body', (done) => {
+      j = request.jar();
+      ck = request.cookie('connect.sid=' + cookie_editor);
+      j.setCookie(ck, global.test_host);
+
+      request({
+        uri: global.test_host + '/api/v1/compendium/' + compendium_id,
+        method: 'DELETE',
+        jar: j,
+        timeout: 1000
+      }, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 204);
+        assert.equal(body, '');
+        done();
+      });
+    });
+
+    it('should not have the compendium in the database anymore', (done) => {
+      db.compendia.findOne({ id: compendium_id }, function (err, doc) {
+        assert.ifError(err);
+        assert.isNull(doc);
+        done();
+      })
+    });
+  });
+
   describe('as admin user', () => {
     let compendium_id = null;
 
@@ -266,34 +307,177 @@ describe('Delete candidate (using metatainer)', () => {
         done();
       });
     });
+  });
+});
 
-    it('should return HTTP 400 with valid JSON and error response when trying to delete non-candidate compendium', (done) => {
+
+describe('Delete compendium', () => {
+  var db = mongojs('localhost/muncher', ['compendia']);
+
+  before(function (done) {
+    db.compendia.drop(function (err, doc) {
+      done();
+    });
+  });
+
+  after(function (done) {
+    db.close();
+    done();
+  });
+
+  describe('as author', () => {
+    let compendium_id = null;
+
+    before(function (done) {
+      this.timeout(90000);
       createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {
-        let compendium_id = null;
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
+          
           publishCandidate(compendium_id, cookie_o2r, () => {
-
-            j = request.jar();
-            ck = request.cookie('connect.sid=' + cookie_o2r);
-            j.setCookie(ck, global.test_host);
-
-            request({
-              uri: global.test_host + '/api/v1/compendium/' + compendium_id,
-              method: 'DELETE',
-              jar: j
-            }, (err, res, body) => {
-              assert.ifError(err);
-              assert.equal(res.statusCode, 400);
-              let response = JSON.parse(body);
-              assert.isObject(response);
-              assert.property(response, 'error');
-              done();
-            });
+            done();
           });
         });
       });
-    }).timeout(30000);
+    });
+
+    it('should return HTTP 400 with valid JSON and error response when trying to delete', (done) => {
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie_o2r);
+      j.setCookie(ck, global.test_host);
+
+      request({
+        uri: global.test_host + '/api/v1/compendium/' + compendium_id,
+        method: 'DELETE',
+        jar: j
+      }, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 400);
+        let response = JSON.parse(body);
+        assert.isObject(response);
+        assert.property(response, 'error');
+        done();
+      });
+    });
+  });
+
+  describe('as editor user', () => {
+    let compendium_id = null;
+
+    before(function (done) {
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            done();
+          });
+        });
+      });
+    });
+
+    it('should return HTTP 400 with valid JSON and error response when trying to delete', (done) => {
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie_editor);
+      j.setCookie(ck, global.test_host);
+
+      request({
+        uri: global.test_host + '/api/v1/compendium/' + compendium_id,
+        method: 'DELETE',
+        jar: j
+      }, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 400);
+        let response = JSON.parse(body);
+        assert.isObject(response);
+        assert.property(response, 'error');
+        done();
+      });
+    });
+
+    it('should still have the compendium in the database', (done) => {
+      db.compendia.findOne({ id: compendium_id }, function (err, doc) {
+        assert.ifError(err);
+        assert.isNotNull(doc);
+        assert.propertyVal(doc, 'id', compendium_id);
+        done();
+      })
+    });
+  });
+  
+  describe('as admin user', () => {
+    let compendium_id = null;
+
+    before(function (done) {
+      this.timeout(90000);
+      createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            //startJob(compendium_id, id => {
+            //  job_id = id;
+            //  waitForJob(job_id, (finalStatus) => {
+                done();
+            //  });
+            });
+          });
+        });
+    });
+
+    it('should return HTTP 204 with empty body when deleting', (done) => {
+      let j = request.jar();
+      let ck = request.cookie('connect.sid=' + cookie_admin);
+      j.setCookie(ck, global.test_host);
+
+      request({
+        uri: global.test_host + '/api/v1/compendium/' + compendium_id,
+        method: 'DELETE',
+        jar: j
+      }, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 204);
+        assert.equal(body, '');
+        done();
+      });
+    });
+
+    it('should not have the compendium in the database anymore', (done) => {
+      db.compendia.findOne({ id: compendium_id }, function (err, doc) {
+        assert.ifError(err);
+        assert.isNull(doc);
+        done();
+      })
+    });
+
+    it('should return not have the files in the storage anymore', (done) => {
+      tryAccess = function () {
+        fs.accessSync(path.join(config.fs.compendium, compendium_id));
+      }
+      assert.throws(tryAccess, Error, 'no such file or directory');
+      done();
+    });
+
+    it('should have the files in the deleted folder', (done) => {
+      deleted_path = path.join(config.fs.deleted, compendium_id);
+      tryAccess = function () {
+        fs.accessSync(deleted_path);
+      }
+      assert.doesNotThrow(tryAccess, Error);
+
+      files = fs.readdirSync(deleted_path);
+      assert.sameMembers(files, ['.erc', 'data.csv', 'display.html', 'main.Rmd']);
+
+      done();
+    });
+
+    it('should have stored the full compendium JSON in the deleted folder', (done) => {
+      deleted_metadata = path.join(config.fs.deleted, compendium_id + '.json');
+      metadata_doc = JSON.parse(fs.readFileSync(deleted_metadata));
+      assert.containsAllKeys(metadata_doc, [ 'id', 'user', 'metadata', 'updatedAt' ]);
+      done();
+    });
   });
 
 });

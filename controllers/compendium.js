@@ -38,12 +38,15 @@ var Compendium = require('../lib/model/compendium');
 var User = require('../lib/model/user');
 var Job = require('../lib/model/job');
 
+/*
+ * user must be owner (unless delete) OR have the sufficient level
+ */
 detect_rights = function (user_id, compendium, level) {
   debug('[%s] Checking rights for user %s against level %s', compendium.id, user_id, level);
 
   return new Promise(function (resolve, reject) {
-    if (user_id === compendium.user) {
-      debug('[%s] User %s is owner!', compendium.id, user_id);
+    if (user_id === compendium.user && level < config.user.level.delete_compendium) {
+      debug('[%s] User %s is owner and level is not too high (%s < %s)', compendium.id, user_id, level, config.user.level.delete_compendium);
       resolve({ user_has_rights: true, user_id: user_id });
     } else {
       // user is not author but could have required level
@@ -149,21 +152,20 @@ exports.deleteCompendium = (req, res) => {
       res.status(404).send({ error: 'no compendium with this id' });
     } else {
       let compendium_path = path.join(config.fs.compendium, id);
-      // check if user is allowed to delete the candidate
-      if (!compendium.candidate) {
-        debug('[%s] Compendium is NOT a candidate, can NOT be deleted.', id);
-        res.status(400).send({ error: 'compendium is not a candidate, cannot be deleted' });
-        return;
-      } else if (!req.isAuthenticated()) {
-        debug('[%s] User is not authenticated, cannot view candidate.', id);
+      
+      if (!req.isAuthenticated()) {
+        debug('[%s] User is not authenticated, cannot even view candidate.', id);
         res.status(401).send({ error: 'user is not authenticated' });
         return;
       }
 
-      detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
+      // check if user is allowed to delete the compendium or candidate
+      if (compendium.candidate) {
+        // compendium is a candidate
+        detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
         .then((passon) => {
           if (passon.user_has_rights) {
-            debug('[%s] single compendium found, going to remove it and its files at %s on behalf of user %s (has rights: %s)',
+            debug('[%s] single compendium candidate found, going to remove it and its files at %s on behalf of user %s (has rights: %s)',
               compendium.id, compendium_path, passon.user_id, passon.user_has_rights);
             Compendium.findOneAndRemove({ id: compendium.id }).exec((err) => {
               if (err) {
@@ -182,11 +184,61 @@ exports.deleteCompendium = (req, res) => {
             });
           } else {
             debug('[%s] Error: user does not have rights but promise fulfilled', id);
+            res.status(500);
           }
         }, function (passon) {
           debug('[%s] User %s may NOT delete candidate.', id, req.user.orcid);
           res.status(403).send(passon);
         });
+      } else {
+        // compendium is NOT a candidate
+        detect_rights(req.user.orcid, compendium, config.user.level.delete_compendium)
+          .then((passon) => {
+            if (passon.user_has_rights) {
+              debug('[%s] single compendium found, going to remove it and its files at %s on behalf of user %s (has rights: %s)',
+                compendium.id, compendium_path, passon.user_id, passon.user_has_rights);
+
+              // save compendium metadata to file
+              Compendium.findOne({ id: id }).exec((err, compendium) => {
+                // eslint-disable-next-line no-eq-null, eqeqeq
+                if (err || compendium == null) {
+                  debug('[%s] compendium does not exist!', id);
+                  res.status(500);
+                } else {
+                  metadata_file = path.join(config.fs.deleted, compendium.id + '.json');
+                  fs.writeFile(metadata_file, JSON.stringify(compendium), (err) => {
+                    if (err) throw err;
+                    debug('[%s] Saved full compendium metadata to %s', metadata_file);
+
+                    Compendium.findOneAndRemove({ id: compendium.id }).exec((err) => {
+                      if (err) {
+                        debug('[%s] error deleting compendium: %s', compendium.id, err);
+                        res.status(500).send({ error: err.message });
+                      } else {
+                        deleted_path = path.join(config.fs.deleted, compendium.id);
+                        debug('[%s] Moving compendium files to %s', compendium.id, deleted_path);
+                        fse.move(compendium_path, deleted_path, (err) => {
+                          if (err) {
+                            debug('[%s] Error moving data files to %s: %s', compendium.id, deleted_path, err);
+                            res.status(500).send({ error: err.message });
+                          } else {
+                            res.status(204).send();
+                          }
+                        });
+                      };
+                    });
+                  });
+                }
+              });
+            } else {
+              debug('[%s] Error: user does not have rights but promise fulfilled', id);
+              res.status(500);
+            }
+          }, function (passon) {
+            debug('[%s] Compendium is NOT a candidate, can NOT be deleted by user %s.', id, req.user.orcid);
+            res.status(400).send({ error: 'compendium is not a candidate, cannot be deleted' });
+        });
+      }
     };
   });
 };
@@ -569,7 +621,7 @@ exports.updateCompendiumMetadata = (req, res) => {
       if (err || compendium == null) {
         res.status(404).send({ error: 'no compendium with this id' });
       } else {
-        detect_rights(user_id, compendium, config.user.level.edit_metadata)
+        detect_rights(user_id, compendium, config.user.level.edit_others)
           .then(function (passon) {
             if (!req.body.hasOwnProperty('o2r')) {
               debug('[%s] invalid metadata provided: no o2r root element: %O', id, req.body);

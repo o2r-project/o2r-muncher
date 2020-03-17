@@ -53,6 +53,7 @@ if (c.mongo.location[c.mongo.location.length - 1] !== '/') {
 c.fs.base = env.MUNCHER_BASEPATH || '/tmp/o2r/';
 c.fs.incoming = path.join(c.fs.base, 'incoming');
 c.fs.compendium = path.join(c.fs.base, 'compendium');
+c.fs.deleted = path.join(c.fs.base, 'deleted');
 c.fs.job = path.join(c.fs.base, 'job');
 c.fs.delete_inc = true;
 c.fs.fail_on_no_files = yn(env.MUNCHER_FAIL_ON_NO_FILES || 'false');
@@ -79,9 +80,10 @@ c.user = {};
 c.user.level = {};
 c.user.level.create_compendium = 100;
 c.user.level.create_job = 0;
-c.user.level.view_status = 1000;
-c.user.level.edit_metadata = 500;
+c.user.level.edit_others = 500;
 c.user.level.view_candidates = 500;
+c.user.level.view_status = 1000;
+c.user.level.delete_compendium = 1000;
 
 // bagtainer configuration
 c.bagtainer = {};
