@@ -20,14 +20,11 @@ const archiver = require('archiver');
 const fs = require('fs');
 const os = require('os');
 const zlib = require('zlib');
-const tags = require('mocha-tags');
 const debug = require('debug')('test:util');
 const path = require('path');
 const hasher = require('node-object-hash');
 var hashSortCoerce = hasher();
 const AsyncPolling = require('async-polling');
-
-debug('Test filter: ', tags.filter);
 
 require("./setup");
 debug('Using loader at ' + global.test_host_loader);
