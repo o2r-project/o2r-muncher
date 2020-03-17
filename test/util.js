@@ -233,3 +233,20 @@ module.exports.waitForJob = function (job_id, done) {
 
   polling.run();
 }
+
+module.exports.publishLink = function (compendium_id, cookie, done) {
+  let j = request.jar();
+  let ck = request.cookie('connect.sid=' + cookie);
+  j.setCookie(ck, global.test_host);
+
+  request({
+    uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/link',
+    method: 'PUT',
+    jar: j,
+    timeout: 2000
+  }, (err, res, body) => {
+    let response = JSON.parse(body);
+    debug("Created link: %o", response);
+    done({ link: response.link, id: response.id });
+  });
+}

@@ -37,6 +37,7 @@ const meta = require('../lib/meta');
 var Compendium = require('../lib/model/compendium');
 var User = require('../lib/model/user');
 var Job = require('../lib/model/job');
+var PublicLink = require('../lib/model/link');
 
 /*
  * user must be owner (unless delete) OR have the sufficient level
@@ -46,11 +47,11 @@ detect_rights = function (user_id, compendium, level) {
 
   return new Promise(function (resolve, reject) {
     if (user_id === compendium.user && level < config.user.level.delete_compendium) {
-      debug('[%s] User %s is owner and level is not too high (%s < %s)', compendium.id, user_id, level, config.user.level.delete_compendium);
+      debug('[%s] User %s is owner and requested level is not too high (%s < %s)', compendium.id, user_id, level, config.user.level.delete_compendium);
       resolve({ user_has_rights: true, user_id: user_id });
     } else {
       // user is not author but could have required level
-      debug('[%s] User %s trying to edit/view compendium by user %s', compendium.id, user_id, compendium.user);
+      debug('[%s] User %s trying to access compendium by user %s', compendium.id, user_id, compendium.user);
 
       User.findOne({ orcid: user_id }, (err, user) => {
         if (err) {
@@ -68,18 +69,47 @@ detect_rights = function (user_id, compendium, level) {
   });
 }
 
-exports.viewCompendium = (req, res) => {
-  let id = req.params.id;
-  debug('[%s] view single compendium', id);
+/*
+ * is a given compendium ID a public link? if so get the actual id
+ */
+resolve_public_link = function (id, callback) {
+  debug('Checking public link %s', id);
 
-  Compendium
-    .findOne({ id })
+  PublicLink.findOne({ id }).lean().exec((err, link) => {
+    // eslint-disable-next-line no-eq-null, eqeqeq
+    if (err || link == null) {
+      debug('%s is not a public link.', id);
+      callback({ is_link: false, compendium: id });
+    } else {
+      debug('Public link %s used for compendium %s', id, link.compendium);
+      callback({
+        is_link: true,
+        link: link.id,
+        compendium: link.compendium
+      });
+    }
+  });
+}
+
+exports.viewCompendium = (req, res) => {
+  debug('[%s] view single compendium', req.params.id);
+
+  resolve_public_link(req.params.id, (ident) => {
+    let id = null;
+    if (ident.is_link) {
+      id = ident.link;
+    } else {
+      id = ident.compendium;
+    }
+    
+    Compendium
+    .findOne({ id: ident.compendium })
     .select('id user metadata created candidate bag compendium substituted')
     .lean()
     .exec((err, compendium) => {
       // eslint-disable-next-line no-eq-null, eqeqeq
       if (err || compendium == null) {
-        debug('[%s] compendium does not exist!', id);
+        debug('[%s] compendium does not exist! identifiers: %o', id, ident);
         res.status(404).send({ error: 'no compendium with this id' });
       } else {
         debug('[%s] single compendium found!', id);
@@ -95,12 +125,13 @@ exports.viewCompendium = (req, res) => {
         }
 
         try {
-          fullPath = path.join(config.fs.compendium, id);
+          fullPath = path.join(config.fs.compendium, ident.compendium);
           fs.accessSync(fullPath); // throws if does not exist
           answer.files = rewriteTree(dirTree(fullPath),
             fullPath.length, // remove local fs path and id
             urlJoin(config.api.resource.compendium, id, config.api.sub_resource.data) // prepend proper location
           );
+          answer.files.name = id;
         } catch (err) {
           debug('[%s] Error: No data files found (Fail? %s): %s', id, config.fs.fail_on_no_files, err);
           if (config.fs.fail_on_no_files) {
@@ -111,8 +142,9 @@ exports.viewCompendium = (req, res) => {
           }
         }
 
-        // check if user is allowed to view the candidate (easier to check async if done after answer creation)
-        if (compendium.candidate) {
+        // check if user is allowed to view the candidate, not coming from a link
+        // (easier to check async if done after answer creation)
+        if (compendium.candidate && !ident.is_link) {
           debug('[%s] Compendium is a candidate, need to make some checks.', id);
 
           if (!req.isAuthenticated()) {
@@ -139,6 +171,7 @@ exports.viewCompendium = (req, res) => {
         }
       }
     });
+  });
 };
 
 exports.deleteCompendium = (req, res) => {
@@ -177,6 +210,7 @@ exports.deleteCompendium = (req, res) => {
                     debug('[%s] Error deleting data files: %s', compendium.id, err);
                     res.status(500).send({ error: err.message });
                   } else {
+                    debug('[%s] Deleted!', compendium.id);
                     res.status(204).send();
                   }
                 });

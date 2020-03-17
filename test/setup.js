@@ -18,14 +18,8 @@
 /* eslint-env mocha */
 const mongojs = require('mongojs');
 const Docker = require('dockerode');
-const Stream = require('stream');
-const exec = require('child_process').exec;
-const yn = require('yn');
 const async = require('async');
 const tar = require('tar');
-const path = require('path');
-const fs = require('fs');
-const colors = require('colors');
 const debug = require('debug')('test:setup');
 
 // test parameters for local session authentication directly via fixed database entries

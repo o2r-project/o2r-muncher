@@ -62,7 +62,8 @@ c.fs.volume = env.MUNCHER_VOLUME || null;
 
 // muncher behaviour & defaults
 c.list_limit = 100; // amount of results per page
-c.id_length = 5;   // length of job & compendium ids [0-9,a-z,A-Z]
+c.id_length = 5;    // length of job & compendium ids [0-9,a-z,A-Z]
+c.link_length = 32; // length of link ids [0-9,a-z,A-Z]
 
 // session secret
 c.sessionSecret = env.SESSION_SECRET || 'o2r';
@@ -84,6 +85,7 @@ c.user.level.edit_others = 500;
 c.user.level.view_candidates = 500;
 c.user.level.view_status = 1000;
 c.user.level.delete_compendium = 1000;
+c.user.level.manage_links = 500;
 
 // bagtainer configuration
 c.bagtainer = {};

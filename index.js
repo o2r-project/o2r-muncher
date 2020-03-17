@@ -87,6 +87,7 @@ mongoStore.on('error', (err) => {
 var controllers = {};
 controllers.compendium = require('./controllers/compendium');
 controllers.job = require('./controllers/job');
+controllers.link = require('./controllers/link');
 
 // check fs & create dirs if necessary
 fse.mkdirsSync(config.fs.job);
@@ -233,6 +234,7 @@ function initApp(callback) {
     indexResponseV1.shipments = '/api/v1/shipment';
     indexResponseV1.recipients = '/api/v1/recipient';
     indexResponseV1.substitutions = '/api/v1/substitution';
+    indexResponseV1.links = '/api/v1/link';
 
     // set up routes
     app.get('/status', function (req, res) {
@@ -281,6 +283,11 @@ function initApp(callback) {
     app.get('/api/v1/job', controllers.job.listJobs);
     app.post('/api/v1/job', upload.any(), controllers.job.createJob);
     app.get('/api/v1/job/:id', controllers.job.viewJob);
+
+    app.get('/api/v1/link', controllers.link.listLinks);
+    app.get('/api/v1/compendium/:id/link', controllers.link.viewCompendiumLink);
+    app.put('/api/v1/compendium/:id/link', controllers.link.createLink);
+    app.delete('/api/v1/compendium/:id/link', controllers.link.deleteLink);
 
     fulfill();
   });

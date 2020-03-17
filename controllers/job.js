@@ -181,7 +181,7 @@ exports.createJob = (req, res) => {
     return;
   }
   if (req.user.level < config.user.level.create_job) {
-    res.status(401).send({ error: 'user level does not allow job creation' });
+    res.status(403).send({ error: 'user level does not allow job creation' });
     return;
   }
 
