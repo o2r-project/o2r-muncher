@@ -832,7 +832,7 @@ describe('API job steps', () => {
       });
     });
 
-    it('execution log should include uname output', (done) => {
+    it.skip('execution log should include uname output', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);

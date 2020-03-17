@@ -54,7 +54,7 @@ describe('Images in uploads and downloads', () => {
     done();
   });
 
-  describe('Find image tarball if it is uploaded and use it for running the job', () => {
+  describe('Find image tarball in compendium if it is exists and use it for running the job', () => {
     let job_id, compendium_id, job_id2 = '';
 
     workspacePath = './test/workspace/with-image-tarball';
@@ -63,63 +63,61 @@ describe('Images in uploads and downloads', () => {
 
     before(function (done) {
       this.timeout(360000);
-      createCompendiumPostRequest(workspacePath, cookie_o2r, 'workspace', (requestData) => {
-        fs.access(imageTarballFile, (err) => {
-          if (err) {
-            debug('build local image tarball at %s', imageTarballFile);
-            docker.buildImage({
-              context: workspacePath,
-              src: ['Dockerfile']
-            }, { t: imageTag }, function (err, stream) {
-              if (err) throw err;
 
-              stream.on('data', function (data) {
-                s = JSON.parse(data.toString('utf8'));
-                if (s.stream) debug(s.stream.substring(0, 100).trim());
-              });
-
-              stream.on('end', function () {
-                debug('built image %s, now saving to %s', imageTag, imageTarballFile);
-                fileStream = fs.createWriteStream(imageTarballFile);
-
-                fileStream.on('finish', function () {
-                  debug('Image saved');
-
-                  request(requestData, (err, res, body) => {
-                    compendium_id = JSON.parse(body).id;
-                    publishCandidate(compendium_id, cookie_o2r, () => {
-                      startJob(compendium_id, id => {
-                        job_id = id;
-                        done();
-                      });
-                    });
-                  });
-                });
-
-                image = docker.getImage(imageTag);
-                image.get((err, imageStream) => {
-                  if (err) throw err;
-                  imageStream.pipe(fileStream);
+      uploadCompendiumWithImageTarball = function() {
+        createCompendiumPostRequest(workspacePath, cookie_o2r, 'workspace', (requestData) => {
+          request(requestData, (err, res, body) => {
+            if (err) throw err;
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              startJob(compendium_id, id => {
+                job_id = id;
+                waitForJob(job_id, (finalStatus) => {
+                  done();
                 });
               });
             });
-          } else {
-            debug('local image tarball file found at %s. YOU MUST MANUALLY DELETE THIS FILE (and potentially the upload cache file, see test:util log) if the content at %s changed. Uploading workspace now...',
-              imageTarballFile, workspacePath);
-            request(requestData, (err, res, body) => {
-              if (err) throw err;
-              compendium_id = JSON.parse(body).id;
-              publishCandidate(compendium_id, cookie_o2r, () => {
-                startJob(compendium_id, id => {
-                  job_id = id;
-                  waitForJob(job_id, (finalStatus) => {
-                    done();
-                  });
-                });
-              });
-            });
-          }
+          });
         });
+      }
+
+      fs.access(imageTarballFile, (err) => {
+        if (err) {
+          debug('build local image tarball at %s', imageTarballFile);
+          docker.buildImage({
+            context: workspacePath,
+            src: ['Dockerfile']
+          }, { t: imageTag }, function (err, stream) {
+            if (err) throw err;
+
+            stream.on('data', function (data) {
+              s = JSON.parse(data.toString('utf8'));
+              if (s.stream) debug(s.stream.substring(0, 100).trim());
+            });
+
+            stream.on('end', function () {
+              debug('built image %s, now saving to %s', imageTag, imageTarballFile);
+              fileStream = fs.createWriteStream(imageTarballFile);
+
+              fileStream.on('finish', function () {
+                debug('Image saved');
+
+                uploadCompendiumWithImageTarball();
+              });
+
+              image = docker.getImage(imageTag);
+              image.get((err, imageStream) => {
+                if (err) throw err;
+                imageStream.pipe(fileStream);
+              });
+            });
+          });
+        } else {
+          debug('local image tarball file found as expected at %s. YOU MUST MANUALLY DELETE THIS FILE AND the upload cache file' +
+                ', see test:util log below) if the content at %s changed. Uploading workspace now...',
+            imageTarballFile, workspacePath);
+            uploadCompendiumWithImageTarball();
+        }
       });
     });
 
@@ -134,8 +132,6 @@ describe('Images in uploads and downloads', () => {
         assert.propertyVal(response.steps.image_prepare, 'status', 'success', 'image prepare');
         assert.propertyVal(response.steps.image_build, 'status', 'success', 'image build');
         assert.propertyVal(response.steps.image_execute, 'status', 'success', 'image execute');
-        assert.propertyVal(response.steps.check, 'status', 'success', 'check');
-        assert.propertyVal(response.steps.image_save, 'status', 'skipped', 'image save');
         assert.propertyVal(response.steps.cleanup, 'status', 'success', 'cleanup');
         done();
       });
@@ -169,18 +165,6 @@ describe('Images in uploads and downloads', () => {
         assert.property(response.steps.image_build, 'text');
         assert.include(JSON.stringify(response.steps.image_build.text), 'Image tarball found');
         assert.include(JSON.stringify(response.steps.image_build.text), 'Loaded image tarball from file ' + config.bagtainer.imageTarballFile);
-        done();
-      });
-    });
-
-    it('should have correct text log for image_save', function (done) {
-      request(global.test_host + '/api/v1/job/' + job_id + '?steps=image_save', (err, res, body) => {
-        assert.ifError(err);
-        let response = JSON.parse(body);
-
-        assert.property(response.steps.image_save, 'text');
-        assert.include(JSON.stringify(response.steps.image_save.text), 'Existing image tarball file found');
-        assert.include(JSON.stringify(response.steps.image_save.text), 'not overwriting tarball');
         done();
       });
     });
