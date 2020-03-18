@@ -220,7 +220,7 @@ describe('Images in uploads and downloads', () => {
 
     it('should have the correct job tag on the image in tarball', (done) => {
       let tmpfile = tmp.tmpNameSync() + '.zip';
-      let url = global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '.zip';
+      let url = global.test_host + '/api/v1/compendium/' + compendium_id + '.zip';
       request.get(url)
         .on('error', function (err) {
           done(err);
@@ -272,7 +272,7 @@ describe('Images in uploads and downloads', () => {
 
     it('should have the correct compendium tag on the image in tarball', (done) => {
       let tmpfile = tmp.tmpNameSync() + '.zip';
-      let url = global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '.zip';
+      let url = global.test_host + '/api/v1/compendium/' + compendium_id + '.zip';
       request.get(url)
         .on('error', function (err) {
           done(err);

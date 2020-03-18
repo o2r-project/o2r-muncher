@@ -1,5 +1,0 @@
----
-id: with_metadata
-spec_version: 1
-main: test.txt
-display: test.txt

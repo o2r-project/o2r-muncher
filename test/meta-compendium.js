@@ -631,7 +631,7 @@ describe('compendium metadata and the compendium configuration file', () => {
 
   describe('Updating compendium metadata must also update compendium configuration file (erc.yml)', () => {
     it('should have the configuration file with correct content after publish', (done) => {
-      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id + '/data/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
         assert.include(body, 'main: doc.Rmd');
         assert.include(body, 'display: test.html');
@@ -681,7 +681,7 @@ describe('compendium metadata and the compendium configuration file', () => {
       request(req_doc_o2r, (err, res, body) => {
         assert.ifError(err);
 
-        request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+        request(global.test_host + '/api/v1/compendium/' + compendium_id + '/data/data/' + config.bagtainer.configFile.name, (err, res, body) => {
           assert.ifError(err);
           assert.include(body, 'main: test.R');
           assert.include(body, 'display: wrongUpdate.html');

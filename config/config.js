@@ -55,6 +55,7 @@ c.fs.incoming = path.join(c.fs.base, 'incoming');
 c.fs.compendium = path.join(c.fs.base, 'compendium');
 c.fs.deleted = path.join(c.fs.base, 'deleted');
 c.fs.job = path.join(c.fs.base, 'job');
+c.fs.imgtmp = path.join(c.fs.base, 'imgtmp');
 c.fs.delete_inc = true;
 c.fs.fail_on_no_files = yn(env.MUNCHER_FAIL_ON_NO_FILES || 'false');
 
@@ -62,7 +63,8 @@ c.fs.volume = env.MUNCHER_VOLUME || null;
 
 // muncher behaviour & defaults
 c.list_limit = 100; // amount of results per page
-c.id_length = 5;   // length of job & compendium ids [0-9,a-z,A-Z]
+c.id_length = 5;    // length of job & compendium ids [0-9,a-z,A-Z]
+c.link_length = 32; // length of link ids [0-9,a-z,A-Z]
 
 // session secret
 c.sessionSecret = env.SESSION_SECRET || 'o2r';
@@ -84,6 +86,7 @@ c.user.level.edit_others = 500;
 c.user.level.view_candidates = 500;
 c.user.level.view_status = 1000;
 c.user.level.delete_compendium = 1000;
+c.user.level.manage_links = 500;
 
 // bagtainer configuration
 c.bagtainer = {};
@@ -254,6 +257,13 @@ c.body_parser_config = {
   // increase limit for metadata uploads, see https://github.com/expressjs/body-parser#limit
   limit: '50mb'
 };
+
+c.download = {};
+c.download.defaults = {};
+c.download.defaults.statConcurrency = 4; // archiver.js default is '4'
+c.download.defaults.tar = {};
+c.download.defaults.tar.gzipOptions = {}; // https://nodejs.org/api/zlib.html#zlib_class_options
+c.download.defaults.includeImage = true;
 
 debug('CONFIGURATION:\n%s', util.inspect(c, { depth: null, colors: true }));
 

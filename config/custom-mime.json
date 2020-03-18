@@ -19,6 +19,16 @@
     ],
     "type": "script/x-R"
   },
+  "text/plain": {
+    "source": "custom",
+    "charset": "UTF-8",
+    "compressible": true,
+    "extensions": [
+      "Rmd",
+      "rmd"
+    ],
+    "type": "text/x-r-markdown"
+  },
   "application/octet-stream": {
     "source": "custom",
     "charset": "binary",

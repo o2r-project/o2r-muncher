@@ -18,14 +18,8 @@
 /* eslint-env mocha */
 const mongojs = require('mongojs');
 const Docker = require('dockerode');
-const Stream = require('stream');
-const exec = require('child_process').exec;
-const yn = require('yn');
 const async = require('async');
 const tar = require('tar');
-const path = require('path');
-const fs = require('fs');
-const colors = require('colors');
 const debug = require('debug')('test:setup');
 
 // test parameters for local session authentication directly via fixed database entries
@@ -44,7 +38,6 @@ var env = process.env;
 const config = require('../config/config');
 global.test_host = env.TEST_HOST || 'http://localhost:' + config.net.port;
 global.test_host_loader = env.TEST_HOST_UPLOAD || 'http://localhost:8088';
-global.test_host_transporter = env.TEST_HOST_DOWNLOAD || 'http://localhost:8081';
 global.test_job_poll_interval = parseInt(env.TEST_JOB_POLL_INTERVAL) || 5000;
 debug('Testing endpoint at %s using %s for upload, poll interval for jobs: %s', global.test_host, global.test_host_loader, global.test_job_poll_interval);
 
