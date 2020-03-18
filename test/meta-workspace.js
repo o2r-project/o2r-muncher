@@ -141,7 +141,7 @@ describe('Updating workspace metadata', () => {
     });
 
     it('should have the configuration file with correct content after generating it during first job', (done) => {
-      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
         assert.include(body, 'main: main.Rmd');
         assert.include(body, 'display: display.html');
@@ -181,7 +181,7 @@ describe('Updating workspace metadata', () => {
       req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req_doc_o2r, (err, res, body) => {
         assert.ifError(err);
-        request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+        request(global.test_host + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
           assert.ifError(err);
           assert.include(body, 'main: test.R');
           assert.include(body, 'display: test.html');

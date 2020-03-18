@@ -184,7 +184,7 @@ exports.deleteLink = (req, res) => {
             res.status(500).send({ error: 'error deleting link' });
           } else {
             debug('User %s removed link: %O', req.user.id, removed);
-            res.status(204).send();
+            res.sendStatus(204);
           }
         });
       }

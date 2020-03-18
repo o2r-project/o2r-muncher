@@ -30,7 +30,7 @@ const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9y
 const cookie_admin = 's:hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i.IEPb0lmtGojn2cVk2edRuomIEanX6Ddz87egE5Pe8UM';
 const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
 
-describe.only('Public links', () => {
+describe('Public links', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'publiclinks']);
   var compendium_id = '';
   var published_compendium = '';
@@ -472,6 +472,21 @@ describe.only('Public links', () => {
       request(global.test_host + '/api/v1/compendium/' + public_id + '/data/data.csv', (err, res) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
+        assert.include(res.headers, { 'content-type': 'text/csv; charset=utf-8', 'content-length': '122' }, 'returned file has unexpected mime-type or size');
+        done();
+      });
+    });
+
+    it('should only expose link id in file listing', (done) => {
+      request(global.test_host + '/api/v1/compendium/' + public_id + '/data', (err, res) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        response = JSON.parse(res.body);
+        assert.isObject(response);
+        assert.property(response, 'path');
+        assert.propertyVal(response, 'name', public_id);
+        assert.notPropertyVal(response, 'name', compendium_id);
+        assert.notInclude(res.body, compendium_id);
         done();
       });
     });

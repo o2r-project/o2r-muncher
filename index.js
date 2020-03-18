@@ -20,12 +20,10 @@ const debug = require('debug')('muncher');
 const config = require('./config/config');
 const fse = require('fs-extra');
 const backoff = require('backoff');
-const child_process = require('child_process');
 const exec = require('child_process').exec;
-const fs = require('fs');
-const colors = require('colors');
 const starwars = require('starwars');
 const Docker = require('dockerode');
+const url = require('url');
 
 // handle unhandled rejections
 process.on('unhandledRejection', (reason) => {
@@ -88,6 +86,7 @@ var controllers = {};
 controllers.compendium = require('./controllers/compendium');
 controllers.job = require('./controllers/job');
 controllers.link = require('./controllers/link');
+controllers.download = require('./controllers/download');
 
 // check fs & create dirs if necessary
 fse.mkdirsSync(config.fs.job);
@@ -271,6 +270,21 @@ function initApp(callback) {
     app.get('/api/v1', function (req, res) {
       res.send(indexResponseV1);
     });
+
+    // transporter routes
+    app.get('/api/v1/job/:id/data/:path(*)', controllers.job.viewPath);
+    app.get('/api/v1/compendium/:id/data/', controllers.compendium.viewData);
+    app.get('/api/v1/compendium/:id/data/:path(*)', controllers.compendium.viewPath);
+    app.get('/api/v1/compendium/:id.zip', controllers.download.downloadZip);
+    app.get('/api/v1/compendium/:id.tar.gz', function (req, res) {
+      let redirectUrl = req.path.replace('.tar.gz', '.tar?gzip');
+      if (Object.keys(req.query).length !== 0) {
+        redirectUrl += '&' + url.parse(req.url).query;
+      }
+      debug('Redirecting from %s with query %s  to  %s', req.path, JSON.stringify(req.query), redirectUrl)
+      res.redirect(redirectUrl);
+    });
+    app.get('/api/v1/compendium/:id.tar', controllers.download.downloadTar);
 
     app.get('/api/v1/compendium', controllers.compendium.listCompendia);
     app.get('/api/v1/compendium/:id', controllers.compendium.viewCompendium);

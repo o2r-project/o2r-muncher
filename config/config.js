@@ -55,6 +55,7 @@ c.fs.incoming = path.join(c.fs.base, 'incoming');
 c.fs.compendium = path.join(c.fs.base, 'compendium');
 c.fs.deleted = path.join(c.fs.base, 'deleted');
 c.fs.job = path.join(c.fs.base, 'job');
+c.fs.imgtmp = path.join(c.fs.base, 'imgtmp');
 c.fs.delete_inc = true;
 c.fs.fail_on_no_files = yn(env.MUNCHER_FAIL_ON_NO_FILES || 'false');
 
@@ -256,6 +257,13 @@ c.body_parser_config = {
   // increase limit for metadata uploads, see https://github.com/expressjs/body-parser#limit
   limit: '50mb'
 };
+
+c.download = {};
+c.download.defaults = {};
+c.download.defaults.statConcurrency = 4; // archiver.js default is '4'
+c.download.defaults.tar = {};
+c.download.defaults.tar.gzipOptions = {}; // https://nodejs.org/api/zlib.html#zlib_class_options
+c.download.defaults.includeImage = true;
 
 debug('CONFIGURATION:\n%s', util.inspect(c, { depth: null, colors: true }));
 

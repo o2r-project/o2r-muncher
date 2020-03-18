@@ -44,6 +44,7 @@ RUN apk add --no-cache \
     unzip \
     icu-dev \
     dumb-init \
+    imagemagick \
   && pip install --upgrade pip \
   && pip install bagit
 

@@ -20,7 +20,6 @@ const debug = require('debug')('muncher:compendium');
 const fs = require('fs');
 const fse = require('fs-extra');
 const path = require('path');
-const exec = require('child_process').exec;
 const objectPath = require('object-path');
 const urlJoin = require('url-join');
 const yaml = require('yamljs');
@@ -33,6 +32,10 @@ const rewriteTree = require('../lib/rewrite-tree');
 const errorMessageHelper = require('../lib/error-message');
 const bagit = require('../lib/bagit');
 const meta = require('../lib/meta');
+const resize = require('../lib/resize.js').resize;
+const override = require('../config/custom-mime.json');
+const Mimos = require('@hapi/mimos');
+const mime = new Mimos({ override });
 
 var Compendium = require('../lib/model/compendium');
 var User = require('../lib/model/user');
@@ -211,7 +214,7 @@ exports.deleteCompendium = (req, res) => {
                     res.status(500).send({ error: err.message });
                   } else {
                     debug('[%s] Deleted!', compendium.id);
-                    res.status(204).send();
+                    res.sendStatus(204);
                   }
                 });
               };
@@ -256,7 +259,7 @@ exports.deleteCompendium = (req, res) => {
                             debug('[%s] Error moving data files to %s: %s', compendium.id, deleted_path, err);
                             res.status(500).send({ error: err.message });
                           } else {
-                            res.status(204).send();
+                            res.sendStatus(204);
                           }
                         });
                       };
@@ -725,4 +728,96 @@ exports.updateCompendiumMetadata = (req, res) => {
     debug('Internal error updating metadata: %O', err);
     res.status(500).send({ error: err.message });
   }
+};
+
+exports.viewPath = (req, res) => {
+  debug('View path %s', req.params.path);
+
+  resolve_public_link(req.params.id, (ident) => {
+    let id = null;
+    if (ident.is_link) {
+      id = ident.link;
+    } else {
+      id = ident.compendium;
+    }
+    
+    let size = req.query.size || null;
+
+    Compendium.findOne({ id: ident.compendium }).select('id').lean().exec((err, compendium) => {
+      if (err || compendium == null) {
+        res.status(404).send({ error: 'no compendium with this id' });
+      } else {
+        let localPath = path.join(config.fs.compendium, ident.compendium, req.params.path);
+        try {
+          innerSend = function(response, filePath) {
+            mimetype = mime.path(filePath).type;              
+            response.type(mimetype).sendFile(filePath, {}, (err) => {
+              if (err) {
+                debug("Error viewing path: %o", err)
+              } else {
+                debug('Returned %s for %s as %s', filePath, req.params.path, mimetype);
+              }
+            });
+          }
+
+          debug('Accessing %s', localPath);
+          fs.accessSync(localPath); //throws if does not exist
+          if (size) {
+            resize(localPath, size, (finalPath, err, code) => {
+              if (err) {
+                let status = code || 500;
+                res.status(status).send({ error: err });
+                return;
+              }
+
+              innerSend(res, finalPath);
+            });
+          } else {
+            innerSend(res, localPath);
+          }
+        } catch (e) {
+          debug('Error accessing path: %s', e);
+          res.status(500).send({ error: e.message });
+          return;
+        }
+      }
+    });
+  });
+};
+
+exports.viewData = (req, res) => {
+  debug('[%s] View data', req.params.id);
+
+  resolve_public_link(req.params.id, (ident) => {
+    let id = null;
+    if (ident.is_link) {
+      id = ident.link;
+    } else {
+      id = ident.compendium;
+    }
+    
+    Compendium.findOne({ id: ident.compendium }).select('id').lean().exec((err, compendium) => {
+      if (err || compendium == null) {
+        res.status(404).send({ error: 'no compendium with this id' });
+      } else {
+        let localPath = path.join(config.fs.compendium, ident.compendium);
+        try {
+          debug('Reading file listing from %s', localPath);
+          fs.accessSync(localPath); //throws if does not exist
+
+          let answer = rewriteTree(dirTree(localPath),
+            localPath.length, // remove local fs path
+            '/api/v1/compendium/' + id + '/data' // prepend proper location
+          );
+          answer.name = id;
+
+          res.status(200).send(answer);
+        } catch (e) {
+          debug('Error reading file listing: %s', e);
+          res.status(500).send({ error: e.message });
+          return;
+        }
+      }
+    });
+  });
 };

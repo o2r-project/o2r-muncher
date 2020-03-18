@@ -25,6 +25,10 @@ const pick = require('lodash.pick');
 
 const dirTree = require('directory-tree');
 const rewriteTree = require('../lib/rewrite-tree');
+const resize = require('../lib/resize.js').resize;
+const override = require('../config/custom-mime.json');
+const Mimos = require('@hapi/mimos');
+const mime = new Mimos({ override });
 
 const Executor = require('../lib/executor').Executor;
 
@@ -223,6 +227,52 @@ exports.createJob = (req, res) => {
             debug("[%s] Request complete and response sent; job for compendium %s started.", job_id, compendium_id);
           }
         });
+      }
+    }
+  });
+};
+
+exports.viewPath = (req, res) => {
+  debug('View job path %s', req.params.path);
+  let size = req.query.size || null;
+  let id = req.params.id;
+  Job.findOne({id}).select('id').exec((err, job) => {
+    if (err || job == null) {
+      res.status(404).send({error: 'no job with this id'});
+    } else {
+      let localPath = path.join(config.fs.job, id, req.params.path);
+      try {
+        innerSend = function(response, filePath) {
+          mimetype = mime.path(filePath).type;              
+          response.type(mimetype).sendFile(filePath, {}, (err) => {
+            if (err) {
+              debug("Error viewing path: %o", err)
+            } else {
+              debug('Returned %s for %s as %s', filePath, req.params.path, mimetype);
+            }
+          });
+        }
+
+        debug('Accessing %s', localPath);
+        fs.accessSync(localPath); //throws if does not exist
+        if(size) {
+          resize(localPath, size, (finalPath, err) => {
+            if (err) {
+              let status = code || 500;
+              res.status(status).send({ error: err});
+              return;
+            }
+
+            innerSend(res, finalPath);
+          });
+        } else {
+          innerSend(res, localPath);
+        }
+      } catch (e) {
+        debug(e);
+        res.setHeader('Content-Type', 'application/json');
+        res.status(500).send({ error: e.message });
+        return;
       }
     }
   });
