@@ -22,6 +22,7 @@ const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
 const publishLink = require('./util').publishLink;
+const waitForJob = require('./util').waitForJob;
 const mongojs = require('mongojs');
 
 require("./setup");
@@ -162,10 +163,10 @@ describe('Public links', () => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.property(response, 'id');
-        assert.property(response, 'compendium');
+        assert.property(response, 'compendium_id');
         assert.property(response, 'user');
         assert.notPropertyVal(response, 'id', compendium_id);
-        assert.propertyVal(response, 'compendium', compendium_id);
+        assert.propertyVal(response, 'compendium_id', compendium_id);
         assert.propertyVal(response, 'user', '4242-0000-0000-4242');
         done();
       });
@@ -367,7 +368,7 @@ describe('Public links', () => {
         response.results.forEach(elem => {
           assert.propertyVal(elem, 'user', '4242-0000-0000-4242');
           assert.property(elem, 'id');
-          assert.propertyVal(elem, 'compendium', compendium_id);
+          assert.propertyVal(elem, 'compendium_id', compendium_id);
           all_ids.push(elem.id);
         });
 
@@ -426,20 +427,11 @@ describe('Public links', () => {
     });
   });
 
-  describe('View public link', () => {
+  describe('Examine public link', () => {
     let public_id = '';
 
     before(function(done) {
       this.timeout(30000);
-
-      let j = request.jar();
-      j.setCookie(request.cookie('connect.sid=' + cookie_plain), global.test_host);
-
-      let req = {
-        method: 'PUT',
-        jar: j,
-        uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/link'
-      };
 
       createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
@@ -459,9 +451,6 @@ describe('Public links', () => {
         assert.equal(res.statusCode, 200);
         response = JSON.parse(res.body);
         assert.isObject(response);
-        assert.property(response, 'compendium');
-        assert.property(response, 'user');
-        assert.property(response, 'files');
         assert.propertyVal(response, 'id', public_id);
         assert.notInclude(res.body, compendium_id);
         done();
@@ -488,6 +477,87 @@ describe('Public links', () => {
         assert.notPropertyVal(response, 'name', compendium_id);
         assert.notInclude(res.body, compendium_id);
         done();
+      });
+    });
+  });
+
+  describe('Jobs for public link', () => {
+    let public_id, private_id = '';
+
+    before(function(done) {
+      this.timeout(30000);
+
+      createCompendiumPostRequest('./test/workspace/dummy', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          let response = JSON.parse(body);
+          compendium_id = response.id;
+          publishLink(compendium_id, cookie_admin, (response) => {
+            public_id = response.id;
+            private_id = response.compendium;
+            done();
+          });
+        });
+      });
+    });
+
+    it('a job can be started using link id as a non logged-in user and the job can be viewed directly and also related to compendium', (done) => {
+      request({
+        uri: global.test_host + '/api/v1/job',
+        method: 'POST',
+        formData: {
+          compendium_id: public_id
+        },
+        timeout: 10000
+      }, (err, res, body) => {
+        response = JSON.parse(body);
+        let job_id = response.job_id;
+        waitForJob(job_id, (finalStatus) => {
+          assert.equal(finalStatus, 'success');
+
+          // direct job view          
+          request(global.test_host + '/api/v1/job/' + job_id, (err, res2) => {
+            assert.equal(res2.statusCode, 200);
+            response2 = JSON.parse(res2.body);
+            assert.propertyVal(response2, 'id', job_id);
+            assert.propertyVal(response2, 'compendium_id', public_id);
+            
+            // job view via compendium
+            request(global.test_host + '/api/v1/compendium/' + public_id + '/jobs', (err, res3) => {
+              assert.equal(res3.statusCode, 200);
+              response3 = JSON.parse(res3.body);
+              assert.include(response3.results, job_id);
+              assert.notInclude(res3.body, private_id);
+              done();
+            });
+          });
+        });
+      });
+    }).timeout(30000);
+
+    it('should expose the job id but does not expose compendium id, and job should not be listed in the jobs list', (done) => {
+      request({
+        uri: global.test_host + '/api/v1/job',
+        method: 'POST',
+        formData: {
+          compendium_id: public_id
+        },
+        timeout: 10000
+      }, (err, res, body) => {
+        response = JSON.parse(body);
+        let job_id = response.job_id;
+
+        request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res1) => {
+          response1 = JSON.parse(res1.body);
+          assert.propertyVal(response1, 'id', job_id);
+          assert.propertyVal(response1, 'compendium_id', public_id);
+          assert.notInclude(res1.body, private_id);
+        
+          request(global.test_host + '/api/v1/job', (err, res2) => {
+            response2 = JSON.parse(res2.body);
+            assert.notInclude(response2.results, job_id);
+            done();
+          });
+        });
       });
     });
   });

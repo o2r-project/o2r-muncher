@@ -47,7 +47,7 @@ exports.listLinks = (req, res) => {
       answer.results = links.map((link) => {
         return {
           id: link.id,
-          compendium: link.compendium,
+          compendium_id: link.compendium,
           user: link.user
         };
       });
@@ -79,7 +79,7 @@ exports.viewCompendiumLink = (req, res) => {
       debug('[%s] Found link %s', id, link.id);
       answer = {
         id: link.id,
-        compendium: link.compendium,
+        compendium_id: link.compendium,
         user: link.user
       };
 
@@ -139,7 +139,7 @@ exports.createLink = (req, res) => {
             } else {
               res.status(200).send({
                 id: link.id,
-                compendium: link.compendium,
+                compendium_id: link.compendium,
                 user: link.user
               });
             }
@@ -194,3 +194,25 @@ exports.deleteLink = (req, res) => {
     res.status(500).send({ error: err.message });
   }
 };
+
+/*
+ * is a given compendium ID a public link? if so get the actual id
+ */
+exports.resolve_public_link = function (id, callback) {
+  debug('Checking public link %s', id);
+
+  PublicLink.findOne({ id }).lean().exec((err, link) => {
+    // eslint-disable-next-line no-eq-null, eqeqeq
+    if (err || link == null) {
+      debug('%s is not a public link.', id);
+      callback({ is_link: false, compendium: id });
+    } else {
+      debug('Public link %s used for compendium %s', id, link.compendium);
+      callback({
+        is_link: true,
+        link: link.id,
+        compendium: link.compendium
+      });
+    }
+  });
+}

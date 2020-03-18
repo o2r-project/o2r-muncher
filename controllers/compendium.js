@@ -36,11 +36,11 @@ const resize = require('../lib/resize.js').resize;
 const override = require('../config/custom-mime.json');
 const Mimos = require('@hapi/mimos');
 const mime = new Mimos({ override });
+const resolve_public_link = require('./link').resolve_public_link;
 
-var Compendium = require('../lib/model/compendium');
-var User = require('../lib/model/user');
-var Job = require('../lib/model/job');
-var PublicLink = require('../lib/model/link');
+const Compendium = require('../lib/model/compendium');
+const User = require('../lib/model/user');
+const Job = require('../lib/model/job');
 
 /*
  * user must be owner (unless delete) OR have the sufficient level
@@ -67,28 +67,6 @@ detect_rights = function (user_id, compendium, level) {
             reject({ error: 'not authorized to edit/view ' + compendium.id });
           }
         }
-      });
-    }
-  });
-}
-
-/*
- * is a given compendium ID a public link? if so get the actual id
- */
-resolve_public_link = function (id, callback) {
-  debug('Checking public link %s', id);
-
-  PublicLink.findOne({ id }).lean().exec((err, link) => {
-    // eslint-disable-next-line no-eq-null, eqeqeq
-    if (err || link == null) {
-      debug('%s is not a public link.', id);
-      callback({ is_link: false, compendium: id });
-    } else {
-      debug('Public link %s used for compendium %s', id, link.compendium);
-      callback({
-        is_link: true,
-        link: link.id,
-        compendium: link.compendium
       });
     }
   });
@@ -281,44 +259,54 @@ exports.deleteCompendium = (req, res) => {
 };
 
 exports.viewCompendiumJobs = (req, res) => {
-  var id = req.params.id;
-  var answer = {};
-  var filter = { compendium_id: id };
-  var limit = parseInt(req.query.limit || config.list_limit, 10);
-  var start = parseInt(req.query.start || 1, 10) - 1;
+  debug('[%s] vide compendium jobs', req.params.id);
+  
+  resolve_public_link(req.params.id, (ident) => {
+    let id = null;
+    if (ident.is_link) {
+      id = ident.link;
+    } else {
+      id = ident.compendium;
+    }
+    
+    var answer = {};
+    var filter = { compendium_id: id };
+    var limit = parseInt(req.query.limit || config.list_limit, 10);
+    var start = parseInt(req.query.start || 1, 10) - 1;
 
-  Job
-    .find(filter)
-    .select('id')
-    .skip(start)
-    .limit(limit)
-    .lean()
-    .exec((err, jobs) => {
-      if (err) {
-        res.status(500).send({ error: 'query failed' });
-      } else {
-
-        answer.results = jobs.map(job => {
-          return job.id;
-        });
-
-        if (jobs.length <= 0) {
-          Compendium.find({ id }).limit(1).exec((err, compendium) => {
-            if (err) {
-              res.status(404).send({ error: 'error finding compendium: ' + err.message });
-            } else {
-              if (compendium.length <= 0) {
-                res.status(404).send({ error: 'no compendium with id ' + id });
-              } else {
-                res.status(200).send(answer);
-              }
-            }
-          });
+    Job
+      .find(filter)
+      .select('id')
+      .skip(start)
+      .limit(limit)
+      .lean()
+      .exec((err, jobs) => {
+        if (err) {
+          res.status(500).send({ error: 'query failed' });
         } else {
-          res.status(200).send(answer);
+
+          answer.results = jobs.map(job => {
+            return job.id;
+          });
+
+          if (jobs.length <= 0) {
+            Compendium.find({ id }).limit(1).exec((err, compendium) => {
+              if (err) {
+                res.status(404).send({ error: 'error finding compendium: ' + err.message });
+              } else {
+                if (compendium.length <= 0) {
+                  res.status(404).send({ error: 'no compendium with id ' + id });
+                } else {
+                  res.status(200).send(answer);
+                }
+              }
+            });
+          } else {
+            res.status(200).send(answer);
+          }
         }
-      }
-    });
+      });
+  });
 };
 
 exports.listCompendia = (req, res) => {

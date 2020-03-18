@@ -164,7 +164,7 @@ describe('configuration file (erc.yml)', () => {
     });
 
     it('should have all licenses in configuration file', (done) => {
-      request(global.test_hos_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
         configuration = yaml.parse(body);
         assert.hasAllKeys(configuration.licenses, ['code', 'data', 'text', 'metadata']);
