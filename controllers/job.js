@@ -44,7 +44,7 @@ exports.listJobs = (req, res) => {
   var filter = {};
   var limit = parseInt(req.query.limit || config.list_limit, 10);
   var start = parseInt(req.query.start || 1, 10) - 1;
-  var fields = ['id', 'compendium_id'];
+  var fields = 'id compendium_id';
 
   // eslint-disable-next-line no-eq-null, eqeqeq
   if (req.query.compendium_id != null) {
@@ -222,7 +222,7 @@ exports.createJob = (req, res) => {
       id = ident.compendium;
     
       // check user level
-      if (!req.isAuthenticated()) {
+      if (!ident.is_link && !req.isAuthenticated()) {
         res.status(401).send({ error: 'user is not authenticated' });
         return;
       }
@@ -233,7 +233,7 @@ exports.createJob = (req, res) => {
     }
 
     // check compendium existence and load its metadata
-    Compendium.findOne({ id: ident.compendium }).select('id candidate metadata bag compendium').exec((err, compendium) => {
+    Compendium.findOne({ id: ident.compendium }).select('id user candidate metadata bag compendium').exec((err, compendium) => {
       // eslint-disable-next-line no-eq-null, eqeqeq
       if (err || compendium == null) {
         debug('[%s] compendium not found, cannot create job: %o', job_id, ident);
@@ -241,23 +241,30 @@ exports.createJob = (req, res) => {
       } else {
         debug('[%s] found compendium "%s" (candidate? %s) - create job!', job_id, id, compendium.candidate);
 
-        var executionJob = new Job({
-          id: job_id,
-          user: req.user.orcid,
-          compendium_id: id
-        });
+        // only author and above may execute a candidate, unless this is a link
+        if(compendium.candidate && !ident.is_link && req.user.orcid != compendium.user) {
+          debug("[%s] Compendium is candidate of another user, and not accessed via public link.".red, job_id);
+          res.status(403).send({ error: 'compendium is candidate of another user' });
+          return;
+        } else {
+          var executionJob = new Job({
+            id: job_id,
+            user: req.user.orcid,
+            compendium_id: id
+          });
 
-        executionJob.save(err => {
-          if (err) {
-            debug('[%s] error starting job for compendium %s and user %s', job_id, compendium.id, req.user.orcid);
-            throw new Error('error creating job');
-          } else {
-            var execution = new Executor(job_id, compendium );
-            execution.execute();
-            res.status(200).send({ job_id });
-            debug("[%s] Request complete and response sent; job for compendium %s started.", job_id, id);
-          }
-        });
+          executionJob.save(err => {
+            if (err) {
+              debug('[%s] error starting job for compendium %s and user %s', job_id, compendium.id, req.user.orcid);
+              throw new Error('error creating job');
+            } else {
+              var execution = new Executor(job_id, compendium );
+              execution.execute();
+              res.status(200).send({ job_id });
+              debug("[%s] Request complete and response sent; job for compendium %s started.", job_id, id);
+            }
+          });
+        }
       }
     });
   });
@@ -274,7 +281,8 @@ exports.viewPath = (req, res) => {
       let localPath = path.join(config.fs.job, id, req.params.path);
       try {
         innerSend = function(response, filePath) {
-          mimetype = mime.path(filePath).type;              
+          mimetype = mime.path(filePath).type;
+          mimetype = (mimetype === undefined) ? 'text/plain' : mimetype;
           response.type(mimetype).sendFile(filePath, {}, (err) => {
             if (err) {
               debug("Error viewing path: %o", err)

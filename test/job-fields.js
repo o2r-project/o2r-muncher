@@ -49,8 +49,8 @@ describe('returned fields in job listing', () => {
 
     // upload 1st compendium with final job status "success"
     before(function (done) {
-      this.timeout(360000); // step_check includes saving of image tarball
-      createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
+      this.timeout(360000);
+      createCompendiumPostRequest('./test/workspace/dummy', cookie_o2r, 'workspace', (req) => {
 
         request(req, (err, res, body) => {
           assert.equal(res.statusCode, 200);

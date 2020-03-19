@@ -738,7 +738,8 @@ exports.viewPath = (req, res) => {
         let localPath = path.join(config.fs.compendium, ident.compendium, req.params.path);
         try {
           innerSend = function(response, filePath) {
-            mimetype = mime.path(filePath).type;              
+            mimetype = mime.path(filePath).type;
+            mimetype = (mimetype === undefined) ? 'text/plain' : mimetype;
             response.type(mimetype).sendFile(filePath, {}, (err) => {
               if (err) {
                 debug("Error viewing path: %o", err)

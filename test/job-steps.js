@@ -190,12 +190,31 @@ describe('API job steps', () => {
     before(function (done) {
       this.timeout(90000);
       db.compendia.drop(function (err, doc) {
-        createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie_o2r, 'compendium', (req) => {
+        createCompendiumPostRequest('./test/workspace/dummy', cookie_o2r, 'workspace', (req) => {
           request(req, (err, res, body) => {
             compendium_id = JSON.parse(body).id;
             done();
           });
         });
+      });
+    });
+
+    it('should return HTTP error code and error message as valid JSON when starting job as non-logged-in user', (done) => {
+      request({
+        uri: global.test_host + '/api/v1/job',
+        method: 'POST',
+        formData: {
+          compendium_id: compendium_id
+        },
+        timeout: 1000
+      }, (err, res, body) => {
+        assert.ifError(err);
+        response = JSON.parse(body);
+        assert.equal(res.statusCode, 401);
+        assert.isObject(JSON.parse(body));
+        assert.notProperty(response, 'job_id');
+        assert.property(response, 'error');
+        done();
       });
     });
 
@@ -214,8 +233,8 @@ describe('API job steps', () => {
         timeout: 1000
       }, (err, res, body) => {
         assert.ifError(err);
-        let response = JSON.parse(body);
-        assert.equal(res.statusCode, 400);
+        response = JSON.parse(body);
+        assert.equal(res.statusCode, 403);
         assert.isObject(JSON.parse(body));
         assert.notProperty(response, 'job_id');
         assert.property(response, 'error');
@@ -223,7 +242,7 @@ describe('API job steps', () => {
       });
     });
 
-    it('should return HTTP error code and error message as valid JSON even when starting as author', (done) => {
+    it('should return HTTP 200 and start a job when author', (done) => {
       let j = request.jar();
       let ck = request.cookie('connect.sid=' + cookie_o2r);
       j.setCookie(ck, global.test_host);
@@ -238,36 +257,14 @@ describe('API job steps', () => {
         timeout: 1000
       }, (err, res, body) => {
         assert.ifError(err);
-        assert.equal(res.statusCode, 400);
+        response = JSON.parse(body);
+        assert.equal(res.statusCode, 200);
         assert.isObject(JSON.parse(body));
-        let response = JSON.parse(body);
-        assert.notProperty(response, 'job_id');
-        assert.property(response, 'error');
+        assert.property(response, 'job_id');
+        assert.notProperty(response, 'error');
         done();
       });
     });
-
-    it('should return job ID after publishing compendium', (done) => {
-      publishCandidate(compendium_id, cookie_o2r, () => {
-        let j = request.jar();
-        let ck = request.cookie('connect.sid=' + cookie_plain);
-        j.setCookie(ck, global.test_host);
-
-        request({
-          uri: global.test_host + '/api/v1/job',
-          method: 'POST',
-          jar: j,
-          formData: {
-            compendium_id: compendium_id
-          }
-        }, (err, res, body) => {
-          assert.ifError(err);
-          let response = JSON.parse(body);
-          assert.property(response, 'job_id');
-          done();
-        });
-      });
-    }).timeout(20000);
   });
 
   describe('EXECUTION step_validate_bag', () => {
