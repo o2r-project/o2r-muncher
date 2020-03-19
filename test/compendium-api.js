@@ -22,14 +22,77 @@ const config = require('../config/config');
 const createCompendiumPostRequest = require('./util').createCompendiumPostRequest;
 const publishCandidate = require('./util').publishCandidate;
 const startJob = require('./util').startJob;
-const fs = require('fs');
 const mongojs = require('mongojs');
 const chai = require('chai');
 chai.use(require('chai-datetime'));
+const url = require('url');
 
 require("./setup");
 
 const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
+
+describe('API base routes', () => {
+  describe('GET /', function() {
+    it('should respond with 404 Not Found (if endpoint of tested host is the configured port only)', function(done) {
+      let u = url.parse(global.test_host);
+      if (u.port == config.net.port) {
+        request(global.test_host, (err, res) => {
+          assert.ifError(err);
+          assert.equal(res.statusCode, 404);
+          done();
+        });
+      } else {
+        this.skip();
+      }
+    });
+  });
+
+  describe('GET /api', () => {
+    let path = global.test_host + '/api';
+    let current = null;
+
+    it('should respond with 200', (done) => {
+      request(path, (err, res) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        done();
+      });
+    });
+    it('should respond with a JSON object', (done) => {
+      request(path, (err, res, body) => {
+        assert.ifError(err);
+        assert.isObject(JSON.parse(body), 'returned JSON');
+        done();
+      });
+    });
+    it('should respond with a document containing about and versions', (done) => {
+      request(path, (err, res, body) => {
+        let response = JSON.parse(body);
+        assert.ifError(err);
+        assert.equal(response.about, "https://o2r.info");
+        assert.isOk(response.versions);
+        assert.isOk(response.versions.current);
+        current = response.versions.current;
+        done();
+      });
+    });
+    it('should at "current" endpoint return a document with valid sub-paths', (done) => {
+      request(global.test_host + current, (err, res, body) => {
+        let response = JSON.parse(body);
+        assert.ifError(err);
+        assert.isOk(response.auth);
+        assert.isOk(response.compendia);
+        assert.isOk(response.jobs);
+        assert.isOk(response.users);
+        assert.include(response.auth, current);
+        assert.include(response.compendia, current);
+        assert.include(response.jobs, current);
+        assert.include(response.users, current);
+        done();
+      });
+    });
+  });
+});
 
 describe('API Compendium', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);

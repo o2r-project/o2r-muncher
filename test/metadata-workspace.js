@@ -487,7 +487,7 @@ describe('Publishing workspace without editing metadata', () => {
         assert.propertyVal(response.metadata.o2r.license, 'metadata', 'metadatalicense');
         
         assert.propertyVal(response.metadata.o2r, 'title', 'Test with metadata in Rmd header');
-        assert.propertyVal(response.metadata.o2r, 'description', 'just a test with Rmd header');
+        assert.include(response.metadata.o2r.description, 'Tempus eget nunc eu, lobortis');
         done();
       });
     });

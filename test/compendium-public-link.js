@@ -45,7 +45,7 @@ describe('Public links', () => {
     this.timeout(30000);
     db.compendia.drop(function (err, doc) {
       db.publiclinks.drop(function (err, doc) {
-        createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {
+        createCompendiumPostRequest('./test/workspace/dummy', cookie_o2r, 'workspace', (req) => {
           request(req, (err, res, body) => {
             compendium_id = JSON.parse(body).id;
             done();
@@ -131,7 +131,7 @@ describe('Public links', () => {
     
     before(function (done) {
       this.timeout(30000);
-      createCompendiumPostRequest('./test/erc/metatainer', cookie_o2r, 'compendium', (req) => {
+      createCompendiumPostRequest('./test/workspace/dummy', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           published_compendium = JSON.parse(body).id;
           publishCandidate(published_compendium, cookie_o2r, () => {
@@ -259,7 +259,7 @@ describe('Public links', () => {
     before(function (done) {
       this.timeout(30000);
 
-      createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {
+      createCompendiumPostRequest('./test/workspace/dummy', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id2 = JSON.parse(body).id;
           reqLink = {

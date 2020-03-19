@@ -2,7 +2,7 @@
 sudo: required
 language: node_js
 node_js:
-  - "9"
+  - "12"
 services:
   - docker
 before_install:
@@ -21,8 +21,13 @@ before_script:
   - docker build --tag muncher .
   - docker run --name testmuncher     -d -p 8080:8080 --link mongodb:mongodb -v /tmp/o2r:/tmp/o2r -v /var/run/docker.sock:/var/run/docker.sock -e MUNCHER_MONGODB=mongodb://mongodb:27017     -e DEBUG=muncher,muncher:* muncher
   - sleep 10
+env:
+  - TEST_SET=compendium
+  - TEST_SET=download
+  - TEST_SET=job
+  - TEST_SET=metadata
 script:
-  - npm run test_ci
+  - npm run-script test_ci
 after_failure:
   - sleep 5
   - docker logs testmuncher

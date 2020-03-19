@@ -7,8 +7,7 @@
     "start": "DEBUG=muncher,muncher:*,executor:* node index.js",
     "test_port80": "TEST_HOST=http://localhost DEBUG=*,-modem,-mocha:* mocha",
     "test": "DEBUG=*,-modem,-mocha:* mocha",
-    "test_bail": "DEBUG=*,-modem,-mocha:* mocha --bail",
-    "test_ci": "DEBUG=*,-modem,-mocha:* mocha ./test/ --exit",
+    "test_ci": "DEBUG=*,-modem,-mocha:* mocha ./test/$TEST_SET*.js --exit",
     "test_ci_async_dump": "DEBUG=*,-modem,-mocha:* mocha ./test/ --require test/async-dump",
     "test_clean_upload_cache": "rm /tmp/o2r-*.zip"
   },
