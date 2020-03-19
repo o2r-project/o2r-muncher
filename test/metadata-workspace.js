@@ -141,7 +141,7 @@ describe('Updating workspace metadata', () => {
     });
 
     it('should have the configuration file with correct content after generating it during first job', (done) => {
-      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
         assert.include(body, 'main: main.Rmd');
         assert.include(body, 'display: display.html');
@@ -181,7 +181,7 @@ describe('Updating workspace metadata', () => {
       req_doc_o2r.uri = global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata';
       request(req_doc_o2r, (err, res, body) => {
         assert.ifError(err);
-        request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+        request(global.test_host + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
           assert.ifError(err);
           assert.include(body, 'main: test.R');
           assert.include(body, 'display: test.html');
@@ -215,10 +215,12 @@ describe('Publishing workspace metadata', () => {
 
   before(function (done) {
     this.timeout(90000);
-    createCompendiumPostRequest('./test/erc/metatainer/data', cookie_o2r, 'workspace', (req) => {
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        done();
+    db.compendia.drop(function (err, doc) {
+      createCompendiumPostRequest('./test/erc/metatainer/data', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          done();
+        });
       });
     });
   });
@@ -374,19 +376,22 @@ describe('Publishing workspace without editing metadata', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/metatainer-licenses/data', cookie_o2r, 'workspace', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
 
-          request({
-            method: 'GET',
-            uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata',
-            jar: j
-          }, (err, res, body) => {
-            assert.ifError(err);
-            response = JSON.parse(body);
-            metadata_o2r.o2r = response.metadata.o2r;
-            done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/metatainer-licenses/data', cookie_o2r, 'workspace', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+
+            request({
+              method: 'GET',
+              uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata',
+              jar: j
+            }, (err, res, body) => {
+              assert.ifError(err);
+              response = JSON.parse(body);
+              metadata_o2r.o2r = response.metadata.o2r;
+              done();
+            });
           });
         });
       });
@@ -487,7 +492,7 @@ describe('Publishing workspace without editing metadata', () => {
         assert.propertyVal(response.metadata.o2r.license, 'metadata', 'metadatalicense');
         
         assert.propertyVal(response.metadata.o2r, 'title', 'Test with metadata in Rmd header');
-        assert.propertyVal(response.metadata.o2r, 'description', 'just a test with Rmd header');
+        assert.include(response.metadata.o2r.description, 'Tempus eget nunc eu, lobortis');
         done();
       });
     });

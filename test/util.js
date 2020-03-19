@@ -20,14 +20,11 @@ const archiver = require('archiver');
 const fs = require('fs');
 const os = require('os');
 const zlib = require('zlib');
-const tags = require('mocha-tags');
 const debug = require('debug')('test:util');
 const path = require('path');
 const hasher = require('node-object-hash');
 var hashSortCoerce = hasher();
 const AsyncPolling = require('async-polling');
-
-debug('Test filter: ', tags.filter);
 
 require("./setup");
 debug('Using loader at ' + global.test_host_loader);
@@ -235,4 +232,21 @@ module.exports.waitForJob = function (job_id, done) {
   });
 
   polling.run();
+}
+
+module.exports.publishLink = function (compendium_id, cookie, done) {
+  let j = request.jar();
+  let ck = request.cookie('connect.sid=' + cookie);
+  j.setCookie(ck, global.test_host);
+
+  request({
+    uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/link',
+    method: 'PUT',
+    jar: j,
+    timeout: 2000
+  }, (err, res, body) => {
+    let response = JSON.parse(body);
+    debug("Created link: %o", response);
+    done({ link: response.link, id: response.id });
+  });
 }

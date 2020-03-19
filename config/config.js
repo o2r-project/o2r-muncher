@@ -53,7 +53,9 @@ if (c.mongo.location[c.mongo.location.length - 1] !== '/') {
 c.fs.base = env.MUNCHER_BASEPATH || '/tmp/o2r/';
 c.fs.incoming = path.join(c.fs.base, 'incoming');
 c.fs.compendium = path.join(c.fs.base, 'compendium');
+c.fs.deleted = path.join(c.fs.base, 'deleted');
 c.fs.job = path.join(c.fs.base, 'job');
+c.fs.imgtmp = path.join(c.fs.base, 'imgtmp');
 c.fs.delete_inc = true;
 c.fs.fail_on_no_files = yn(env.MUNCHER_FAIL_ON_NO_FILES || 'false');
 
@@ -61,7 +63,8 @@ c.fs.volume = env.MUNCHER_VOLUME || null;
 
 // muncher behaviour & defaults
 c.list_limit = 100; // amount of results per page
-c.id_length = 5;   // length of job & compendium ids [0-9,a-z,A-Z]
+c.id_length = 5;    // length of job & compendium ids [0-9,a-z,A-Z]
+c.link_length = 32; // length of link ids [0-9,a-z,A-Z]
 
 // session secret
 c.sessionSecret = env.SESSION_SECRET || 'o2r';
@@ -79,9 +82,11 @@ c.user = {};
 c.user.level = {};
 c.user.level.create_compendium = 100;
 c.user.level.create_job = 0;
-c.user.level.view_status = 1000;
-c.user.level.edit_metadata = 500;
+c.user.level.edit_others = 500;
 c.user.level.view_candidates = 500;
+c.user.level.view_status = 1000;
+c.user.level.delete_compendium = 1000;
+c.user.level.manage_links = 500;
 
 // bagtainer configuration
 c.bagtainer = {};
@@ -220,7 +225,7 @@ c.checker = {};
 c.checker.diffFileName = 'check.html';
 
 c.containerit = {};
-c.containerit.image = env.MUNCHER_CONTAINERIT_IMAGE || 'o2rproject/containerit:geospatial-0.5.0.9003';
+c.containerit.image = env.MUNCHER_CONTAINERIT_IMAGE || 'o2rproject/containerit:geospatial-0.6.0.9000';
 c.containerit.default_create_options = {
   CpuShares: 256,
   Env: ['O2R_MUNCHER=true', 'O2R_MUNCHER_VERSION=' + c.version],
@@ -229,7 +234,7 @@ c.containerit.default_create_options = {
   User: env.MUNCHER_CONTAINERIT_USER || 'rstudio' // this must fit the used image, so that files outside the container for local testing can be deleted
                                                   // and must be 'root' (or a user who can run Docḱer) for package filtering > extra setting below!
 };
-c.containerit.baseImage = env.MUNCHER_CONTAINERIT_BASE_IMAGE || 'rocker/geospatial:3.4.4';
+c.containerit.baseImage = env.MUNCHER_CONTAINERIT_BASE_IMAGE || 'rocker/geospatial:3.6.2'; // when changing this, also update the "test warming" Dockerfile at ./test/Dockerfile
 c.containerit.filterBaseImagePkgs = {
   r_parameter_value:  (yn(env.MUNCHER_CONTAINERIT_FILTER_BASE_IMAGE_PKGS) || 'false').toString().toUpperCase(),
   enabled: yn(env.MUNCHER_CONTAINERIT_FILTER_BASE_IMAGE_PKGS || 'false'),
@@ -252,6 +257,13 @@ c.body_parser_config = {
   // increase limit for metadata uploads, see https://github.com/expressjs/body-parser#limit
   limit: '50mb'
 };
+
+c.download = {};
+c.download.defaults = {};
+c.download.defaults.statConcurrency = 4; // archiver.js default is '4'
+c.download.defaults.tar = {};
+c.download.defaults.tar.gzipOptions = {}; // https://nodejs.org/api/zlib.html#zlib_class_options
+c.download.defaults.includeImage = true;
 
 debug('CONFIGURATION:\n%s', util.inspect(c, { depth: null, colors: true }));
 

@@ -20,7 +20,6 @@ const debug = require('debug')('muncher:compendium');
 const fs = require('fs');
 const fse = require('fs-extra');
 const path = require('path');
-const exec = require('child_process').exec;
 const objectPath = require('object-path');
 const urlJoin = require('url-join');
 const yaml = require('yamljs');
@@ -30,24 +29,30 @@ const get = require('lodash.get');
 
 const dirTree = require('directory-tree');
 const rewriteTree = require('../lib/rewrite-tree');
+const mime = require('mime-types');
 const errorMessageHelper = require('../lib/error-message');
 const bagit = require('../lib/bagit');
 const meta = require('../lib/meta');
+const resize = require('../lib/resize.js').resize;
+const resolve_public_link = require('./link').resolve_public_link;
 
-var Compendium = require('../lib/model/compendium');
-var User = require('../lib/model/user');
-var Job = require('../lib/model/job');
+const Compendium = require('../lib/model/compendium');
+const User = require('../lib/model/user');
+const Job = require('../lib/model/job');
 
+/*
+ * user must be owner (unless delete) OR have the sufficient level
+ */
 detect_rights = function (user_id, compendium, level) {
   debug('[%s] Checking rights for user %s against level %s', compendium.id, user_id, level);
 
   return new Promise(function (resolve, reject) {
-    if (user_id === compendium.user) {
-      debug('[%s] User %s is owner!', compendium.id, user_id);
+    if (user_id === compendium.user && level < config.user.level.delete_compendium) {
+      debug('[%s] User %s is owner and requested level is not too high (%s < %s)', compendium.id, user_id, level, config.user.level.delete_compendium);
       resolve({ user_has_rights: true, user_id: user_id });
     } else {
       // user is not author but could have required level
-      debug('[%s] User %s trying to edit/view compendium by user %s', compendium.id, user_id, compendium.user);
+      debug('[%s] User %s trying to access compendium by user %s', compendium.id, user_id, compendium.user);
 
       User.findOne({ orcid: user_id }, (err, user) => {
         if (err) {
@@ -66,17 +71,24 @@ detect_rights = function (user_id, compendium, level) {
 }
 
 exports.viewCompendium = (req, res) => {
-  let id = req.params.id;
-  debug('[%s] view single compendium', id);
+  debug('[%s] view single compendium', req.params.id);
 
-  Compendium
-    .findOne({ id })
+  resolve_public_link(req.params.id, (ident) => {
+    let id = null;
+    if (ident.is_link) {
+      id = ident.link;
+    } else {
+      id = ident.compendium;
+    }
+    
+    Compendium
+    .findOne({ id: ident.compendium })
     .select('id user metadata created candidate bag compendium substituted')
     .lean()
     .exec((err, compendium) => {
       // eslint-disable-next-line no-eq-null, eqeqeq
       if (err || compendium == null) {
-        debug('[%s] compendium does not exist!', id);
+        debug('[%s] compendium does not exist! identifiers: %o', id, ident);
         res.status(404).send({ error: 'no compendium with this id' });
       } else {
         debug('[%s] single compendium found!', id);
@@ -92,12 +104,13 @@ exports.viewCompendium = (req, res) => {
         }
 
         try {
-          fullPath = path.join(config.fs.compendium, id);
+          fullPath = path.join(config.fs.compendium, ident.compendium);
           fs.accessSync(fullPath); // throws if does not exist
-          answer.files = rewriteTree(dirTree(fullPath),
+          answer.files = rewriteTree.rewriteTree(dirTree(fullPath),
             fullPath.length, // remove local fs path and id
             urlJoin(config.api.resource.compendium, id, config.api.sub_resource.data) // prepend proper location
           );
+          answer.files.name = id;
         } catch (err) {
           debug('[%s] Error: No data files found (Fail? %s): %s', id, config.fs.fail_on_no_files, err);
           if (config.fs.fail_on_no_files) {
@@ -108,8 +121,9 @@ exports.viewCompendium = (req, res) => {
           }
         }
 
-        // check if user is allowed to view the candidate (easier to check async if done after answer creation)
-        if (compendium.candidate) {
+        // check if user is allowed to view the candidate, not coming from a link
+        // (easier to check async if done after answer creation)
+        if (compendium.candidate && !ident.is_link) {
           debug('[%s] Compendium is a candidate, need to make some checks.', id);
 
           if (!req.isAuthenticated()) {
@@ -136,6 +150,7 @@ exports.viewCompendium = (req, res) => {
         }
       }
     });
+  });
 };
 
 exports.deleteCompendium = (req, res) => {
@@ -149,21 +164,20 @@ exports.deleteCompendium = (req, res) => {
       res.status(404).send({ error: 'no compendium with this id' });
     } else {
       let compendium_path = path.join(config.fs.compendium, id);
-      // check if user is allowed to delete the candidate
-      if (!compendium.candidate) {
-        debug('[%s] Compendium is NOT a candidate, can NOT be deleted.', id);
-        res.status(400).send({ error: 'compendium is not a candidate, cannot be deleted' });
-        return;
-      } else if (!req.isAuthenticated()) {
-        debug('[%s] User is not authenticated, cannot view candidate.', id);
+      
+      if (!req.isAuthenticated()) {
+        debug('[%s] User is not authenticated, cannot even view candidate.', id);
         res.status(401).send({ error: 'user is not authenticated' });
         return;
       }
 
-      detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
+      // check if user is allowed to delete the compendium or candidate
+      if (compendium.candidate) {
+        // compendium is a candidate
+        detect_rights(req.user.orcid, compendium, config.user.level.view_candidates)
         .then((passon) => {
           if (passon.user_has_rights) {
-            debug('[%s] single compendium found, going to remove it and its files at %s on behalf of user %s (has rights: %s)',
+            debug('[%s] single compendium candidate found, going to remove it and its files at %s on behalf of user %s (has rights: %s)',
               compendium.id, compendium_path, passon.user_id, passon.user_has_rights);
             Compendium.findOneAndRemove({ id: compendium.id }).exec((err) => {
               if (err) {
@@ -175,61 +189,122 @@ exports.deleteCompendium = (req, res) => {
                     debug('[%s] Error deleting data files: %s', compendium.id, err);
                     res.status(500).send({ error: err.message });
                   } else {
-                    res.status(204).send();
+                    debug('[%s] Deleted!', compendium.id);
+                    res.sendStatus(204);
                   }
                 });
               };
             });
           } else {
             debug('[%s] Error: user does not have rights but promise fulfilled', id);
+            res.status(500);
           }
         }, function (passon) {
           debug('[%s] User %s may NOT delete candidate.', id, req.user.orcid);
           res.status(403).send(passon);
         });
+      } else {
+        // compendium is NOT a candidate
+        detect_rights(req.user.orcid, compendium, config.user.level.delete_compendium)
+          .then((passon) => {
+            if (passon.user_has_rights) {
+              debug('[%s] single compendium found, going to remove it and its files at %s on behalf of user %s (has rights: %s)',
+                compendium.id, compendium_path, passon.user_id, passon.user_has_rights);
+
+              // save compendium metadata to file
+              Compendium.findOne({ id: id }).exec((err, compendium) => {
+                // eslint-disable-next-line no-eq-null, eqeqeq
+                if (err || compendium == null) {
+                  debug('[%s] compendium does not exist!', id);
+                  res.status(500);
+                } else {
+                  metadata_file = path.join(config.fs.deleted, compendium.id + '.json');
+                  fs.writeFile(metadata_file, JSON.stringify(compendium), (err) => {
+                    if (err) throw err;
+                    debug('[%s] Saved full compendium metadata to %s', metadata_file);
+
+                    Compendium.findOneAndRemove({ id: compendium.id }).exec((err) => {
+                      if (err) {
+                        debug('[%s] error deleting compendium: %s', compendium.id, err);
+                        res.status(500).send({ error: err.message });
+                      } else {
+                        deleted_path = path.join(config.fs.deleted, compendium.id);
+                        debug('[%s] Moving compendium files to %s', compendium.id, deleted_path);
+                        fse.move(compendium_path, deleted_path, (err) => {
+                          if (err) {
+                            debug('[%s] Error moving data files to %s: %s', compendium.id, deleted_path, err);
+                            res.status(500).send({ error: err.message });
+                          } else {
+                            res.sendStatus(204);
+                          }
+                        });
+                      };
+                    });
+                  });
+                }
+              });
+            } else {
+              debug('[%s] Error: user does not have rights but promise fulfilled', id);
+              res.status(500);
+            }
+          }, function (passon) {
+            debug('[%s] Compendium is NOT a candidate, can NOT be deleted by user %s.', id, req.user.orcid);
+            res.status(400).send({ error: 'compendium is not a candidate, cannot be deleted' });
+        });
+      }
     };
   });
 };
 
 exports.viewCompendiumJobs = (req, res) => {
-  var id = req.params.id;
-  var answer = {};
-  var filter = { compendium_id: id };
-  var limit = parseInt(req.query.limit || config.list_limit, 10);
-  var start = parseInt(req.query.start || 1, 10) - 1;
+  debug('[%s] vide compendium jobs', req.params.id);
+  
+  resolve_public_link(req.params.id, (ident) => {
+    let id = null;
+    if (ident.is_link) {
+      id = ident.link;
+    } else {
+      id = ident.compendium;
+    }
+    
+    var answer = {};
+    var filter = { compendium_id: id };
+    var limit = parseInt(req.query.limit || config.list_limit, 10);
+    var start = parseInt(req.query.start || 1, 10) - 1;
 
-  Job
-    .find(filter)
-    .select('id')
-    .skip(start)
-    .limit(limit)
-    .lean()
-    .exec((err, jobs) => {
-      if (err) {
-        res.status(500).send({ error: 'query failed' });
-      } else {
-
-        answer.results = jobs.map(job => {
-          return job.id;
-        });
-
-        if (jobs.length <= 0) {
-          Compendium.find({ id }).limit(1).exec((err, compendium) => {
-            if (err) {
-              res.status(404).send({ error: 'error finding compendium: ' + err.message });
-            } else {
-              if (compendium.length <= 0) {
-                res.status(404).send({ error: 'no compendium with id ' + id });
-              } else {
-                res.status(200).send(answer);
-              }
-            }
-          });
+    Job
+      .find(filter)
+      .select('id')
+      .skip(start)
+      .limit(limit)
+      .lean()
+      .exec((err, jobs) => {
+        if (err) {
+          res.status(500).send({ error: 'query failed' });
         } else {
-          res.status(200).send(answer);
+
+          answer.results = jobs.map(job => {
+            return job.id;
+          });
+
+          if (jobs.length <= 0) {
+            Compendium.find({ id }).limit(1).exec((err, compendium) => {
+              if (err) {
+                res.status(404).send({ error: 'error finding compendium: ' + err.message });
+              } else {
+                if (compendium.length <= 0) {
+                  res.status(404).send({ error: 'no compendium with id ' + id });
+                } else {
+                  res.status(200).send(answer);
+                }
+              }
+            });
+          } else {
+            res.status(200).send(answer);
+          }
         }
-      }
-    });
+      });
+  });
 };
 
 exports.listCompendia = (req, res) => {
@@ -569,7 +644,7 @@ exports.updateCompendiumMetadata = (req, res) => {
       if (err || compendium == null) {
         res.status(404).send({ error: 'no compendium with this id' });
       } else {
-        detect_rights(user_id, compendium, config.user.level.edit_metadata)
+        detect_rights(user_id, compendium, config.user.level.edit_others)
           .then(function (passon) {
             if (!req.body.hasOwnProperty('o2r')) {
               debug('[%s] invalid metadata provided: no o2r root element: %O', id, req.body);
@@ -639,4 +714,96 @@ exports.updateCompendiumMetadata = (req, res) => {
     debug('Internal error updating metadata: %O', err);
     res.status(500).send({ error: err.message });
   }
+};
+
+exports.viewPath = (req, res) => {
+  debug('View path %s', req.params.path);
+
+  resolve_public_link(req.params.id, (ident) => {
+    let id = null;
+    if (ident.is_link) {
+      id = ident.link;
+    } else {
+      id = ident.compendium;
+    }
+    
+    let size = req.query.size || null;
+
+    Compendium.findOne({ id: ident.compendium }).select('id').lean().exec((err, compendium) => {
+      if (err || compendium == null) {
+        res.status(404).send({ error: 'no compendium with this id' });
+      } else {
+        let localPath = path.join(config.fs.compendium, ident.compendium, req.params.path);
+        try {
+          innerSend = function(response, filePath) {
+            mimetype = mime.lookup(tree.path) || rewriteTree.extraMimeTypes(tree.extension);
+            response.type(mimetype).sendFile(filePath, {}, (err) => {
+              if (err) {
+                debug("Error viewing path: %o", err)
+              } else {
+                debug('Returned %s for %s as %s', filePath, req.params.path, mimetype);
+              }
+            });
+          }
+
+          debug('Accessing %s', localPath);
+          fs.accessSync(localPath); //throws if does not exist
+          if (size) {
+            resize(localPath, size, (finalPath, err, code) => {
+              if (err) {
+                let status = code || 500;
+                res.status(status).send({ error: err });
+                return;
+              }
+
+              innerSend(res, finalPath);
+            });
+          } else {
+            innerSend(res, localPath);
+          }
+        } catch (e) {
+          debug('Error accessing path: %s', e);
+          res.status(500).send({ error: e.message });
+          return;
+        }
+      }
+    });
+  });
+};
+
+exports.viewData = (req, res) => {
+  debug('[%s] View data', req.params.id);
+
+  resolve_public_link(req.params.id, (ident) => {
+    let id = null;
+    if (ident.is_link) {
+      id = ident.link;
+    } else {
+      id = ident.compendium;
+    }
+    
+    Compendium.findOne({ id: ident.compendium }).select('id').lean().exec((err, compendium) => {
+      if (err || compendium == null) {
+        res.status(404).send({ error: 'no compendium with this id' });
+      } else {
+        let localPath = path.join(config.fs.compendium, ident.compendium);
+        try {
+          debug('Reading file listing from %s', localPath);
+          fs.accessSync(localPath); //throws if does not exist
+
+          let answer = rewriteTree.rewriteTree(dirTree(localPath),
+            localPath.length, // remove local fs path
+            '/api/v1/compendium/' + id + '/data' // prepend proper location
+          );
+          answer.name = id;
+
+          res.status(200).send(answer);
+        } catch (e) {
+          debug('Error reading file listing: %s', e);
+          res.status(500).send({ error: e.message });
+          return;
+        }
+      }
+    });
+  });
 };

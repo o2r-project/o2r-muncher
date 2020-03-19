@@ -24,13 +24,10 @@ const publishCandidate = require('./util').publishCandidate;
 const waitForJob = require('./util').waitForJob;
 const startJob = require('./util').startJob;
 const mongojs = require('mongojs');
-const chai = require('chai');
 const path = require('path');
-const debug = require('debug')('test:networking');
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
-const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
 
 describe('Container networking', () => {
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);

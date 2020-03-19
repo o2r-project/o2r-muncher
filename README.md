@@ -49,6 +49,8 @@ You can override these environment variables (configured in `config/config.js`) 
   Docker image name and tag for containerit tool, defaults to running Rocker's [geospatial](https://github.com/rocker-org/geospatial/) image with [containerit](https://github.com/o2r-project/containerit/) pre-installed, i.e. `o2rproject/containerit:geospatial`.
 - `MUNCHER_CONTAINERIT_USER`
   The user within the container, which must match the used image (see previous setting), defaults to `rstudio`, which is suitable for images in the `rocker/verse` stack of images. _Change this_ when running muncher inside a container, or with `docker-compose`!
+- `MUNCHER_CONTAINERIT_BASE_IMAGE`
+  The base image to use for generated `Dockerfile`s.
 - `MUNCHER_CONTAINERIT_FILTER_BASE_IMAGE_PKGS`
   Gives the `containerit` container access to the Docker socket so that it can extract the packages installed in a container and not install them redundantly, see also [related issue](https://github.com/o2r-project/o2r-muncher/issues/105). _Only works when running muncher inside a container_, or with `docker-compose`!
 - `MUNCHER_FAIL_ON_NO_FILES`

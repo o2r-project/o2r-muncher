@@ -20,12 +20,10 @@ const debug = require('debug')('muncher');
 const config = require('./config/config');
 const fse = require('fs-extra');
 const backoff = require('backoff');
-const child_process = require('child_process');
 const exec = require('child_process').exec;
-const fs = require('fs');
-const colors = require('colors');
 const starwars = require('starwars');
 const Docker = require('dockerode');
+const url = require('url');
 
 // handle unhandled rejections
 process.on('unhandledRejection', (reason) => {
@@ -87,6 +85,8 @@ mongoStore.on('error', (err) => {
 var controllers = {};
 controllers.compendium = require('./controllers/compendium');
 controllers.job = require('./controllers/job');
+controllers.link = require('./controllers/link');
+controllers.download = require('./controllers/download');
 
 // check fs & create dirs if necessary
 fse.mkdirsSync(config.fs.job);
@@ -233,6 +233,7 @@ function initApp(callback) {
     indexResponseV1.shipments = '/api/v1/shipment';
     indexResponseV1.recipients = '/api/v1/recipient';
     indexResponseV1.substitutions = '/api/v1/substitution';
+    indexResponseV1.links = '/api/v1/link';
 
     // set up routes
     app.get('/status', function (req, res) {
@@ -270,6 +271,21 @@ function initApp(callback) {
       res.send(indexResponseV1);
     });
 
+    // transporter routes
+    app.get('/api/v1/job/:id/data/:path(*)', controllers.job.viewPath);
+    app.get('/api/v1/compendium/:id/data/', controllers.compendium.viewData);
+    app.get('/api/v1/compendium/:id/data/:path(*)', controllers.compendium.viewPath);
+    app.get('/api/v1/compendium/:id.zip', controllers.download.downloadZip);
+    app.get('/api/v1/compendium/:id.tar.gz', function (req, res) {
+      let redirectUrl = req.path.replace('.tar.gz', '.tar?gzip');
+      if (Object.keys(req.query).length !== 0) {
+        redirectUrl += '&' + url.parse(req.url).query;
+      }
+      debug('Redirecting from %s with query %s  to  %s', req.path, JSON.stringify(req.query), redirectUrl)
+      res.redirect(redirectUrl);
+    });
+    app.get('/api/v1/compendium/:id.tar', controllers.download.downloadTar);
+
     app.get('/api/v1/compendium', controllers.compendium.listCompendia);
     app.get('/api/v1/compendium/:id', controllers.compendium.viewCompendium);
     app.delete('/api/v1/compendium/:id', controllers.compendium.deleteCompendium);
@@ -281,6 +297,11 @@ function initApp(callback) {
     app.get('/api/v1/job', controllers.job.listJobs);
     app.post('/api/v1/job', upload.any(), controllers.job.createJob);
     app.get('/api/v1/job/:id', controllers.job.viewJob);
+
+    app.get('/api/v1/link', controllers.link.listLinks);
+    app.get('/api/v1/compendium/:id/link', controllers.link.viewCompendiumLink);
+    app.put('/api/v1/compendium/:id/link', controllers.link.createLink);
+    app.delete('/api/v1/compendium/:id/link', controllers.link.deleteLink);
 
     fulfill();
   });

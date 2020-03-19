@@ -109,7 +109,7 @@ describe('Manifest creation during a job', () => {
     });
 
     it('should have the expected content in the manifest file via the job', function (done) {
-      request(global.test_host_transporter + '/api/v1/job/' + job_id + '/data/Dockerfile', (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '/data/Dockerfile', (err, res, body) => {
         assert.ifError(err);
         assert.isNotObject(body, 'response is not JSON');
         assert.include(body, 'FROM ' + config.containerit.baseImage);
@@ -119,7 +119,7 @@ describe('Manifest creation during a job', () => {
     });
 
     it('should have the expected content in the manifest file via the compendium', function (done) {
-      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/Dockerfile', (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id + '/data/Dockerfile', (err, res, body) => {
         assert.ifError(err);
         assert.isNotObject(body, 'response is not JSON');
         assert.include(body, 'FROM ' + config.containerit.baseImage);
@@ -232,7 +232,7 @@ describe('Manifest creation during a job', () => {
     });
 
     it('should have the expected content in the manifest', function (done) {
-      request(global.test_host_transporter + '/api/v1/job/' + job_id + '/data/Dockerfile', (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '/data/Dockerfile', (err, res, body) => {
         assert.ifError(err);
         assert.isNotObject(body, 'response is not JSON');
         assert.notInclude(body, 'COPY', 'no COPY statement, because files are mounted');
@@ -286,7 +286,7 @@ describe('Manifest creation during a job', () => {
     });
 
     it('should have the expected content in the manifest', function (done) {
-      request(global.test_host_transporter + '/api/v1/job/' + job_id + '/data/Dockerfile', (err, res, body) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '/data/Dockerfile', (err, res, body) => {
         assert.ifError(err);
         assert.isNotObject(body, 'response is not JSON');
         assert.include(body, 'RUN ["install2.r", "here", "lwgeom"]', 'lwgeom and here packages installed in Dockerfile');

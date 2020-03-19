@@ -164,7 +164,7 @@ describe('configuration file (erc.yml)', () => {
     });
 
     it('should have all licenses in configuration file', (done) => {
-      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
         configuration = yaml.parse(body);
         assert.hasAllKeys(configuration.licenses, ['code', 'data', 'text', 'metadata']);
@@ -173,7 +173,7 @@ describe('configuration file (erc.yml)', () => {
     });
 
     it('should have correct code license in configuration file', (done) => {
-      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
         assert.include(body, 'code: a_test_code_license');
         done();
@@ -181,7 +181,7 @@ describe('configuration file (erc.yml)', () => {
     });
 
     it('should have correct data license in configuration file', (done) => {
-      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
         assert.include(body, 'data: ODbL-1.0');
         done();
@@ -189,7 +189,7 @@ describe('configuration file (erc.yml)', () => {
     });
 
     it('should have correct text license in configuration file', (done) => {
-      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
         assert.include(body, 'text: licenses.txt');
         done();
@@ -197,7 +197,7 @@ describe('configuration file (erc.yml)', () => {
     });
 
     it('should have correct metadata license in configuration file', (done) => {
-      request(global.test_host_transporter + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
+      request(global.test_host + '/api/v1/compendium/' + compendium_id + '/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
         assert.include(body, 'metadata: CC');
         done();
