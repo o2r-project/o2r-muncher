@@ -29,13 +29,11 @@ const get = require('lodash.get');
 
 const dirTree = require('directory-tree');
 const rewriteTree = require('../lib/rewrite-tree');
+const mime = require('mime-types');
 const errorMessageHelper = require('../lib/error-message');
 const bagit = require('../lib/bagit');
 const meta = require('../lib/meta');
 const resize = require('../lib/resize.js').resize;
-const override = require('../config/custom-mime.json');
-const Mimos = require('@hapi/mimos');
-const mime = new Mimos({ override });
 const resolve_public_link = require('./link').resolve_public_link;
 
 const Compendium = require('../lib/model/compendium');
@@ -108,7 +106,7 @@ exports.viewCompendium = (req, res) => {
         try {
           fullPath = path.join(config.fs.compendium, ident.compendium);
           fs.accessSync(fullPath); // throws if does not exist
-          answer.files = rewriteTree(dirTree(fullPath),
+          answer.files = rewriteTree.rewriteTree(dirTree(fullPath),
             fullPath.length, // remove local fs path and id
             urlJoin(config.api.resource.compendium, id, config.api.sub_resource.data) // prepend proper location
           );
@@ -738,8 +736,7 @@ exports.viewPath = (req, res) => {
         let localPath = path.join(config.fs.compendium, ident.compendium, req.params.path);
         try {
           innerSend = function(response, filePath) {
-            mimetype = mime.path(filePath).type;
-            mimetype = (mimetype === undefined) ? 'text/plain' : mimetype;
+            mimetype = mime.lookup(tree.path) || rewriteTree.extraMimeTypes(tree.extension);
             response.type(mimetype).sendFile(filePath, {}, (err) => {
               if (err) {
                 debug("Error viewing path: %o", err)
@@ -794,7 +791,7 @@ exports.viewData = (req, res) => {
           debug('Reading file listing from %s', localPath);
           fs.accessSync(localPath); //throws if does not exist
 
-          let answer = rewriteTree(dirTree(localPath),
+          let answer = rewriteTree.rewriteTree(dirTree(localPath),
             localPath.length, // remove local fs path
             '/api/v1/compendium/' + id + '/data' // prepend proper location
           );

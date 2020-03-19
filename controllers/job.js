@@ -25,10 +25,8 @@ const pick = require('lodash.pick');
 
 const dirTree = require('directory-tree');
 const rewriteTree = require('../lib/rewrite-tree');
+const mime = require('mime-types');
 const resize = require('../lib/resize.js').resize;
-const override = require('../config/custom-mime.json');
-const Mimos = require('@hapi/mimos');
-const mime = new Mimos({ override });
 const resolve_public_link = require('./link').resolve_public_link;
 
 const Executor = require('../lib/executor').Executor;
@@ -281,8 +279,7 @@ exports.viewPath = (req, res) => {
       let localPath = path.join(config.fs.job, id, req.params.path);
       try {
         innerSend = function(response, filePath) {
-          mimetype = mime.path(filePath).type;
-          mimetype = (mimetype === undefined) ? 'text/plain' : mimetype;
+          mimetype = mime.lookup(tree.path) || rewriteTree.extraMimeTypes(tree.extension);
           response.type(mimetype).sendFile(filePath, {}, (err) => {
             if (err) {
               debug("Error viewing path: %o", err)

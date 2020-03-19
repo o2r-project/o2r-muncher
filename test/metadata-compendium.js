@@ -27,12 +27,10 @@ const createCompendiumPostRequest = require('./util').createCompendiumPostReques
 const publishCandidate = require('./util').publishCandidate;
 const waitForJob = require('./util').waitForJob;
 const startJob = require('./util').startJob;
-const deleteCompendium = require('./util').deleteCompendium;
 
 require("./setup");
 const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
-const cookie_admin = 's:hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i.IEPb0lmtGojn2cVk2edRuomIEanX6Ddz87egE5Pe8UM';
 const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
 
 describe('compendium metadata', () => {
@@ -114,7 +112,7 @@ describe('compendium metadata', () => {
             assert.propertyVal(file, "type", "script/x-R");
             break;
           case (".rmd"):
-            assert.notProperty(file, "type");
+            assert.propertyVal(file, "type", "text/x-r-markdown");
             break;
           default:
             break;

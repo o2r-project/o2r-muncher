@@ -215,10 +215,12 @@ describe('Publishing workspace metadata', () => {
 
   before(function (done) {
     this.timeout(90000);
-    createCompendiumPostRequest('./test/erc/metatainer/data', cookie_o2r, 'workspace', (req) => {
-      request(req, (err, res, body) => {
-        compendium_id = JSON.parse(body).id;
-        done();
+    db.compendia.drop(function (err, doc) {
+      createCompendiumPostRequest('./test/erc/metatainer/data', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          done();
+        });
       });
     });
   });
@@ -374,19 +376,22 @@ describe('Publishing workspace without editing metadata', () => {
 
     before(function (done) {
       this.timeout(90000);
-      createCompendiumPostRequest('./test/erc/metatainer-licenses/data', cookie_o2r, 'workspace', (req) => {
-        request(req, (err, res, body) => {
-          compendium_id = JSON.parse(body).id;
 
-          request({
-            method: 'GET',
-            uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata',
-            jar: j
-          }, (err, res, body) => {
-            assert.ifError(err);
-            response = JSON.parse(body);
-            metadata_o2r.o2r = response.metadata.o2r;
-            done();
+      db.compendia.drop(function (err, doc) {
+        createCompendiumPostRequest('./test/erc/metatainer-licenses/data', cookie_o2r, 'workspace', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+
+            request({
+              method: 'GET',
+              uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/metadata',
+              jar: j
+            }, (err, res, body) => {
+              assert.ifError(err);
+              response = JSON.parse(body);
+              metadata_o2r.o2r = response.metadata.o2r;
+              done();
+            });
           });
         });
       });

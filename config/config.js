@@ -234,7 +234,7 @@ c.containerit.default_create_options = {
   User: env.MUNCHER_CONTAINERIT_USER || 'rstudio' // this must fit the used image, so that files outside the container for local testing can be deleted
                                                   // and must be 'root' (or a user who can run Docḱer) for package filtering > extra setting below!
 };
-c.containerit.baseImage = env.MUNCHER_CONTAINERIT_BASE_IMAGE || 'rocker/geospatial:3.6.2';
+c.containerit.baseImage = env.MUNCHER_CONTAINERIT_BASE_IMAGE || 'rocker/geospatial:3.6.2'; // when changing this, also update the "test warming" Dockerfile at ./test/Dockerfile
 c.containerit.filterBaseImagePkgs = {
   r_parameter_value:  (yn(env.MUNCHER_CONTAINERIT_FILTER_BASE_IMAGE_PKGS) || 'false').toString().toUpperCase(),
   enabled: yn(env.MUNCHER_CONTAINERIT_FILTER_BASE_IMAGE_PKGS || 'false'),
