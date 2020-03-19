@@ -137,67 +137,67 @@ exports.viewJob = (req, res) => {
   let job_id = req.params.id;
   debug('View job %s', job_id);
 
-  resolve_public_link(req.body.compendium_id, (ident) => {
-    let id = null;
-    if (ident.is_link) {
-      id = ident.link;
+  let steps = [];
+  if (req.query.steps) {
+    steps = req.query.steps.split(',').map(f => { return f.trim(); });
+  }
+  let answer = { id: job_id };
+
+  Job.findOne({ id: job_id }).select("compendium_id status steps").lean().exec((err, job) => {
+    // eslint-disable-next-line no-eq-null, eqeqeq
+    if (err || job == null) {
+      debug('[%s] error retrieving job %s: %s', job_id, err);
+      res.status(404).send({ error: 'no job with this id' });
     } else {
-      id = ident.compendium;
-    }
+      debug('[%s] Found job, returning it with steps %o', job_id, steps);
+      answer.compendium_id = job.compendium_id;
+      answer.status = job.status;
 
-    let steps = [];
-    if (req.query.steps) {
-      steps = req.query.steps.split(',').map(f => { return f.trim(); });
-    }
-    let answer = { id: job_id };
-
-    Job.findOne({ id: job_id }).select("compendium_id status steps").lean().exec((err, job) => {
-      // eslint-disable-next-line no-eq-null, eqeqeq
-      if (err || job == null) {
-        debug('[%s] error retrieving job %s: %s', job_id, err);
-        res.status(404).send({ error: 'no job with this id' });
+      answer.steps = {};
+      if (steps.length === 1 && steps[0] === allStepsValue) {
+        answer.steps = job.steps;
       } else {
-        debug('[%s] Found job, returning it with steps %o', job_id, steps);
-        answer.compendium_id = job.compendium_id;
-        answer.status = job.status;
-
-        answer.steps = {};
-        if (steps.length === 1 && steps[0] === allStepsValue) {
-          answer.steps = job.steps;
-        } else {
-          for (let step in job.steps) {
-            if (steps.includes(step)) {
-              // add with all details
-              answer.steps[step] = job.steps[step];
-            } else {
-              // add defaults
-              if (job.steps.hasOwnProperty(step)) {
-                answer.steps[step] = pick(job.steps[step], alwaysStepFields);
-              }
+        for (let step in job.steps) {
+          if (steps.includes(step)) {
+            // add with all details
+            answer.steps[step] = job.steps[step];
+          } else {
+            // add defaults
+            if (job.steps.hasOwnProperty(step)) {
+              answer.steps[step] = pick(job.steps[step], alwaysStepFields);
             }
           }
         }
-
-        try {
-          fullPath = path.join(config.fs.job, job_id)
-          fs.accessSync(fullPath); // throws if directory does not exist
-
-          answer.files = rewriteTree(dirTree(fullPath),
-            fullPath.length, // remove local fs path and id
-            urlJoin(config.api.resource.job, job_id, config.api.sub_resource.data)
-          );
-        } catch (e) {
-          debug('ERROR: No data files found for job %s. Fail? %s', id, config.fs.fail_on_no_files);
-          if (config.fs.fail_on_no_files) {
-            res.status(500).send({ error: 'internal error: could not read job files from storage', e });
-            return;
-          } else {
-            answer.filesMissing = true;
-          }
-        }
-        res.status(200).send(answer);
       }
-    });
+
+      try {
+        fullPath = path.join(config.fs.job, job_id)
+        fs.accessSync(fullPath); // throws if directory does not exist
+
+        answer.files = rewriteTree.rewriteTree(dirTree(fullPath),
+          fullPath.length, // remove local fs path and id
+          urlJoin(config.api.resource.job, job_id, config.api.sub_resource.data)
+        );
+      } catch (e) {
+        debug('ERROR: No data files found for job %s. Fail? %s', job_id, config.fs.fail_on_no_files);
+        if (config.fs.fail_on_no_files) {
+          res.status(500).send({ error: 'internal error: could not read job files from storage', e });
+          return;
+        } else {
+          answer.filesMissing = true;
+        }
+      }
+
+      resolve_public_link(answer.compendium_id, (ident) => {
+        if (ident.is_link) {
+          answer.compendium_id = ident.link;
+        } else {
+          answer.compendium_id = ident.compendium;
+        }
+
+        res.status(200).send(answer);
+      });
+    }
   });
 };
 
