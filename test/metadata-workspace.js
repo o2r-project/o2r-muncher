@@ -69,6 +69,11 @@ describe('Updating workspace metadata', () => {
 
   var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
 
+  after(function (done) {
+    db.close();
+    done();
+  });
+
   before(function (done) {
     this.timeout(90000);
     db.compendia.drop(function (err, doc) {
@@ -83,11 +88,6 @@ describe('Updating workspace metadata', () => {
         });
       });
     });
-  });
-
-  after(function (done) {
-    db.close();
-    done();
   });
 
   describe('metadata update as the authoring user', () => {
@@ -212,6 +212,13 @@ describe('Publishing workspace metadata', () => {
   let j = request.jar();
   let ck = request.cookie('connect.sid=' + cookie_o2r);
   j.setCookie(ck, global.test_host);
+
+  var db = mongojs('localhost/muncher', ['compendia', 'jobs']);
+
+  after(function (done) {
+    db.close();
+    done();
+  });
 
   before(function (done) {
     this.timeout(90000);

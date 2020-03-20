@@ -86,7 +86,7 @@ describe('Manifest creation during a job', () => {
       });
     });
 
-    it('show have the manifest file in the job files', (done) => {
+    it('should have the manifest file in the job files', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
@@ -209,7 +209,7 @@ describe('Manifest creation during a job', () => {
       });
     });
 
-    it('show have the manifest file in the job files', (done) => {
+    it('should have the manifest file in the job files', (done) => {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
