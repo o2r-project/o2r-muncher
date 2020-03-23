@@ -32,10 +32,8 @@ const cookie_admin = 's:hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i.IEPb0lmtGojn2cVk2edRuom
 const cookie_editor = 's:xWHihqZq6jEAObwbfowO5IwdnBxohM7z.VxqsRC5A1VqJVspChcxVPuzEKtRE+aKLF8k3nvCcZ8g';
 
 describe('Public links', () => {
-  var db = mongojs('localhost/muncher', ['compendia', 'publiclinks']);
-  var compendium_id = '';
-  var published_compendium = '';
-
+  var db = mongojs('localhost/muncher', ['compendia', 'publiclinks', 'jobs']);
+  
   after(function (done) {
     db.close();
     done();
@@ -45,17 +43,27 @@ describe('Public links', () => {
     this.timeout(30000);
     db.compendia.drop(function (err, doc) {
       db.publiclinks.drop(function (err, doc) {
-        createCompendiumPostRequest('./test/workspace/dummy', cookie_o2r, 'workspace', (req) => {
-          request(req, (err, res, body) => {
-            compendium_id = JSON.parse(body).id;
-            done();
-          });
+        db.jobs.drop(function (err, doc) {
+          done();
         });
       });
     });
   });
 
   describe('Author vs. link', () => {
+    var compendium_id = '';
+
+    before(function (done) {
+      this.timeout(30000);
+      createCompendiumPostRequest('./test/workspace/dummy', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          done();
+        });
+      });
+    });
+
+
     it('should return an error when trying to create', (done) => {
       let j = request.jar();
       j.setCookie(request.cookie('connect.sid=' + cookie_o2r), global.test_host);
@@ -126,6 +134,7 @@ describe('Public links', () => {
   });
 
   describe('Admin creates link', () => {
+    var compendium_id = '';
     let j = request.jar();
     j.setCookie(request.cookie('connect.sid=' + cookie_admin), global.test_host);
     
@@ -133,10 +142,8 @@ describe('Public links', () => {
       this.timeout(30000);
       createCompendiumPostRequest('./test/workspace/dummy', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
-          published_compendium = JSON.parse(body).id;
-          publishCandidate(published_compendium, cookie_o2r, () => {
+          compendium_id = JSON.parse(body).id;
             done();
-          });
         });
       });
     });
@@ -146,10 +153,10 @@ describe('Public links', () => {
         method: 'PUT',
         jar: j,
         uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/link'
-      }, (err, res, body) => {
+      }, (err, res) => {
         assert.ifError(err);
         assert.equal(res.statusCode, 200);
-        assert.isObject(JSON.parse(body));
+        assert.isObject(JSON.parse(res.body));
         done();
       });
     });
@@ -204,7 +211,7 @@ describe('Public links', () => {
       req = {
         method: 'PUT',
         jar: j,
-        uri: global.test_host + '/api/v1/compendium/' + 'abcdef' + '/link'
+        uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/link'
       };
 
       request(req, (err, res, body) => {
@@ -233,21 +240,21 @@ describe('Public links', () => {
       });
     });
 
-    it('should return an error when compendium is not a candidate', (done) => {
-      req = {
-        method: 'PUT',
-        jar: j,
-        uri: global.test_host + '/api/v1/compendium/' + published_compendium + '/link'
-      };
-
-      request(req, (err, res, body) => {
-        assert.ifError(err);
-        assert.equal(res.statusCode, 400);
-        assert.propertyVal(JSON.parse(body), 'error', 'compendium is not a candidate');
-        done();
+    it('should return an error when compendium is published', (done) => {
+      publishCandidate(compendium_id, cookie_o2r, () => {
+        req = {
+          method: 'PUT',
+          jar: j,
+          uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/link'
+        };
+        request(req, (err, res, body) => {
+          assert.ifError(err);
+          assert.equal(res.statusCode, 400);
+          assert.propertyVal(JSON.parse(body), 'error', 'compendium is not a candidate');
+          done();
+        });
       });
-    });
-
+    }).timeout(10000);
   });
 
   describe('Admin deletes link', () => {
@@ -331,27 +338,32 @@ describe('Public links', () => {
   });
 
   describe('Link list', () => {
-    let link_id = '';
+    let compendium_id, link_id = '';
     let j = request.jar();
     j.setCookie(request.cookie('connect.sid=' + cookie_admin), global.test_host);
 
     before(function (done) {
       this.timeout(30000);
 
-      req = {
-        method: 'PUT',
-        jar: j,
-        uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/link'
-      };
-      
-      request(req, (err, res, body) => {
-          response = JSON.parse(body);
-          link_id = response.id;
-          done();
+      createCompendiumPostRequest('./test/workspace/dummy', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          compendium_id = JSON.parse(body).id;
+          req = {
+            method: 'PUT',
+            jar: j,
+            uri: global.test_host + '/api/v1/compendium/' + compendium_id + '/link'
+          };
+          
+          request(req, (err, res, body) => {
+              response = JSON.parse(body);
+              link_id = response.id;
+              done();
+            });
         });
+      });
     });
     
-    it('should respond with HTTP 200 and list of links for admin, including the latest created one', (done) => {
+    it('should respond with HTTP 200 and list of links for admin, and all links should be created by admin', (done) => {
       req = {
         method: 'GET',
         jar: j,
@@ -364,16 +376,38 @@ describe('Public links', () => {
         assert.isObject(response);
         assert.property(response, 'results');
         assert.isArray(response.results);
-        all_ids = [];
+
         response.results.forEach(elem => {
           assert.propertyVal(elem, 'user', '4242-0000-0000-4242');
           assert.property(elem, 'id');
-          assert.propertyVal(elem, 'compendium_id', compendium_id);
-          all_ids.push(elem.id);
+          assert.property(elem, 'compendium_id');
         });
-
-        assert.include(all_ids, link_id);
         
+        done();
+      });
+    });
+    
+    it('should including the latest created link and the compendium id in the link list', (done) => {
+      req = {
+        method: 'GET',
+        jar: j,
+        uri: global.test_host + '/api/v1/link'
+      };
+      request(req, (err, res, body) => {
+        assert.ifError(err);
+        assert.equal(res.statusCode, 200);
+        response = JSON.parse(body);
+        assert.isObject(response);
+        assert.property(response, 'results');
+        assert.isArray(response.results);
+        
+        assert.include(response.results.map(elem => {
+          return(elem.compendium_id);
+        }), compendium_id);
+        assert.include(response.results.map(elem => {
+          return(elem.id);
+        }), link_id);
+
         done();
       });
     });
@@ -482,7 +516,7 @@ describe('Public links', () => {
   });
 
   describe('Jobs for public link', () => {
-    let public_id, private_id = '';
+    let public_id, candidate_id, job_id = '';
 
     before(function(done) {
       this.timeout(30000);
@@ -490,17 +524,16 @@ describe('Public links', () => {
       createCompendiumPostRequest('./test/workspace/dummy', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           let response = JSON.parse(body);
-          compendium_id = response.id;
-          publishLink(compendium_id, cookie_admin, (response) => {
+          publishLink(response.id, cookie_admin, (response) => {
             public_id = response.id;
-            private_id = response.compendium;
+            candidate_id = response.compendium;
             done();
           });
         });
       });
     });
 
-    it('a job can be started using link id as a non logged-in user and the job can be viewed directly and also related to compendium', (done) => {
+    it('a job can be started using link id as a non logged-in user', (done) => {
       request({
         uri: global.test_host + '/api/v1/job',
         method: 'POST',
@@ -510,54 +543,81 @@ describe('Public links', () => {
         timeout: 10000
       }, (err, res, body) => {
         response = JSON.parse(body);
-        let job_id = response.job_id;
-        waitForJob(job_id, (finalStatus) => {
+        waitForJob(response.job_id, (finalStatus) => {
           assert.equal(finalStatus, 'success');
 
-          // direct job view          
-          request(global.test_host + '/api/v1/job/' + job_id, (err, res2) => {
-            assert.equal(res2.statusCode, 200);
-            response2 = JSON.parse(res2.body);
-            assert.propertyVal(response2, 'id', job_id);
-            assert.propertyVal(response2, 'compendium_id', public_id);
-            
-            // job view via compendium
-            request(global.test_host + '/api/v1/compendium/' + public_id + '/jobs', (err, res3) => {
-              assert.equal(res3.statusCode, 200);
-              response3 = JSON.parse(res3.body);
-              assert.include(response3.results, job_id);
-              assert.notInclude(res3.body, private_id);
-              done();
-            });
-          });
+          job_id = response.job_id;
+          done();
         });
       });
     }).timeout(30000);
 
-    it('should expose the job id but does not expose compendium id, and job should not be listed in the jobs list', (done) => {
-      request({
-        uri: global.test_host + '/api/v1/job',
-        method: 'POST',
-        formData: {
-          compendium_id: public_id
-        },
-        timeout: 10000
-      }, (err, res, body) => {
-        response = JSON.parse(body);
-        let job_id = response.job_id;
+    it('should expose the job id but not expose compendium id', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res) => {
+        response = JSON.parse(res.body);
+        assert.propertyVal(response, 'id', job_id);
+        assert.propertyVal(response, 'compendium_id', public_id);
+        assert.notInclude(res.body, candidate_id);
+        done();
+      });
+    });
 
-        request(global.test_host + '/api/v1/job/' + job_id + '?steps=all', (err, res1) => {
-          response1 = JSON.parse(res1.body);
-          assert.propertyVal(response1, 'id', job_id);
-          assert.propertyVal(response1, 'compendium_id', public_id);
-          assert.notInclude(res1.body, private_id);
-        
-          request(global.test_host + '/api/v1/job', (err, res2) => {
-            response2 = JSON.parse(res2.body);
-            assert.notInclude(response2.results, job_id);
-            done();
-          });
-        });
+    it('should not list the job in the "all jobs" list', (done) => {
+      request(global.test_host + '/api/v1/job', (err, res) => {
+        response = JSON.parse(res.body);
+        assert.notInclude(response.results, job_id);
+        done();
+      });
+    });
+
+    it('should return the job when accessed directly knowing the job id', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res) => {
+        assert.equal(res.statusCode, 200);
+        response = JSON.parse(res.body);
+        assert.propertyVal(response, 'id', job_id);
+        assert.propertyVal(response, 'compendium_id', public_id);
+        done();
+      });
+    });
+    
+    it('should list the job when accessed via the compendium endpoint with the public link', (done) => {
+      request(global.test_host + '/api/v1/compendium/' + public_id + '/jobs', (err, res) => {
+        assert.equal(res.statusCode, 200);
+        response = JSON.parse(res.body);
+        assert.include(response.results, job_id);
+        assert.notInclude(res.body, candidate_id);
+        done();
+      });
+    });
+    
+    it('should not list the job when accessed via the (non-public) candidate compendium id', (done) => {
+      request(global.test_host + '/api/v1/compendium/' + candidate_id + '/jobs', (err, res) => {
+        assert.equal(res.statusCode, 404);
+        response = JSON.parse(res.body);
+        assert.property(response, 'error');
+        assert.notInclude(res.body, candidate_id);
+        assert.notInclude(res.body, job_id);
+        done();
+      });
+    });
+
+    it('should list the job when accessed via the jobs endpoint filtering with the public link', (done) => {
+      request(global.test_host + '/api/v1/job?compendium_id=' + public_id, (err, res) => {
+        assert.equal(res.statusCode, 200);
+        response = JSON.parse(res.body);
+        assert.include(response.results, job_id);
+        assert.notInclude(res.body, candidate_id);
+        done();
+      });
+    });
+    
+    it('should not list the job when accessed via the jobs endpoint filtering with the candidate compendium id', (done) => {
+      request(global.test_host + '/api/v1/job?compendium_id=' + candidate_id, (err, res) => {
+        assert.equal(res.statusCode, 200);
+        response = JSON.parse(res.body);
+        assert.notInclude(response.results, job_id);
+        assert.notInclude(res.body, job_id);
+        done();
       });
     });
   });

@@ -37,17 +37,13 @@ const PublicLink = require('../lib/model/link');
 const alwaysStepFields = ["start", "end", "status"];
 const allStepsValue = "all";
 
-exports.listJobs = (req, res) => {
+exports.listJobs = (req, res) => { 
   var answer = {};
   var filter = {};
   var limit = parseInt(req.query.limit || config.list_limit, 10);
   var start = parseInt(req.query.start || 1, 10) - 1;
   var fields = 'id compendium_id';
 
-  // eslint-disable-next-line no-eq-null, eqeqeq
-  if (req.query.compendium_id != null) {
-    filter.compendium_id = req.query.compendium_id;
-  }
   // eslint-disable-next-line no-eq-null, eqeqeq
   if (req.query.user != null) {
     filter.user = req.query.user;
@@ -89,48 +85,86 @@ exports.listJobs = (req, res) => {
     fields = fields.trim();
   }
 
-  Job.find(filter).select(fields).skip(start).limit(limit).lean().exec((err, jobs) => {
-    if (err) {
-      res.status(500).send({ error: 'job query failed' });
-    } else {
-      if (jobs.length < 1) {
-        debug('Search for jobs has empty result: %o', req.query);
-      }
+  jobSearch = function(filter, fields, start, limit, done) {
+    Job.find(filter).select(fields).skip(start).limit(limit).lean().exec((err, jobs) => {
+      if (err) {
+        res.status(500).send({ error: 'job query failed' });
+      } else {
+        if (jobs.length < 1) {
+          debug('Search for jobs has empty result: %o', req.query);
+        }
 
-      PublicLink.find({}).select('id').lean().exec((err, links) => {
-        if (err) {
-          res.status(500).send({ error: 'link query failed' });
-        } else {
-          let link_ids = links.map((link) => {
-            return link.id;
-          });
-    
-          if (requestedFields.length < 1) {
-            answer.results = jobs.map((job) => {
-              if (link_ids.indexOf(job.compendium_id) < 0)
-                return job.id;
-            }).filter(elem => {
-              return elem != null;
-            });
+        // never include jobs of public links unless that link is specified, TODO: do not filter for admins?
+        PublicLink.find({}).select('id').lean().exec((err, links) => {
+          if (err) {
+            debug('Failure to query public links for filtering publicly available jobs');
+            res.status(500).send({ error: 'links query failed' });
           } else {
-            answer.results = jobs.map((job) => {
-              if (link_ids.indexOf(job.compendium_id) < 0) 
-                jobItem = { id: job.id };
-                requestedFields.forEach((elem) => {
-                  jobItem[elem] = job[elem];
-                });
+            let link_ids = links.map((link) => {
+              return link.id;
+            });
       
-                return jobItem;
-            }).filter(elem => {
-              return elem != null;
+            if (requestedFields.length < 1) {
+              answer.results = jobs.map((job) => {
+                if (link_ids.indexOf(job.compendium_id) < 0 || job.compendium_id === req.query.compendium_id)
+                  return job.id;
+              }).filter(elem => {
+                return elem != null;
+              });
+            } else {
+              answer.results = jobs.map((job) => {
+                if (link_ids.indexOf(job.compendium_id) < 0) 
+                  jobItem = { id: job.id };
+                  requestedFields.forEach((elem) => {
+                    jobItem[elem] = job[elem];
+                  });
+        
+                  return jobItem;
+              }).filter(elem => {
+                return elem != null;
+              });
+            }
+      
+            done(answer); 
+          }
+        });
+      }
+    });
+  }
+
+  // eslint-disable-next-line no-eq-null, eqeqeq
+  if (req.query.compendium_id != null) {
+    resolve_public_link(req.query.compendium_id, (ident) => {
+      if (ident.is_link) {
+        filter.compendium_id  = ident.link;
+        jobSearch(filter, fields, start, limit, (answer) => {
+          res.status(200).send(answer);
+        });
+      } else {
+        // not a link but also defined - ensure it's not a candidate
+        Compendium.findOne({ id: ident.compendium }).select('id candidate').lean().exec((err, compendium) => {
+          if (err || compendium == null) {
+            debug('[%id] Compendium not found, cannot return jobs', ident.compendium);
+            res.status(404).send({ error: 'no compendium with id ' + id });
+          } else if (compendium.candidate && !ident.is_link) {
+            debug('[%id] Compendium does exist, but is a candidate not accessed via public link, not exposing jobs nor compendium: %o', ident.compendium, ident);
+            res.status(200).send({ results: [] });
+          } else {
+            // "normal" case starts here
+            filter.compendium_id  = ident.compendium;
+            jobSearch(filter, fields, start, limit, (answer) => {
+              res.status(200).send(answer);
             });
           }
-    
-          res.status(200).send(answer); 
-        }
-      });
-    }
-  });
+        });
+      }
+    });
+  } else {
+    // no compendium filter
+    jobSearch(filter, fields, start, limit, (answer) => {
+      res.status(200).send(answer);
+    });
+  }
 };
 
 exports.viewJob = (req, res) => {

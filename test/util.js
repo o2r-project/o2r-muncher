@@ -247,6 +247,6 @@ module.exports.publishLink = function (compendium_id, cookie, done) {
   }, (err, res, body) => {
     let response = JSON.parse(body);
     debug("Created link: %o", response);
-    done({ link: response.link, id: response.id });
+    done({ id: response.id, compendium: response.compendium });
   });
 }

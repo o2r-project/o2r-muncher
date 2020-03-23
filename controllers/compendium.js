@@ -140,6 +140,7 @@ exports.viewCompendium = (req, res) => {
                 res.status(200).send(answer);
               } else {
                 debug('[%s] Error: user does not have rights but promise fulfilled', id);
+                res.status(500).send({error: 'illegal state'});
               }
             }, function (passon) {
               debug('[%s] User %s may NOT see candidate.', id, req.user.orcid);
@@ -257,53 +258,64 @@ exports.deleteCompendium = (req, res) => {
 };
 
 exports.viewCompendiumJobs = (req, res) => {
-  debug('[%s] vide compendium jobs', req.params.id);
+  debug('[%s] view compendium jobs', req.params.id);
   
   resolve_public_link(req.params.id, (ident) => {
-    let id = null;
     if (ident.is_link) {
       id = ident.link;
     } else {
       id = ident.compendium;
     }
-    
-    var answer = {};
-    var filter = { compendium_id: id };
-    var limit = parseInt(req.query.limit || config.list_limit, 10);
-    var start = parseInt(req.query.start || 1, 10) - 1;
 
-    Job
-      .find(filter)
-      .select('id')
-      .skip(start)
-      .limit(limit)
-      .lean()
-      .exec((err, jobs) => {
-        if (err) {
-          res.status(500).send({ error: 'query failed' });
-        } else {
-
-          answer.results = jobs.map(job => {
-            return job.id;
-          });
-
-          if (jobs.length <= 0) {
-            Compendium.find({ id }).limit(1).exec((err, compendium) => {
-              if (err) {
-                res.status(404).send({ error: 'error finding compendium: ' + err.message });
-              } else {
-                if (compendium.length <= 0) {
-                  res.status(404).send({ error: 'no compendium with id ' + id });
-                } else {
-                  res.status(200).send(answer);
-                }
-              }
-            });
-          } else {
-            res.status(200).send(answer);
-          }
+    Compendium.findOne({ id: ident.compendium }).select('id candidate user').lean().exec((err, compendium) => {
+      if (err) {
+        debug('[%id] Error finding compendium for job: %s', ident.compendium, err.message);
+        res.status(404).send({ error: 'error finding compendium: ' + err.message });
+      } else {
+        if (compendium == null) {
+          debug('[%id] Compendium does not exist, cannot return jobs', ident.compendium);
+          res.status(404).send({ error: 'no compendium with id ' + id });
+          return;
         }
-      });
+        
+        if (compendium.candidate && !ident.is_link) {
+          debug('[%id] Compendium does exist, but is a candidate not accessed via public link, not exposing jobs nor compendium: %o', ident.compendium, ident);
+          res.status(404).send({ error: 'compendium not found' });
+          return;
+        }
+        
+        var filter = {};
+        if (compendium.candidate && ident.is_link) {
+          debug('[%s] Accessing jobs of candidate via public link: %o', ident.compendium, ident);
+          filter = { compendium_id: ident.link };
+        } else {
+          filter = { compendium_id: ident.compendium };
+        }
+        
+        var answer = {};
+        var limit = parseInt(req.query.limit || config.list_limit, 10);
+        var start = parseInt(req.query.start || 1, 10) - 1;
+
+        Job
+          .find(filter)
+          .select('id')
+          .skip(start)
+          .limit(limit)
+          .lean()
+          .exec((err, jobs) => {
+            if (err) {
+              res.status(500).send({ error: 'query failed' });
+            } else {
+    
+              answer.results = jobs.map(job => {
+                return job.id;
+              });
+    
+              res.status(200).send(answer);
+            }
+          });
+      }
+    });
   });
 };
 
@@ -454,6 +466,7 @@ exports.viewCompendiumMetadata = (req, res) => {
                 res.status(200).send(answer);
               } else {
                 debug('[%s] Error: user does not have rights but promise fulfilled', id);
+                res.status(500).send({error: 'illegal state'});
               }
             }, function (passon) {
               debug('[%s] User %s may NOT see candidate metadata.', id, req.user.orcid);

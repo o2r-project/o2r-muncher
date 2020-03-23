@@ -90,6 +90,7 @@ controllers.download = require('./controllers/download');
 
 // check fs & create dirs if necessary
 fse.mkdirsSync(config.fs.job);
+fse.mkdirsSync(config.fs.deleted);
 fse.mkdirsSync(config.payload.tarball.tmpdir);
 
 // minimal serialize/deserialize to make auth details cookie-compatible.

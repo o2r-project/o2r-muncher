@@ -72,17 +72,15 @@ describe('API job steps', () => {
     });
   });
 
-  describe('GET /api/v1/job?compendium_id for non-existing compendium', () => {
-    it('should respond with HTTP 200 and and an empty list in JSON', (done) => {
+  describe('GET /api/v1/job with compendium_id query for non-existing compendium', () => {
+    it('should respond with HTTP 404 and and a helpful error message in JSON', (done) => {
       request(global.test_host + '/api/v1/job?compendium_id=1234', (err, res, body) => {
         assert.ifError(err);
-        assert.equal(res.statusCode, 200);
+        assert.equal(res.statusCode, 404);
         assert.isObject(JSON.parse(body), 'returned JSON');
         let response = JSON.parse(body);
-        assert.property(response, 'results');
-        assert.notProperty(response, 'error');
-        assert.isArray(response.results);
-        assert.isEmpty(response.results);
+        assert.notProperty(response, 'results');
+        assert.property(response, 'error');
         done();
       });
     });
