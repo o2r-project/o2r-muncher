@@ -1,5 +1,5 @@
 # http://www.budgetshippingcontainers.co.uk/info/how-many-shipping-containers-are-there-in-the-world/
-containers <- c(23000000,14000000,6000000)
+containers <- c(23000000, 14000000, 6000000)
 set.seed(42)
 
 png("display.png", width = 1000)

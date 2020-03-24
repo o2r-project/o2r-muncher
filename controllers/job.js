@@ -145,7 +145,7 @@ exports.listJobs = (req, res) => {
         Compendium.findOne({ id: ident.compendium }).select('id candidate').lean().exec((err, compendium) => {
           if (err || compendium == null) {
             debug('[%id] Compendium not found, cannot return jobs', ident.compendium);
-            res.status(404).send({ error: 'no compendium with id ' + id });
+            res.status(404).send({ error: 'no compendium with id ' + ident.compendium });
           } else if (compendium.candidate && !ident.is_link) {
             debug('[%id] Compendium does exist, but is a candidate not accessed via public link, not exposing jobs nor compendium: %o', ident.compendium, ident);
             res.status(200).send({ results: [] });

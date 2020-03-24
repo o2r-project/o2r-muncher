@@ -462,6 +462,13 @@ describe('API job steps', () => {
   });
 
   describe('EXECUTION configuration file generation', () => {
+
+  before(function(done) {
+    db.compendia.drop(function (err, doc) {
+      done();
+    });
+  });
+  
     it('should skip steps validate bag and generate configuration, but complete following steps', (done) => {
       createCompendiumPostRequest('./test/workspace/rmd-configuration-file', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {

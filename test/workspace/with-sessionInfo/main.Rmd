@@ -1,0 +1,18 @@
+---
+author:
+  - name: "Ted Tester"
+title: "Test title"
+---
+
+```{r test}
+cat("Hello world\n")
+```
+
+```{r packages}
+library("here")
+library("e1071")
+
+sessionInfo <- sessionInfo()
+```
+
+Then: save(sessionInfo, file = "/home/daniel/git/o2r/o2r-muncher/test/workspace/with-sessionInfo/sessionInfo.Rdata")
