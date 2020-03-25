@@ -310,7 +310,6 @@ describe('Delete candidate', () => {
   });
 });
 
-
 describe('Delete compendium', () => {
   var db = mongojs('localhost/muncher', ['compendia']);
 

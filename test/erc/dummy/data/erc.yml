@@ -1,0 +1,5 @@
+---
+id: c9z9G00dummy
+spec_version: 1
+main: main.Rmd
+display: display.html

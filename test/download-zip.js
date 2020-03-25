@@ -32,10 +32,11 @@ const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2
 
 describe('ZIP downloading', function () {
     let compendium_id = null;
-    before(function (done) {
-        this.timeout(30000);
 
-        createCompendiumPostRequest('./test/workspace/with-metadata', cookie, 'workspace', (req) => {
+    before(function (done) {
+        this.timeout(60000);
+
+        createCompendiumPostRequest('./test/workspace/dummy', cookie, 'workspace', (req) => {
             request(req, (err, res, body) => {
                 compendium_id = JSON.parse(body).id;
 
