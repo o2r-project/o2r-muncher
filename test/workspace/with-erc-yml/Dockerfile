@@ -1,9 +1,8 @@
-FROM rocker/r-ver:3.4.3
+FROM alpine
 LABEL maintainer="o2r"
-RUN export DEBIAN_FRONTEND=noninteractive; apt-get -y update \
- && apt-get install -y git-core \
-	pandoc \
-	pandoc-citeproc
-RUN ["install2.r", "backports", "digest", "evaluate", "htmltools", "knitr", "magrittr", "Rcpp", "rmarkdown", "rprojroot", "stringi", "stringr", "yaml"]
+
+WORKDIR /tmp/
+RUN echo "echo '<html>dummy</html>' > display.html" > main.sh
+
 WORKDIR /erc/
-CMD ["R", "--vanilla", "-e", "rmarkdown::render(input = \"/erc/main.Rmd\", output_format = rmarkdown::html_document(), output_dir = \"/erc\", output_file = \"display.html\")"]
+CMD ["sh", "/tmp/main.sh"]

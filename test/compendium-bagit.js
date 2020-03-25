@@ -107,9 +107,9 @@ describe('BagIt functions', () => {
     let job_id = null;
 
     before(function (done) {
-      this.timeout(90000);
+      this.timeout(120000);
       db.compendia.drop(function (err, doc) {
-        createCompendiumPostRequest('./test/workspace/rmd-data', cookie, 'workspace', (req) => {
+        createCompendiumPostRequest('./test/workspace/dummy', cookie, 'workspace', (req) => {
           request(req, (err, res, body) => {
             let compendium_id = JSON.parse(body).id;
             publishCandidate(compendium_id, cookie, () => {
