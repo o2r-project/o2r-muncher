@@ -700,7 +700,7 @@ exports.updateCompendiumMetadata = (req, res) => {
                   return updateConfigurationFile(updated_compendium);
                 })
                 .then(() => {
-                  debug('[%s] completed metadata update, sending answer.', id);
+                  debug('[%s] Completed metadata update, sending answer.', id);
                   res.status(200).send(answer);
                 })
                 .catch((err) => {

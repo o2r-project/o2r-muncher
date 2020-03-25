@@ -25,8 +25,9 @@ env:
   - TEST_SET=download
   - TEST_SET=job
   - TEST_SET=metadata
+  - TEST_SET=execution
 script:
-  - npm run-script test_ci
+  - TEST_JOB_POLL_INTERVAL=10000 npm run-script test_ci
 after_failure:
   - sleep 5
   - docker logs testmuncher

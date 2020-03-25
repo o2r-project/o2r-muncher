@@ -32,8 +32,6 @@ const publishCandidate = require('./util').publishCandidate;
 const startJob = require('./util').startJob;
 const waitForJob = require('./util').waitForJob;
 
-const config = require('../config/config');
-
 require("./setup");
 const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
 
@@ -41,7 +39,7 @@ describe('Image download', function () {
     var compendium_id, job_id = null;
 
     before(function (done) {
-        this.timeout(30000);
+        this.timeout(720000);
 
         createCompendiumPostRequest('./test/workspace/dummy', cookie, 'workspace', (req) => {
             request(req, (err, res, body) => {

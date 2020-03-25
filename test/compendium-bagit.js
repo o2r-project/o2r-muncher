@@ -32,25 +32,35 @@ const startJob = require('./util').startJob;
 require("./setup");
 
 const cookie = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx7Dd2pgZR9DvhKCyDTY';
+const cookie_admin = 's:hJRjapOTVCEvlMYCb8BXovAOi2PEOC4i.IEPb0lmtGojn2cVk2edRuomIEanX6Ddz87egE5Pe8UM';
 
 describe('BagIt functions', () => {
   var db = mongojs('localhost/muncher', ['compendia']);
 
   after(function (done) {
     db.close();
-    fse.removeSync(path.join(config.fs.compendium, 'KIbebWnPlx-validate-comp'));
-    fse.removeSync(path.join(config.fs.compendium, 'KIbebWnPlx-execute'));
 
-    done();
+    let j = request.jar();
+    let ck = request.cookie('connect.sid=' + cookie_admin);
+    j.setCookie(ck, global.test_host);
+
+    request({
+      uri: global.test_host + '/api/v1/compendium/' + 'c9z9G00dummy',
+      method: 'DELETE',
+      jar: j
+    }, (err, res) => {
+      assert.ifError(err);
+      done();
+    });
   });
 
   describe('bag detection for compendium', function () {
     let compendium_id = null;
 
     before(function (done) {
-      this.timeout(90000);
+      this.timeout(720000);
       db.compendia.drop(function (err, doc) {
-        createCompendiumPostRequest('./test/erc/step_validate_compendium', cookie, 'compendium', (req) => {
+        createCompendiumPostRequest('./test/erc/dummy', cookie, 'compendium', (req) => {
           request(req, (err, res, body) => {
             compendium_id = JSON.parse(body).id;
             publishCandidate(compendium_id, cookie, () => {
@@ -97,9 +107,9 @@ describe('BagIt functions', () => {
     let job_id = null;
 
     before(function (done) {
-      this.timeout(90000);
+      this.timeout(120000);
       db.compendia.drop(function (err, doc) {
-        createCompendiumPostRequest('./test/workspace/rmd-data', cookie, 'workspace', (req) => {
+        createCompendiumPostRequest('./test/workspace/dummy', cookie, 'workspace', (req) => {
           request(req, (err, res, body) => {
             let compendium_id = JSON.parse(body).id;
             publishCandidate(compendium_id, cookie, () => {
@@ -128,7 +138,7 @@ describe('BagIt functions', () => {
     before(function (done) {
       this.timeout(90000);
       db.compendia.drop(function (err, doc) {
-        createCompendiumPostRequest('./test/erc/step_image_execute', cookie, 'compendium', (req) => {
+        createCompendiumPostRequest('./test/erc/dummy', cookie, 'compendium', (req) => {
           request(req, (err, res, body) => {
             compendium_id = JSON.parse(body).id;
             publishCandidate(compendium_id, cookie, () => {

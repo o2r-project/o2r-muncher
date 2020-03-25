@@ -55,7 +55,7 @@ c.fs.incoming = path.join(c.fs.base, 'incoming');
 c.fs.compendium = path.join(c.fs.base, 'compendium');
 c.fs.deleted = path.join(c.fs.base, 'deleted');
 c.fs.job = path.join(c.fs.base, 'job');
-c.fs.imgtmp = path.join(c.fs.base, 'imgtmp');
+c.fs.cache = path.join(c.fs.base, 'cache');
 c.fs.delete_inc = true;
 c.fs.fail_on_no_files = yn(env.MUNCHER_FAIL_ON_NO_FILES || 'false');
 
@@ -108,13 +108,14 @@ c.bagtainer.keepContainers = false; // set this to true for debugging runtime op
 c.bagtainer.keepImages = true;
 c.bagtainer.saveImageTarball = yn(env.MUNCHER_SAVE_IMAGE_TARBALL || 'true');
 c.bagtainer.imageTarballFile = 'image.tar';
-c.bagtainer.validateBagBeforeExecute = true; // bag validation will fail, gut useful to highlight the changes in compendium
+c.bagtainer.validateBagBeforeExecute = true; // bag validation will fail, but useful to highlight the changes in compendium
 c.bagtainer.validateCompendiumBeforeExecute = true;
 c.bagtainer.failOnValidationError = true;
 c.bagtainer.manifestFile = 'Dockerfile';
 c.bagtainer.mainFilePath = 'metadata.o2r.mainfile';
 c.bagtainer.displayFilePath = 'metadata.o2r.displayfile';
 c.bagtainer.licensesPath = 'metadata.o2r.license';
+c.bagtainer.sessionFiles = ['sessioninfo.rdata', 'session_info.rdata', 'sessioninfo.rda', 'session_info.rda'];
 
 c.bagit = {};
 c.bagit.detectionFileName = 'bagit.txt';
@@ -225,7 +226,7 @@ c.checker = {};
 c.checker.diffFileName = 'check.html';
 
 c.containerit = {};
-c.containerit.image = env.MUNCHER_CONTAINERIT_IMAGE || 'o2rproject/containerit:geospatial-0.6.0.9000';
+c.containerit.image = env.MUNCHER_CONTAINERIT_IMAGE || 'o2rproject/containerit:geospatial-0.6.0.9003';
 c.containerit.default_create_options = {
   CpuShares: 256,
   Env: ['O2R_MUNCHER=true', 'O2R_MUNCHER_VERSION=' + c.version],
@@ -236,9 +237,10 @@ c.containerit.default_create_options = {
 };
 c.containerit.baseImage = env.MUNCHER_CONTAINERIT_BASE_IMAGE || 'rocker/geospatial:3.6.2'; // when changing this, also update the "test warming" Dockerfile at ./test/Dockerfile
 c.containerit.filterBaseImagePkgs = {
+  // defaults to FALSE because to do the filtering, muncher must run as root!
   r_parameter_value:  (yn(env.MUNCHER_CONTAINERIT_FILTER_BASE_IMAGE_PKGS) || 'false').toString().toUpperCase(),
   enabled: yn(env.MUNCHER_CONTAINERIT_FILTER_BASE_IMAGE_PKGS || 'false'),
-  user: 'root' // needs access to Docker
+  user: 'root' // needs access to Docker!
 };
 c.containerit.dInDBind = '/var/run/docker.sock:/var/run/docker.sock';
 c.containerit.maintainer = 'o2r';

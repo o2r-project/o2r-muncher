@@ -62,7 +62,7 @@ describe('Images in uploads and downloads', () => {
     imageTarballFile = path.join(workspacePath, config.bagtainer.imageTarballFile);
 
     before(function (done) {
-      this.timeout(360000);
+      this.timeout(720000);
 
       uploadCompendiumWithImageTarball = function() {
         createCompendiumPostRequest(workspacePath, cookie_o2r, 'workspace', (requestData) => {
