@@ -51,12 +51,12 @@ describe('sub-setting of payload files', () => {
       });
     };
 
-    let fs_tmp = config.fs.tmp;
+    let fs_tmp = config.fs.cache;
 
     before(done => {
       let tmpdir = tmp.dirSync();
-      config.fs.tmp = tmpdir.name + '/';
-      fse.mkdirsSync(config.fs.tmp);
+      config.fs.cache = tmpdir.name + '/';
+      fse.mkdirsSync(config.fs.cache);
       done();
     });
 
