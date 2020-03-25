@@ -208,7 +208,7 @@ describe('API job overall status', () => {
     let job_id = '';
 
     before(function (done) {
-      this.timeout(240000);
+      this.timeout(720000);
       createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
         request(req, (err, res, body) => {
           let compendium_id = JSON.parse(body).id;

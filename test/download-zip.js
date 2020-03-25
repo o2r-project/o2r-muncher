@@ -34,7 +34,7 @@ describe('ZIP downloading', function () {
     let compendium_id = null;
 
     before(function (done) {
-        this.timeout(60000);
+        this.timeout(720000);
 
         createCompendiumPostRequest('./test/workspace/dummy', cookie, 'workspace', (req) => {
             request(req, (err, res, body) => {

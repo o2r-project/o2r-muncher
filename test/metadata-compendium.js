@@ -616,8 +616,8 @@ describe('compendium metadata and the compendium configuration file', () => {
 
   let compendium_id = '';
   before(function (done) {
-    this.timeout(360000);
-    createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
+    this.timeout(720000);
+    createCompendiumPostRequest('./test/erc/dummy', cookie_o2r, 'compendium', (req) => {
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
         publishCandidate(compendium_id, cookie_o2r, () => {
@@ -631,8 +631,9 @@ describe('compendium metadata and the compendium configuration file', () => {
     it('should have the configuration file with correct content after publish', (done) => {
       request(global.test_host + '/api/v1/compendium/' + compendium_id + '/data/data/' + config.bagtainer.configFile.name, (err, res, body) => {
         assert.ifError(err);
-        assert.include(body, 'main: doc.Rmd');
-        assert.include(body, 'display: test.html');
+        assert.include(body, 'id: c9z9G00dummy');
+        assert.include(body, 'main: main.Rmd');
+        assert.include(body, 'display: display.html');
         done();
       });
     });
@@ -715,7 +716,7 @@ describe('compendium metadata extraction from the compendium configuration file'
   j.setCookie(ck, global.test_host);
 
   before(function (done) {
-    this.timeout(180000);
+    this.timeout(720000);
     db.compendia.drop(function (err, doc) {
       db.jobs.drop(function (err, doc) {
         createCompendiumPostRequest('./test/erc/metatainer-licenses', cookie_o2r, 'compendium', (req) => {

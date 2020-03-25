@@ -50,7 +50,7 @@ describe('Manifest creation during a job', () => {
     let compendium_id = '';
 
     before(function (done) {
-      this.timeout(240000);
+      this.timeout(720000);
       createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
@@ -174,7 +174,7 @@ describe('Manifest creation during a job', () => {
     let compendium_id = '';
 
     before(function (done) {
-      this.timeout(240000); // image tarball saving takes time
+      this.timeout(720000);
       createCompendiumPostRequest('./test/workspace/script', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
@@ -261,7 +261,7 @@ describe('Manifest creation during a job', () => {
     let compendium_id = '';
 
     before(function (done) {
-      this.timeout(240000); // image tarball saving takes time
+      this.timeout(720000);
       createCompendiumPostRequest('./test/workspace/rmd-geospatial', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
@@ -305,7 +305,7 @@ describe('Manifest creation during a job', () => {
     let compendium_id = '';
 
     before(function (done) {
-      this.timeout(360000); // image build and tarball saving takes time
+      this.timeout(720000);
       createCompendiumPostRequest('./test/workspace/with-sessionInfo', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;

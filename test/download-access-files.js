@@ -41,7 +41,7 @@ describe('Accessing payload data of compendia', () => {
     let compendium_data_uri, compendium_id = '';
 
     before(function (done) {
-        this.timeout(60000);
+        this.timeout(720000);
 
         createCompendiumPostRequest('./test/workspace/dummy', cookie, 'workspace', (req) => {
             request(req, (err, res, body) => {

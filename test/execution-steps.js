@@ -499,7 +499,7 @@ describe('API job steps', () => {
           });
         });
       });
-    }).timeout(180000);
+    }).timeout(720000);
 
     it('should complete step "generate_configuration" and skip previous steps for minimal-rmd-data', (done) => {
       createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {
@@ -529,7 +529,7 @@ describe('API job steps', () => {
           });
         });
       });
-    }).timeout(60000);
+    }).timeout(720000);
   });
 
   describe('EXECUTION step_image_prepare', () => {
@@ -1095,7 +1095,7 @@ describe('API job steps', () => {
     let compendium_id = '';
 
     before(function (done) {
-      this.timeout(240000);
+      this.timeout(720000);
       createCompendiumPostRequest('./test/workspace/rmd-data-random', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
@@ -1219,7 +1219,7 @@ describe('API job steps', () => {
     let compendium_id = '';
 
     before(function (done) {
-      this.timeout(240000);
+      this.timeout(720000);
       createCompendiumPostRequest('./test/workspace/rmd-textdiff', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;

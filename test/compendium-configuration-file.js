@@ -83,7 +83,7 @@ describe('configuration file (erc.yml)', () => {
     let job_id;
 
     before(function (done) {
-      this.timeout(180000);
+      this.timeout(720000);
       createCompendiumPostRequest('./test/workspace/with-erc-yml', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
