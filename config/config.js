@@ -55,7 +55,7 @@ c.fs.incoming = path.join(c.fs.base, 'incoming');
 c.fs.compendium = path.join(c.fs.base, 'compendium');
 c.fs.deleted = path.join(c.fs.base, 'deleted');
 c.fs.job = path.join(c.fs.base, 'job');
-c.fs.imgtmp = path.join(c.fs.base, 'imgtmp');
+c.fs.cache = path.join(c.fs.base, 'cache');
 c.fs.delete_inc = true;
 c.fs.fail_on_no_files = yn(env.MUNCHER_FAIL_ON_NO_FILES || 'false');
 
