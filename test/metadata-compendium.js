@@ -616,7 +616,7 @@ describe('compendium metadata and the compendium configuration file', () => {
 
   let compendium_id = '';
   before(function (done) {
-    this.timeout(180000);
+    this.timeout(360000);
     createCompendiumPostRequest('./test/erc/step_check', cookie_o2r, 'compendium', (req) => {
       request(req, (err, res, body) => {
         compendium_id = JSON.parse(body).id;
@@ -644,7 +644,7 @@ describe('compendium metadata and the compendium configuration file', () => {
           done();
         });
       });
-    }).timeout(240000);
+    }).timeout(360000);
 
     it('should have updated the configuration file after updating the metadata', (done) => {
       let j2 = request.jar();

@@ -499,7 +499,7 @@ describe('API job steps', () => {
           });
         });
       });
-    }).timeout(60000);
+    }).timeout(180000);
 
     it('should complete step "generate_configuration" and skip previous steps for minimal-rmd-data', (done) => {
       createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {
@@ -899,7 +899,7 @@ describe('API job steps', () => {
     let job_id, compendium_id, job_id2 = '';
 
     before(function (done) {
-      this.timeout(240000); // takes quite long because of image saving and deleting compendium + image
+      this.timeout(360000); // takes quite long because of image saving and deleting compendium + image
 
       db.compendia.drop(function (err, doc) {
         fse.removeSync(path.join(config.fs.compendium, 'KIbebWnPlx-check'));
@@ -1095,7 +1095,7 @@ describe('API job steps', () => {
     let compendium_id = '';
 
     before(function (done) {
-      this.timeout(90000);
+      this.timeout(240000);
       createCompendiumPostRequest('./test/workspace/rmd-data-random', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
@@ -1219,7 +1219,7 @@ describe('API job steps', () => {
     let compendium_id = '';
 
     before(function (done) {
-      this.timeout(90000);
+      this.timeout(240000);
       createCompendiumPostRequest('./test/workspace/rmd-textdiff', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
