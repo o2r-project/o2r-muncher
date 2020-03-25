@@ -377,6 +377,13 @@ describe('Publishing workspace without editing metadata', () => {
   let ck = request.cookie('connect.sid=' + cookie_o2r);
   j.setCookie(ck, global.test_host);
 
+  var db = mongojs('localhost/muncher', ['compendia']);
+
+  after(function (done) {
+    db.close();
+    done();
+  });
+
   describe('with licenses in the compendium configuration file', () => {
     let compendium_id = '';
     let metadata_o2r = {};

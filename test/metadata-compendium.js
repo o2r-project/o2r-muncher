@@ -644,7 +644,7 @@ describe('compendium metadata and the compendium configuration file', () => {
           done();
         });
       });
-    }).timeout(180000);
+    }).timeout(240000);
 
     it('should have updated the configuration file after updating the metadata', (done) => {
       let j2 = request.jar();
