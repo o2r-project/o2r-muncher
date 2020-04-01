@@ -140,7 +140,7 @@ c.bagtainer.docker = {};
 c.bagtainer.docker.create_options = {
   CpuShares: 256,
   Env: ['O2R_MUNCHER=true'],
-  Memory: 8589934592, // 8G
+  Memory: 4294967296, // 4G
   MemorySwap: 2147483648, // double of 1G
   NetworkDisabled: true,
   User: env.MUNCHER_CONTAINER_USER || '1000' // user name depends on image, use id to be save
