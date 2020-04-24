@@ -24,27 +24,16 @@ RUN apk add --no-cache \
   && if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python2 /usr/bin/python; fi \
   && rm -r /root/.cache
 
-# for vips-dev, needed by sharp, needed by o2r-checker
-RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" > /etc/apk/repositories \
-  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
-  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
-
 # App build time dependencies
 RUN apk add --no-cache \
   git \
-  g++ \
-  # next 4 needed for sharp, see http://sharp.dimens.io/en/stable/install/#alpine-linux
-  make \
-  vips-dev \
-  fftw-dev \
-  binutils
+  g++
 
 # App system dependencies & init system 
 RUN apk add --no-cache \
     unzip \
     icu-dev \
     dumb-init \
-    imagemagick \
   && pip install --upgrade pip \
   && pip install bagit
 
@@ -55,7 +44,7 @@ COPY package.json package.json
 RUN npm install --production
 
 # Clean up
-RUN apk del git make binutils g++ \
+RUN apk del git g++ \
   && rm -rf /var/cache
 
 # Copy files after npm install to utilize build caching
