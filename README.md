@@ -2,7 +2,12 @@
 
 [![Build Status](https://travis-ci.org/o2r-project/o2r-muncher.svg?branch=master)](https://travis-ci.org/o2r-project/o2r-muncher) [![](https://images.microbadger.com/badges/image/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own version badge on microbadger.com")
 
-Node.js implementation of the endpoints `/api/v1/compendium` (reading and metadata update) and `/api/v1/jobs` of the [o2r API](https://o2r.info/api/).
+Node.js implementation of endpoints of the [o2r API](https://o2r.info/api/).
+
+- `/api/` and `/api/v1/` (index of endpoints)
+- `/api/v1/compendium` (reading and metadata update)
+- `/api/v1/job` (execution of compendia)
+- `/api/v1/substitution` (combining compendia)
 
 Requirements:
 
@@ -67,7 +72,7 @@ Most commonly, the default configuration will be used, i.e. the local Docker soc
 
 Testing is based on mocha integration tests.
 A MongoDB database must be running at the default port for the tests to work and must be started manually.
-Also `o2r-loader` and `o2r-transporter` must be running at their default ports.
+Also `o2r-loader` must be running at the default port.
 
 **Attention:** The database is cleared completely several times during the tests!
 
@@ -76,7 +81,6 @@ Also `o2r-loader` and `o2r-transporter` must be running at their default ports.
 mongod --dbpath ./db --replSet rso2r --smallfiles;
 
 # start o2r-loader
-# start o2r-transporter
 
 # run tests
 npm test
