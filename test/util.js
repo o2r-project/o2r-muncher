@@ -23,11 +23,14 @@ const zlib = require('zlib');
 const debug = require('debug')('test:util');
 const path = require('path');
 const hasher = require('node-object-hash');
-var hashSortCoerce = hasher();
+const hashSortCoerce = hasher();
 const AsyncPolling = require('async-polling');
+const AdmZip = require('adm-zip');
+const tmp = require('tmp');
+const yaml = require('js-yaml');
 
 require("./setup");
-debug('Using loader at ' + global.test_host_loader);
+debug('Using loader at ' + global.test_host_upload);
 
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 
@@ -49,10 +52,10 @@ module.exports.createCompendiumPostRequest = function (dataPath, cookie, type, d
   };
   let j = request.jar();
   let ck = request.cookie('connect.sid=' + cookie);
-  j.setCookie(ck, global.test_host_loader);
+  j.setCookie(ck, global.test_host_upload);
 
   let reqParams = {
-    uri: global.test_host_loader + '/api/v1/compendium',
+    uri: global.test_host_upload + '/api/v1/compendium',
     method: 'POST',
     jar: j,
     formData: formData,
@@ -96,6 +99,38 @@ module.exports.createCompendiumPostRequest = function (dataPath, cookie, type, d
       createdRequest(reqParams, done);
     }
   });
+}
+
+// from substituter code, possibly redundant with createCompendiumPostRequest
+module.exports.uploadCompendium = function (path, cookie, type = 'compendium') {
+  var zip = new AdmZip();
+  zip.addLocalFolder(path);
+  var tmpfile = tmp.tmpNameSync() + '.zip';
+  zip.writeZip(tmpfile);
+
+  let formData = {
+    'content_type': type,
+    'compendium': {
+      value: fs.createReadStream(tmpfile),
+      options: {
+        filename: 'another.zip',
+        contentType: 'application/zip'
+      }
+    }
+  };
+  let j = request.jar();
+  let ck = request.cookie('connect.sid=' + cookie);
+  j.setCookie(ck, global.test_host_upload);
+
+  let reqParams = {
+    uri: global.test_host_upload + '/api/v1/compendium',
+    method: 'POST',
+    jar: j,
+    formData: formData,
+    timeout: 60000
+  };
+
+  return (reqParams);
 }
 
 // publish a candidate with a direct copy of or fixed version of the metadata
@@ -248,5 +283,57 @@ module.exports.publishLink = function (compendium_id, cookie, done) {
     let response = JSON.parse(body);
     debug("Created link: %o", response);
     done({ id: response.id, compendium: response.compendium });
+  });
+}
+
+module.exports.createSubstitutionPostRequest = function (base_id, overlay_id, base_file, overlay_file, metadataHandling, cookie) {
+
+  let substitutionObject = {
+    base: base_id,
+    overlay: overlay_id,
+    substitutionFiles: [
+      {
+        base: base_file,
+        overlay: overlay_file
+      }
+    ],
+    metadataHandling: metadataHandling
+  }
+
+  let j = request.jar();
+  let ck = request.cookie('connect.sid=' + cookie);
+  j.setCookie(ck, global.test_host);
+
+  let reqParams = {
+    uri: global.test_host + '/api/v1/substitution',
+    method: 'POST',
+    jar: j,
+    json: substitutionObject
+  };
+
+  return (reqParams);
+};
+
+module.exports.getFile = function (compendium_id, filename, done) {
+  request(global.test_host + '/api/v1/compendium/' + compendium_id, (err, res, body) => {
+    if (err) done(err);
+
+    response = JSON.parse(body);
+    fileElement = response.files.children.filter(elem => {
+      return (elem.name == filename);
+    });
+    fileUrl = global.test_host + fileElement[0].path
+    debug('Requesting file %s', fileUrl);
+    request(fileUrl, done);
+  });
+}
+
+module.exports.getErcYml = function (compendium_id, done) {
+  module.exports.getFile(compendium_id, 'erc.yml', (err, res, body) => {
+    if (err) done(err);
+
+    doc = yaml.safeLoad(body);
+    debug('Loaded erc.yml:', JSON.stringify(doc).slice(0, 60));
+    done(doc);
   });
 }

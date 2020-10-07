@@ -86,6 +86,7 @@ controllers.compendium = require('./controllers/compendium');
 controllers.job = require('./controllers/job');
 controllers.link = require('./controllers/link');
 controllers.download = require('./controllers/download');
+controllers.substitutions = require('./controllers/substitutions');
 
 // check fs & create dirs if necessary
 fse.mkdirsSync(config.fs.job);
@@ -303,6 +304,9 @@ function initApp(callback) {
     app.get('/api/v1/compendium/:id/link', controllers.link.viewCompendiumLink);
     app.put('/api/v1/compendium/:id/link', controllers.link.createLink);
     app.delete('/api/v1/compendium/:id/link', controllers.link.deleteLink);
+
+    app.post('/api/v1/substitution', controllers.substitutions.create);
+    app.get('/api/v1/substitution', controllers.substitutions.view);
 
     fulfill();
   });

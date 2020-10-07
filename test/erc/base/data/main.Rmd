@@ -1,0 +1,70 @@
+---
+title: "Mit Berlin short"
+author:
+- address: |
+    First Geo1 Second line
+  affiliation: University/Company
+  email: name@wwu.de
+  name: Torben Kraft
+  url: https://o2r.info
+- affiliation: Affiliation
+  name: Second Author
+abstract: |
+  Abstract mit berlin abstract
+---
+
+# 01 mit Berlin -- Punkteplot
+
+```{r Section1, echo=TRUE}
+getwd()
+csv <- read.csv("BerlinMit.csv", header=TRUE, sep=",")
+
+meineDaten <-  as.data.frame(csv)
+
+Jahre <- meineDaten[,1]
+Bevoelkerung <- meineDaten[,2]
+Lebend <- meineDaten[,3]
+Gestorben <- meineDaten[,4]
+Natuerlich <- meineDaten[,5]
+Zuzug <- meineDaten[,6]
+Fortzug <- meineDaten[,7]
+Wanderung <- meineDaten[,8]
+Gesamt <- meineDaten[,9]
+
+```
+
+```{r Section2, echo=TRUE}
+x <- Jahre
+y <- Bevoelkerung
+
+plot(x,y, type="p", col="black", main="Jahre vs Bevoelkerung")
+```
+
+```{r Section3, echo=TRUE}
+x <- Jahre
+y <- Lebend
+y <- Gestorben
+
+plot(x,y, type="p", col="green", main="Jahre vs Lebend")
+```
+
+```{r Section4, echo=TRUE}
+x <- Jahre
+y <- Gestorben
+
+plot(x,y, type="p", col="red", main="Jahre vs Gestorben")
+```
+
+```{r Section5, echo=TRUE}
+x <- Jahre
+y <- Gesamt
+
+plot(x,y, type="p", col="blue", main="Jahre vs Gesamt")
+```
+
+```{r Section6, include=FALSE}
+max_ <- max(meineDaten$Gesamtbilanz, na.rm = TRUE)
+writeText <- sprintf("This is the maximum of 'Gesamtbilanz': %s", max_)
+```
+
+**`r writeText`**

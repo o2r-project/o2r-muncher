@@ -1,0 +1,4 @@
+id: b9b0099e-base
+spec_version: 1
+main: main.rmd
+display: main.html

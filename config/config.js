@@ -82,6 +82,7 @@ c.user = {};
 c.user.level = {};
 c.user.level.create_compendium = 100;
 c.user.level.create_job = 0;
+c.user.level.substitute = 50;
 c.user.level.edit_others = 500;
 c.user.level.view_candidates = 500;
 c.user.level.view_status = 1000;
@@ -222,6 +223,31 @@ c.meta.validate.schemas = [
   }
 ];
 
+// sustitution options: metadata extraction and brokering options
+c.substitution = {};
+c.substitution.meta = {};
+c.substitution.meta.base = 'metadata.substitution.base';
+c.substitution.meta.overlay = 'metadata.substitution.overlay';
+// sustitution options: for updating path in metadata
+c.substitution.meta.updatePath = [
+  'mainfile_candidates', //    xjiYy/data/main.Rmd
+  'mainfile', //   xjiYy/data/main.Rmd
+  'inputfiles', //       xjiYy/data/BerlinMit.csv
+  'displayfile', //      /api/v1/compendium/xjiYy/data/data/erc.yml
+  'codefiles'  //        xjiYy/data/main.Rmd
+  ]
+// sustitution options: metadata schema for saving
+c.substitution.meta.bag = false;
+c.substitution.meta.candidate = false;
+c.substitution.meta.compendium = true;
+c.substitution.docker = {};
+c.substitution.docker.volume = {};
+c.substitution.docker.volume.flag = "--volume ";
+c.substitution.docker.volume.basePath = '$(pwd)';
+c.substitution.docker.volume.mode = ":ro";
+c.substitution.docker.cmd = 'docker run -it --rm';
+c.substitution.docker.imageNamePrefix = 'erc:';
+
 c.checker = {};
 c.checker.diffFileName = 'check.html';
 
@@ -266,6 +292,9 @@ c.download.defaults.statConcurrency = 4; // archiver.js default is '4'
 c.download.defaults.tar = {};
 c.download.defaults.tar.gzipOptions = {}; // https://nodejs.org/api/zlib.html#zlib_class_options
 c.download.defaults.includeImage = true;
+
+// filename prepend of substitution file
+c.substitutionFilePrepend = 'overlay_';
 
 debug('CONFIGURATION:\n%s', util.inspect(c, { depth: null, colors: true }));
 
