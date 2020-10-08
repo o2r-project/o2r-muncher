@@ -8,6 +8,7 @@ Node.js implementation of endpoints of the [o2r API](https://o2r.info/api/).
 - `/api/v1/compendium` (reading and metadata update)
 - `/api/v1/job` (execution of compendia)
 - `/api/v1/substitution` (combining compendia)
+- `/api/v1/environment` (computing environment metadata)
 
 Requirements:
 

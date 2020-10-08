@@ -87,6 +87,7 @@ controllers.job = require('./controllers/job');
 controllers.link = require('./controllers/link');
 controllers.download = require('./controllers/download');
 controllers.substitutions = require('./controllers/substitutions');
+controllers.environment = require('./controllers/environment');
 
 // check fs & create dirs if necessary
 fse.mkdirsSync(config.fs.job);
@@ -273,7 +274,6 @@ function initApp(callback) {
       res.send(indexResponseV1);
     });
 
-    // transporter routes
     app.get('/api/v1/job/:id/data/:path(*)', controllers.job.viewPath);
     app.get('/api/v1/compendium/:id/data/', controllers.compendium.viewData);
     app.get('/api/v1/compendium/:id/data/:path(*)', controllers.compendium.viewPath);
@@ -307,6 +307,8 @@ function initApp(callback) {
 
     app.post('/api/v1/substitution', controllers.substitutions.create);
     app.get('/api/v1/substitution', controllers.substitutions.view);
+    
+    app.get('/api/v1/environment', controllers.environment.listEnvironments);
 
     fulfill();
   });
