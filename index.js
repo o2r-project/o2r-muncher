@@ -35,12 +35,11 @@ const mongoose = require('mongoose');
 const dbURI = config.mongo.location + config.mongo.database;
 // see http://blog.mlab.com/2014/04/mongodb-driver-mongoose/#Production-ready_connection_settings and http://mongodb.github.io/node-mongodb-native/2.1/api/Server.html and http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/overview.html
 var dbOptions = {
-  autoReconnect: true,
-  reconnectTries: Number.MAX_VALUE,
   keepAlive: 30000,
   socketTimeoutMS: 30000,
   promiseLibrary: mongoose.Promise, // use ES6 promises for mongoose
-  useNewUrlParser: true
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 };
 mongoose.connection.on('error', (err) => {
   debug('Could not connect to MongoDB @ %s: %s'.red, dbURI, err);
@@ -87,6 +86,7 @@ controllers.compendium = require('./controllers/compendium');
 controllers.job = require('./controllers/job');
 controllers.link = require('./controllers/link');
 controllers.download = require('./controllers/download');
+controllers.substitutions = require('./controllers/substitutions');
 
 // check fs & create dirs if necessary
 fse.mkdirsSync(config.fs.job);
@@ -304,6 +304,9 @@ function initApp(callback) {
     app.get('/api/v1/compendium/:id/link', controllers.link.viewCompendiumLink);
     app.put('/api/v1/compendium/:id/link', controllers.link.createLink);
     app.delete('/api/v1/compendium/:id/link', controllers.link.deleteLink);
+
+    app.post('/api/v1/substitution', controllers.substitutions.create);
+    app.get('/api/v1/substitution', controllers.substitutions.view);
 
     fulfill();
   });

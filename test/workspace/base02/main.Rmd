@@ -1,0 +1,74 @@
+---
+author:
+  - name: Torben Kraft
+    affiliation: University/Company
+    address: >
+      First Geo1
+      Second line
+    email: name@wwu.de
+    url: http://rstudio.com
+  - name: Second Author
+    affiliation: Affiliation
+title:
+  formatted: "Mit Berlin formatted"
+  # If you use tex in the formatted title, also supply version without
+  plain:     "base01 - Mit Berlin"
+  # For running headers, if needed
+  short:     "Mit Berlin short"
+abstract: >
+  Abstract mit berlin abstract
+keywords:
+  # at least one keyword must be supplied
+  formatted: [mit]
+  plain:     [mit]
+preamble: >
+  \usepackage{amsmath}
+output: rticles::jss_article
+---
+
+# 01 mit Berlin -- Punkteplot
+
+```{r Section1, echo=TRUE}
+getwd()
+csv <- read.csv("BerlinMit.csv", header=TRUE, sep=",")
+#csv
+
+meineDaten <-  as.data.frame(csv)
+#meineDaten
+
+Jahre <- meineDaten[,1]
+Bevoelkerung <- meineDaten[,2]
+Lebend <- meineDaten[,3]
+Gestorben <- meineDaten[,4]
+Natuerlich <- meineDaten[,5]
+Zuzug <- meineDaten[,6]
+Fortzug <- meineDaten[,7]
+Wanderung <- meineDaten[,8]
+Gesamt <- meineDaten[,9]
+
+```
+```{r Section2, echo=TRUE}
+x <- Jahre
+y <- Bevoelkerung
+
+plot(x,y, type="p", col="black", main="Jahre vs Bevoelkerung")
+```
+```{r Section3, echo=TRUE}
+x <- Jahre
+y <- Lebend
+y <- Gestorben
+
+plot(x,y, type="p", col="green", main="Jahre vs Lebend")
+```
+```{r Section4, echo=TRUE}
+x <- Jahre
+y <- Gestorben
+
+plot(x,y, type="p", col="red", main="Jahre vs Gestorben")
+```
+```{r Section5, echo=TRUE}
+x <- Jahre
+y <- Gesamt
+
+plot(x,y, type="p", col="blue", main="Jahre vs Gesamt")
+```

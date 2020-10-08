@@ -1,0 +1,68 @@
+---
+author:
+  - name: Torben Kraft
+    affiliation: University/Company
+    address: >
+      First GEO1
+      Second line
+    email: name@uni-muenster.de
+    url: http://rstudio.com
+  - name: Second Author
+    affiliation: Affiliation
+title: "overlay01 - Ohne Berlin"
+abstract: >
+  Abstract Ohne Berlin abstract
+---
+
+# 02 ohne Berlin -- Linienplot
+
+```{r Section1, echo=TRUE}
+getwd()
+csv <- read.csv("BerlinOhne.csv", header=TRUE, sep=",")
+#csv
+
+meineDaten <-  as.data.frame(csv)
+#meineDaten
+
+Jahre <- meineDaten[,1]
+Bevoelkerung <- meineDaten[,2]
+Lebend <- meineDaten[,3]
+Gestorben <- meineDaten[,4]
+Natuerlich <- meineDaten[,5]
+Zuzug <- meineDaten[,6]
+Fortzug <- meineDaten[,7]
+Wanderung <- meineDaten[,8]
+Gesamt <- meineDaten[,9]
+
+```
+```{r Section2, echo=TRUE}
+x <- Jahre
+y <- Bevoelkerung
+
+plot(x,y, type="l", col="black", main="Jahre vs Bevoelkerung")
+```
+```{r Section3, echo=TRUE}
+x <- Jahre
+y <- Lebend
+
+plot(x,y, type="l", col="green", main="Jahre vs Lebend")
+```
+```{r Section4, echo=TRUE}
+x <- Jahre
+y <- Gestorben
+
+plot(x,y, type="l", col="red", main="Jahre vs Gestorben")
+```
+```{r Section5, echo=TRUE}
+x <- Jahre
+y <- Gesamt
+
+plot(x,y, type="l", col="blue", main="Jahre vs Gesamt")
+```
+
+```{r Section6, include=FALSE}
+max_ <- max(meineDaten$Gesamtbilanz, na.rm = TRUE)
+writeText <- sprintf("This is the maximum of 'Gesamtbilanz': %s", max_)
+writeText
+```
+## `r writeText

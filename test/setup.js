@@ -37,9 +37,9 @@ var sessionId_editor = 'xWHihqZq6jEAObwbfowO5IwdnBxohM7z';
 var env = process.env;
 const config = require('../config/config');
 global.test_host = env.TEST_HOST || 'http://localhost:' + config.net.port;
-global.test_host_loader = env.TEST_HOST_UPLOAD || 'http://localhost:8088';
+global.test_host_upload = env.TEST_HOST_UPLOAD || 'http://localhost:8088';
 global.test_job_poll_interval = parseInt(env.TEST_JOB_POLL_INTERVAL) || 5000;
-debug('Testing endpoint at %s using %s for upload, poll interval for jobs: %s', global.test_host, global.test_host_loader, global.test_job_poll_interval);
+debug('Testing endpoint at %s using %s for upload, poll interval for jobs: %s', global.test_host, global.test_host_upload, global.test_job_poll_interval);
 
 docker = new Docker();
 

@@ -21,6 +21,7 @@ const Compendium = require('../lib/model/compendium');
 const archiver = require('archiver');
 const Timer = require('timer-machine');
 const path = require('path');
+const resolve_public_link = require('./link').resolve_public_link;
 
 function imageTarballExists(compendiumPath) {
   let p = path.join(compendiumPath, config.bagtainer.imageTarballFile);
@@ -56,15 +57,15 @@ function archiveCompendium(archive, compendiumPath, ignoreImage, ignoreMetadataF
 }
 
 returnError = (res, status, message, timer) => {
-  if(timer) timer.stop();
-  
+  if (timer) timer.stop();
+
   res.removeHeader('content-disposition'); // response is not a file
   res.setHeader('Content-Type', 'application/json');
   res.status(status).send({ error: message });
 }
 
 // throws exception if localPath does not exist
-returnArchive = (res, id, localPath, filename, archive) => {
+returnArchive = (res, id, includeImage, localPath, filename, archive) => {
   debug('[%s] returning archive with filename %s', id, filename); //, util.inspect(archive, {depth: 1, color: true}));
 
   fs.accessSync(localPath); //throws if does not exist
@@ -87,7 +88,7 @@ returnArchive = (res, id, localPath, filename, archive) => {
   //this is the streaming magic
   archive.pipe(res);
 
-  if (pReq.includeImage) {
+  if (includeImage) {
     if (!imageTarballExists(localPath)) {
       debug('[%s] Error: cannot include image tarball because it is missing at %s', id, localPath);
       returnError(res, 400, 'Image tarball is missing, so it cannot be included. Please ensure a successful job execution first.', timer);
@@ -99,7 +100,7 @@ returnArchive = (res, id, localPath, filename, archive) => {
   }
 }
 
-parseRequest = (req) => {
+parseRequest = (req, done) => {
   let includeImage = config.download.defaults.includeImage;
   if (req.query.image) {
     includeImage = (req.query.image === "true");
@@ -109,71 +110,96 @@ parseRequest = (req) => {
     gzip = true;
   }
   let port = "";
-  if(req.port) {
+  if (req.port) {
     port = ':' + req.port;
   }
-  
-  return {
-    includeImage: includeImage,
-    id: req.params.id,
-    gzip: gzip,
-    originalUrl: req.protocol + '://' + req.hostname + port + req.path,
-    localPath: path.join(config.fs.compendium, req.params.id)
-  }
+
+  resolve_public_link(req.params.id, (ident) => {
+    let id = null;
+    let parsed = {
+      includeImage: includeImage,
+      id: req.params.id,
+      gzip: gzip,
+      originalUrl: req.protocol + '://' + req.hostname + port + req.path,
+      localPath: path.join(config.fs.compendium, ident.compendium)
+    };
+    
+    done(parsed);
+  });
 }
 
 // based on https://github.com/archiverjs/node-archiver/blob/master/examples/express.js
 exports.downloadZip = (req, res) => {
-  pReq = parseRequest(req);
-  debug('Download ZIP archive for %s (image? %s) with original request %s', pReq.id, pReq.includeImage, pReq.originalUrl);
+  parseRequest(req, pReq => {
+    debug('Download ZIP archive for %s (image? %s) with original request %s', pReq.id, pReq.includeImage, pReq.originalUrl);
 
-  Compendium.findOne({ id: pReq.id }).select('id').exec((err, compendium) => {
-    if (err || compendium == null) {
-      returnError(res, 404, 'no compendium with this id');
-    } else {
-      try {
-        let archive = archiver('zip', {
-          comment: 'Created by o2r [' + pReq.originalUrl + ']',
-          statConcurrency: config.download.defaults.statConcurrency
-        });
-
-        returnArchive(res, pReq.id, pReq.localPath, pReq.id + '.zip', archive);
-      } catch (e) {
-        debug('[%s] Error: %s', pReq.id, e);
-        returnError(res, 500, e.message);
+    resolve_public_link(pReq.id, (ident) => {
+      let id = null;
+      if (ident.is_link) {
+        id = ident.link;
+      } else {
+        id = ident.compendium;
       }
-    }
+
+      Compendium.findOne({ id: ident.compendium }).select('id').exec((err, compendium) => {
+        if (err || compendium == null) {
+          returnError(res, 404, 'no compendium with this id');
+        } else {
+          try {
+            let archive = archiver('zip', {
+              comment: 'Created by o2r [' + pReq.originalUrl + ']',
+              statConcurrency: config.download.defaults.statConcurrency
+            });
+
+            returnArchive(res, pReq.id, pReq.includeImage, pReq.localPath, pReq.id + '.zip', archive);
+          } catch (e) {
+            debug('[%s] Error: %s', pReq.id, e);
+            returnError(res, 500, e.message);
+          }
+        }
+      });
+    });
   });
 };
 
 exports.downloadTar = (req, res) => {
-  pReq = parseRequest(req);
-  debug('[%s] Download TAR archive (image? %s gzip? %s) with original request %s', pReq.id, pReq.includeImage, pReq.gzip, pReq.originalUrl);
+  parseRequest(req, pReq => {
+    debug('[%s] Download TAR archive (image? %s gzip? %s) with original request %s', pReq.id, pReq.includeImage, pReq.gzip, pReq.originalUrl);
 
-  Compendium.findOne({ id: pReq.id }).select('id').exec((err, compendium) => {
-    if (err || compendium == null) {
-      res.setHeader('Content-Type', 'application/json');
-      res.status(404).send({ error: 'no compendium with this id' });
-    } else {
-      try {
-        let archive = archiver('tar', {
-          gzip: pReq.gzip,
-          gzipOptions: config.download.defaults.tar.gzipOptions,
-          statConcurrency: config.download.defaults.statConcurrency
-        });
-
-        let filename = pReq.id + '.tar';
-        if (pReq.gzip) {
-          filename = filename + '.gz';
-          res.set('Content-Type', 'application/gzip'); // https://superusepReq.com/a/960710
-        }
-
-        returnArchive(res, pReq.id, pReq.localPath, filename, archive);
-      } catch (e) {
-        debug('[%s] Error: %s', pReq.id, e);
-        returnError(res, 500, e.message);
-        return;
+    resolve_public_link(pReq.id, (ident) => {
+      let id = null;
+      if (ident.is_link) {
+        id = ident.link;
+      } else {
+        id = ident.compendium;
       }
-    }
+
+      Compendium.findOne({ id: ident.compendium }).select('id').exec((err, compendium) => {
+        if (err || compendium == null) {
+          res.setHeader('Content-Type', 'application/json');
+          res.status(404).send({ error: 'no compendium with this id' });
+        } else {
+          try {
+            let archive = archiver('tar', {
+              gzip: pReq.gzip,
+              gzipOptions: config.download.defaults.tar.gzipOptions,
+              statConcurrency: config.download.defaults.statConcurrency
+            });
+
+            let filename = pReq.id + '.tar';
+            if (pReq.gzip) {
+              filename = filename + '.gz';
+              res.set('Content-Type', 'application/gzip'); // https://superusepReq.com/a/960710
+            }
+
+            returnArchive(res, pReq.id, pReq.includeImage, pReq.localPath, filename, archive);
+          } catch (e) {
+            debug('[%s] Error: %s', pReq.id, e);
+            returnError(res, 500, e.message);
+            return;
+          }
+        }
+      });
+    });
   });
 };

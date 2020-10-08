@@ -1,8 +1,9 @@
 ---
-sudo: required
+os: linux 
+dist: xenial
 language: node_js
 node_js:
-  - "12"
+  - "14"
 services:
   - docker
 before_install:
@@ -26,11 +27,11 @@ env:
   - TEST_SET=job
   - TEST_SET=metadata
   - TEST_SET=execution
+  - TEST_SET=substitution
 script:
   - TEST_JOB_POLL_INTERVAL=10000 npm run-script test_ci
 after_failure:
   - sleep 5
   - docker logs testmuncher
   - docker logs testloader
-  - docker logs testransporter
   - cat docker_image_build.log

@@ -1,0 +1,133 @@
+\documentclass[article]{jss}
+\usepackage[utf8]{inputenc}
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+\author{
+Torben Kraft\\University/Company \And Second Author\\Affiliation
+}
+\title{Mit Berlin formatted}
+
+\Plainauthor{Torben Kraft, Second Author}
+\Plaintitle{base01 - Mit Berlin}
+\Shorttitle{Mit Berlin short}
+
+\Abstract{
+Abstract mit berlin abstract
+}
+
+\Keywords{mit}
+\Plainkeywords{mit}
+
+%% publication information
+%% \Volume{50}
+%% \Issue{9}
+%% \Month{June}
+%% \Year{2012}
+%% \Submitdate{}
+%% \Acceptdate{2012-06-04}
+
+\Address{
+    Torben Kraft\\
+  University/Company\\
+  First Geo1 Second line\\
+  E-mail: \href{mailto:name@wwu.de}{\nolinkurl{name@wwu.de}}\\
+  URL: \url{http://rstudio.com}\\~\\
+    }
+
+% Pandoc header
+
+\usepackage{amsmath}
+
+\begin{document}
+
+\hypertarget{mit-berlin-punkteplot}{%
+\section{01 mit Berlin -- Punkteplot}\label{mit-berlin-punkteplot}}
+
+\begin{CodeChunk}
+
+\begin{CodeInput}
+R> getwd()
+\end{CodeInput}
+
+\begin{CodeOutput}
+[1] "/home/daniel/git/o2r/o2r-substituter/test/workspace/base01"
+\end{CodeOutput}
+
+\begin{CodeInput}
+R> csv <- read.csv("files/BerlinMit.csv", header=TRUE, sep=",")
+R> #csv
+R> 
+R> meineDaten <-  as.data.frame(csv)
+R> #meineDaten
+R> 
+R> Jahre <- meineDaten[,1]
+R> Bevoelkerung <- meineDaten[,2]
+R> Lebend <- meineDaten[,3]
+R> Gestorben <- meineDaten[,4]
+R> Natuerlich <- meineDaten[,5]
+R> Zuzug <- meineDaten[,6]
+R> Fortzug <- meineDaten[,7]
+R> Wanderung <- meineDaten[,8]
+R> Gesamt <- meineDaten[,9]
+\end{CodeInput}
+\end{CodeChunk}
+\begin{CodeChunk}
+
+\begin{CodeInput}
+R> x <- Jahre
+R> y <- Bevoelkerung
+R> 
+R> plot(x,y, type="p", col="black", main="Jahre vs Bevoelkerung")
+\end{CodeInput}
+
+
+\begin{center}\includegraphics{main_files/figure-latex/Section2-1} \end{center}
+
+\end{CodeChunk}
+\begin{CodeChunk}
+
+\begin{CodeInput}
+R> x <- Jahre
+R> y <- Lebend
+R> y <- Gestorben
+R> 
+R> plot(x,y, type="p", col="green", main="Jahre vs Lebend")
+\end{CodeInput}
+
+
+\begin{center}\includegraphics{main_files/figure-latex/Section3-1} \end{center}
+
+\end{CodeChunk}
+\begin{CodeChunk}
+
+\begin{CodeInput}
+R> x <- Jahre
+R> y <- Gestorben
+R> 
+R> plot(x,y, type="p", col="red", main="Jahre vs Gestorben")
+\end{CodeInput}
+
+
+\begin{center}\includegraphics{main_files/figure-latex/Section4-1} \end{center}
+
+\end{CodeChunk}
+\begin{CodeChunk}
+
+\begin{CodeInput}
+R> x <- Jahre
+R> y <- Gesamt
+R> 
+R> plot(x,y, type="p", col="blue", main="Jahre vs Gesamt")
+\end{CodeInput}
+
+
+\begin{center}\includegraphics{main_files/figure-latex/Section5-1} \end{center}
+
+\end{CodeChunk}
+
+
+
+\end{document}
+

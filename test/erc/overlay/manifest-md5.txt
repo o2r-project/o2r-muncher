@@ -1,0 +1,5 @@
+57740374df23c841d3284b77ad1e59dc  data/BerlinOhne.csv
+21aaf3ac320fe0120e2d98deec7380f8  data/Dockerfile
+7a31f89a7acef5cb3a92a64219e3fb70  data/erc.yml
+b6707fffd95c7967d96f799440a32dc6  data/main.Rmd
+47a90686955aeec145cd5e54ffd802b8  data/view.html
