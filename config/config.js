@@ -271,6 +271,7 @@ c.containerit.filterBaseImagePkgs = {
 c.containerit.dInDBind = '/var/run/docker.sock:/var/run/docker.sock';
 c.containerit.maintainer = 'o2r';
 c.containerit.rm = yn(env.MUNCHER_CONTAINERIT_CONTAINER_RM || 'true');
+c.containerit.labelNamespace = 'info.o2r.';
 
 c.payload = {};
 c.payload.tarball = {};

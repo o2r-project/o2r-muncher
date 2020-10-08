@@ -36,7 +36,7 @@ const cookie_o2r = 's:C0LIrsxGtHOGHld8Nv2jedjL4evGgEHo.GMsWD5Vveq0vBt7/4rGeoH5Xx
 
 require("./setup");
 
-describe.only('Environment metadata', () => {
+describe('Environment metadata', () => {
   describe('Environment metadata about the architecture', () => {
 
     it('should include the supported architecture(s)', function (done) {
@@ -178,4 +178,43 @@ describe.only('Environment metadata', () => {
     }).timeout(60000);
   });
 
+  describe('Environment metadata in Dockerfile LABELs', () => {
+    var compendium_id, job_id = null;
+
+    before(function (done) {
+      this.timeout(720000);
+
+      createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {
+        request(req, (err, res, body) => {
+          assert.ifError(err);
+          compendium_id = JSON.parse(body).id;
+
+          publishCandidate(compendium_id, cookie_o2r, () => {
+            startJob(compendium_id, id => {
+              assert.ok(id);
+              job_id = id;
+              waitForJob(job_id, (finalStatus) => {
+                done();
+              });
+            })
+          });
+        });
+      });
+    });
+
+    it('should document metadata in the Dockerfile', (done) => {
+      getFile(compendium_id, 'Dockerfile', (err, res, body) => {
+        assert.ifError(err);
+
+        assert.equal(res.statusCode, 200);
+        assert.include(body, 'info.o2r.generate.name="muncher"');
+        assert.include(body, 'info.o2r.generate.version');
+        assert.include(body, 'info.o2r.generate.image');
+        assert.include(body, config.containerit.image);
+        assert.include(body, config.version);
+        done();
+    });
+
+    }).timeout(60000);
+  });
 });

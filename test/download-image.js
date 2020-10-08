@@ -289,7 +289,7 @@ describe('Image download', function () {
                             });
 
                             let bufferStream = new stream.PassThrough();
-                            bufferStream.end(new Buffer(entry.getData()));
+                            bufferStream.end(new Buffer.from(entry.getData()));
                             bufferStream.pipe(extractTar);
                         }
                     });
@@ -338,7 +338,7 @@ describe('Image download', function () {
                             });
 
                             let bufferStream = new stream.PassThrough();
-                            bufferStream.end(new Buffer(entry.getData()));
+                            bufferStream.end(new Buffer.from(entry.getData()));
                             bufferStream.pipe(extractTar);
                         }
                     });
@@ -387,7 +387,7 @@ describe('Image download', function () {
                             });
 
                             let bufferStream = new stream.PassThrough();
-                            bufferStream.end(new Buffer(entry.getData()));
+                            bufferStream.end(new Buffer.from(entry.getData()));
                             bufferStream.pipe(extractTar);
                         }
                     });
