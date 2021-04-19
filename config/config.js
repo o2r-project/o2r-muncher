@@ -148,7 +148,7 @@ c.bagtainer.docker.create_options = {
   Env: ['O2R_MUNCHER=true'],
   Memory: 4294967296, // 4G
   MemorySwap: 8589934592, // double of 4G
-  NetworkDisabled: false,
+  NetworkDisabled: true,
   User: env.MUNCHER_CONTAINER_USER || '1000' // user name depends on image, use id to be save
 };
 c.bagtainer.rm = yn(env.EXECUTE_CONTAINER_RM || 'true');

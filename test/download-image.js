@@ -83,7 +83,7 @@ describe('Image download', function () {
                     assert.oneOf('.erc/metadata_o2r_1.json', filenames);
                     done();
                 });
-        });
+        }).timeout(10000);
 
         it('should contain a tarball of Docker image in gzipped .tar archive', (done) => {
             let url = global.test_host + '/api/v1/compendium/' + compendium_id + '.tar?gzip';
@@ -111,7 +111,7 @@ describe('Image download', function () {
                 })
                 .pipe(gunzip())
                 .pipe(extractTar);
-        });
+        }).timeout(10000);
 
         it('should contain a tarball of Docker image in zip archive when explicitly asking for it', (done) => {
             let tmpfile = tmp.tmpNameSync() + '.zip';
@@ -133,7 +133,7 @@ describe('Image download', function () {
                     assert.oneOf('.erc/metadata_o2r_1.json', filenames);
                     done();
                 });
-        });
+        }).timeout(10000);
 
         it('should contain a tarball of Docker image in tar.gz archive when explicitly asking for it', (done) => {
             let url = global.test_host + '/api/v1/compendium/' + compendium_id + '.tar?gzip&image=true';
@@ -160,7 +160,7 @@ describe('Image download', function () {
                 })
                 .pipe(gunzip())
                 .pipe(extractTar);
-        });
+        }).timeout(10000);
 
         it('should not have a tarball of Docker image in zip archive when explicitly not asking for it', (done) => {
             let tmpfile = tmp.tmpNameSync() + '.zip';

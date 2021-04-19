@@ -214,7 +214,7 @@ describe('Direct upload of minimal workspace (script) as bag', function () {
     });
 });
 
-describe.only('Direct upload of minimal workspace (rmd)', function () {
+describe('Direct upload of minimal workspace (rmd)', function () {
     describe('Create compendium', () => {
         it('should respond with HTTP 200 OK and valid JSON, including the ID field', (done) => {
             request(global.test_host + '/api/v1/compendium', (err, res, body) => {
@@ -299,6 +299,7 @@ describe.only('Direct upload of minimal workspace (rmd)', function () {
                         let response = JSON.parse(body);
                         assert.isObject(response, 'returned JSON');
                         assert.property(response, 'error');
+                        assert.include(response.error, "content_type \"undefined\"");
                         done();
                     });
                 });
@@ -308,7 +309,7 @@ describe.only('Direct upload of minimal workspace (rmd)', function () {
         it('should respond with HTTP 400 with valid JSON and error message when using empty string as content type', (done) => {
             request(global.test_host + '/api/v1/compendium', (err, res, body) => {
                 createCompendiumPostRequest('./test/workspace/minimal-rmd', cookie_o2r, 'workspace', (req) => {
-                    delete req.formData.content_type;
+                    req.formData.content_type = "";
 
                     request(req, (err, res, body) => {
                         assert.ifError(err);
@@ -316,6 +317,7 @@ describe.only('Direct upload of minimal workspace (rmd)', function () {
                         let response = JSON.parse(body);
                         assert.isObject(response, 'returned JSON');
                         assert.property(response, 'error');
+                        assert.include(response.error, "content_type \"\"");
                         done();
                     });
                 });
@@ -326,6 +328,7 @@ describe.only('Direct upload of minimal workspace (rmd)', function () {
             request(global.test_host + '/api/v1/compendium', (err, res, body) => {
                 let teststring = 'testnonexist';
                 createCompendiumPostRequest('./test/workspace/minimal-rmd', cookie_o2r, 'workspace', (req) => {
+                    req.formData.content_type = teststring;
 
                     request(req, (err, res, body) => {
                         assert.ifError(err);

@@ -1,14 +1,13 @@
 ---
 title: "Mit Berlin short"
 author:
-- address: |
-    First Geo1 Second line
-  affiliation: University/Company
-  email: name@wwu.de
-  name: Torben Kraft
-  url: https://o2r.info
-- affiliation: Affiliation
-  name: Second Author
+  - address: First Geo1
+    affiliation: University/Company
+    email: name@wwu.de
+    name: Torben Kraft
+    url: https://o2r.info
+  - affiliation: Affiliation
+    name: Second Author
 abstract: |
   Abstract mit berlin abstract
 ---
