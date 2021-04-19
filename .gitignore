@@ -8,5 +8,3 @@ test/workspace/with-image-tarball/image\.tar
 .idea
 
 test/workspace/with-image-tarball/with-image-tarball\.zip
-
-*.zip
