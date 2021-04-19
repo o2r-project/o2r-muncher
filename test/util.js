@@ -30,7 +30,6 @@ const tmp = require('tmp');
 const yaml = require('js-yaml');
 
 require("./setup");
-debug('Using loader at ' + global.test_host_upload);
 
 const cookie_plain = 's:yleQfdYnkh-sbj9Ez--_TWHVhXeXNEgq.qRmINNdkRuJ+iHGg5woRa9ydziuJ+DzFG9GnAZRvaaM';
 
@@ -52,10 +51,10 @@ module.exports.createCompendiumPostRequest = function (dataPath, cookie, type, d
   };
   let j = request.jar();
   let ck = request.cookie('connect.sid=' + cookie);
-  j.setCookie(ck, global.test_host_upload);
+  j.setCookie(ck, global.test_host);
 
   let reqParams = {
-    uri: global.test_host_upload + '/api/v1/compendium',
+    uri: global.test_host + '/api/v1/compendium',
     method: 'POST',
     jar: j,
     formData: formData,
@@ -120,10 +119,10 @@ module.exports.uploadCompendium = function (path, cookie, type = 'compendium') {
   };
   let j = request.jar();
   let ck = request.cookie('connect.sid=' + cookie);
-  j.setCookie(ck, global.test_host_upload);
+  j.setCookie(ck, global.test_host);
 
   let reqParams = {
-    uri: global.test_host_upload + '/api/v1/compendium',
+    uri: global.test_host + '/api/v1/compendium',
     method: 'POST',
     jar: j,
     formData: formData,

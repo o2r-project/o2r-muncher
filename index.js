@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017 o2r project
+ * (C) Copyright 2021 o2r project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,10 +57,12 @@ const express = require('express');
 const compression = require('compression');
 const bodyParser = require('body-parser');
 const multer = require('multer');
-const upload = multer();
 const app = express();
 app.use(compression());
 app.use(bodyParser.json(config.body_parser_config));
+
+const dispatch = require('./controllers/dispatch').dispatch;
+const slackbot = require('./lib/slack');
 
 // passport & session modules for authenticating users.
 const User = require('./lib/model/user');
@@ -90,6 +92,8 @@ controllers.substitutions = require('./controllers/substitutions');
 controllers.environment = require('./controllers/environment');
 
 // check fs & create dirs if necessary
+fse.mkdirsSync(config.fs.incoming);
+fse.mkdirsSync(config.fs.compendium);
 fse.mkdirsSync(config.fs.job);
 fse.mkdirsSync(config.fs.cache);
 fse.mkdirsSync(config.fs.deleted);
@@ -105,6 +109,25 @@ passport.deserializeUser((user, cb) => {
     cb(null, user);
   });
 });
+
+/*
+ *  File Upload: check fs & create dirs if necessary
+ */
+const randomstring = require('randomstring');
+fse.mkdirsSync(config.fs.incoming);
+fse.mkdirsSync(config.fs.compendium);
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    debug('Saving user\'s file %s to %s', file.originalname, config.fs.incoming);
+    cb(null, config.fs.incoming);
+  },
+  filename: (req, file, cb) => {
+    let id = randomstring.generate(config.id_length);
+    debug('Generated id "%s" for file %s from field name %s', id, file.originalname, file.fieldname);
+    cb(null, id);
+  }
+});
+var upload = multer({ storage: storage });
 
 function initApp(callback) {
   debug('Initialize application...');
@@ -123,7 +146,7 @@ function initApp(callback) {
           if (err) {
             debug('error pulling meta image: %o'.yellow, err);
 
-            if(config.meta.container.image.indexOf('/') !== -1) {
+            if (config.meta.container.image.indexOf('/') !== -1) {
               debug('meta image is remote, raising error!'.yellow);
               reject(err);
             } else {
@@ -274,6 +297,8 @@ function initApp(callback) {
       res.send(indexResponseV1);
     });
 
+    app.post('/api/v1/compendium', upload.single('compendium'), dispatch);
+
     app.get('/api/v1/job/:id/data/:path(*)', controllers.job.viewPath);
     app.get('/api/v1/compendium/:id/data/', controllers.compendium.viewData);
     app.get('/api/v1/compendium/:id/data/:path(*)', controllers.compendium.viewPath);
@@ -307,7 +332,7 @@ function initApp(callback) {
 
     app.post('/api/v1/substitution', controllers.substitutions.create);
     app.get('/api/v1/substitution', controllers.substitutions.view);
-    
+
     app.get('/api/v1/environment', controllers.environment.listEnvironments);
 
     fulfill();
@@ -324,6 +349,19 @@ function initApp(callback) {
       debug('Email notification for critical events _not_ active: %o', config.email);
     }
     fulfill();
+  });
+
+  configureSlack = new Promise((fulfill, reject) => {
+    if (config.slack.enable) {
+      slackbot.start((err) => {
+        debug('Error starting slackbot (disabling it now): %s', err);
+        config.slack.enable = false;
+        fulfill();
+      }, (done) => {
+        debug('Slack bot enabled and configured - nice! %o', done);
+        fulfill();
+      });
+    }
   });
 
   logVersions = new Promise((fulfill, reject) => {
@@ -358,6 +396,7 @@ function initApp(callback) {
     .then(logVersions)
     .then(configureEmailTransporter)
     .then(configureExpressApp)
+    .then(configureSlack)
     .then(startListening)
     .then(() => {
       callback(null);

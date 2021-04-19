@@ -1,0 +1,27 @@
+---
+title: "Capacity of container ships in seaborne trade from 1980 to 2016 (in million dwt)*"
+author:
+    - name: "Daniel Nüst"
+    - affiliation: o2r team
+date: "2017"
+output: html_document
+abstract: |
+    Capacity of container ships in seaborne trade of the world container ship fleet.
+keywords:
+    - container
+    - ship
+    - trade
+    - statistic
+doi: 'http://dx.doi.org/10.5555/666655554444'
+---
+
+```{r plot, echo=FALSE}
+data <- c("1980" = 11, "1985" = 20, "1990" = 26, "1995" = 44,
+          "2000" = 64, "2005" = 98, "2010" = 169, "2014" = 216,
+          "2015" = 228, "2016" = 244)
+barplot(data, ylab = "Capacity", sub = "© Statista 2017")
+```
+
+> This statistic portrays the capacity of the world container ship fleet from 1980 through 2016. In 2016, the world merchant container ship fleet had a capacity of around 244 million metric tons deadweight. As of January 2016, there were 5,239 container ships in the world's merchant fleet ([source](https://www.statista.com/statistics/264024/number-of-merchant-ships-worldwide-by-type/)).
+
+Sources: UNCTAD; Clarkson Research Services, via [statista](https://www.statista.com/statistics/267603/capacity-of-container-ships-in-the-global-seaborne-trade/).

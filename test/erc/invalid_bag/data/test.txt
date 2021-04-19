@@ -1,0 +1,1 @@
+BagIt bag is invalid, because this file was edited after bagging!

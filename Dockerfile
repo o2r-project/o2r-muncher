@@ -1,4 +1,4 @@
-# (C) Copyright 2017 o2r project. https://o2r.info
+# (C) Copyright 2021 o2r project. https://o2r.info
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,39 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM node:12-alpine
+FROM node:12-slim
 
 # Python, based on frolvlad/alpine-python3
-RUN apk add --no-cache \
-  python2 \
-  && python2 -m ensurepip \
-  && rm -r /usr/lib/python*/ensurepip \
-  && pip install --upgrade pip setuptools \
-  && if [ ! -e /usr/bin/pip ]; then ln -s pip /usr/bin/pip ; fi \
-  && if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python2 /usr/bin/python; fi \
-  && rm -r /root/.cache
-
-# App build time dependencies
-RUN apk add --no-cache \
-  git \
-  g++
-
-# App system dependencies & init system 
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
+    python \
+    python-pip \
     unzip \
-    icu-dev \
-    dumb-init \
-  && pip install --upgrade pip \
+    # needed for npm install (gyp, GitHub deps)
+    make \
+    g++ \
+    wget \
+    git \
+  && wget https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_amd64.deb \
+  && dpkg -i dumb-init_*.deb \
+  && pip install --upgrade setuptools \
   && pip install bagit
 
-# App installation
+# Install app
 WORKDIR /muncher
 COPY package.json package.json
-
 RUN npm install --production
 
 # Clean up
-RUN apk del git g++ \
+RUN apt-get purge -y \
+  make \
+  g++ \
+  wget \
+  git \
+  && apt-get autoremove -y \
   && rm -rf /var/cache
 
 # Copy files after npm install to utilize build caching
