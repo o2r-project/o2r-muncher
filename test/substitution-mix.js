@@ -31,7 +31,7 @@ const getErcYml = require('./util').getErcYml;
 const getFile = require('./util').getFile;
 
 
-describe('Substitution of data with compendium as base and workspace as overlay', function () {
+describe.skip('Substitution of data with compendium as base and workspace as overlay', function () {
     var base_id;
     var overlay_id;
     var metadataHandling = "keepBase";
@@ -181,7 +181,7 @@ describe('Substitution of data with compendium as base and workspace as overlay'
 });
 
 
-describe('Substitution of data with one workspace as base (must run job) and one compendium as overlay', function () {
+describe.skip('Substitution of data with one workspace as base (must run job) and one compendium as overlay', function () {
     var base_id;
     var overlay_id;
     var metadataHandling = "keepBase";
@@ -345,7 +345,7 @@ describe('Substitution of data with one workspace as base (must run job) and one
 });
 
 
-describe('Failing substitution of data with one workspace as base and compendium as overlay', function () {
+describe.skip('Failing substitution of data with one workspace as base and compendium as overlay', function () {
     var base_id;
     var overlay_id;
     var metadataHandling = "keepBase";
