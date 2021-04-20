@@ -135,6 +135,11 @@ describe('Container networking', () => {
 
     before(function (done) {
       this.timeout(90000);
+
+      if (process.env.CI === "true") {
+        this.skip();
+      }
+
       db.compendia.drop(function (err, doc) {
 
         createCompendiumPostRequest('./test/workspace/ping_online', cookie_o2r, 'workspace', (req) => {

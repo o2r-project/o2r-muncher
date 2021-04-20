@@ -35,7 +35,7 @@ describe('Zenodo loader', function () {
 
     beforeEach(function(done) {
         // 1. Delete database compendium collection
-        if(env.TRAVIS === "true") {
+        if(env.CI === "true") {
             db.compendia.drop(function (err, doc) {
                 // 2. Delete compendium files
                 let cmd = 'docker exec testloader rm -rf ' + path.join(config.fs.compendium, '*');

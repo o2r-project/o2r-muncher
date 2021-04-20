@@ -1,6 +1,6 @@
 # o2r muncher
 
-[![Build Status](https://travis-ci.org/o2r-project/o2r-muncher.svg?branch=master)](https://travis-ci.org/o2r-project/o2r-muncher) [![](https://images.microbadger.com/badges/image/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own version badge on microbadger.com")
+[![Run tests](https://github.com/nuest/o2r-muncher/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/nuest/o2r-muncher/actions/workflows/tests.yml) [![](https://images.microbadger.com/badges/image/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own version badge on microbadger.com")
 
 Node.js implementation of endpoints of the [o2r API](https://o2r.info/api/) to load compendia from third party repositories, handle direct user uploads, and execute research compendia.
 
@@ -143,9 +143,9 @@ DEBUG=*,-modem,-mocha:* mocha --bail --grep manifest
 
 The archives created to upload workspaces and compendia for testing are cached.
 Be aware that when you edit files in test workspaces and compendia, you must manually delete the cached files, e.g. `/tmp/o2r-muncher-upload_<hash>.zip`.
-You can use the hash to identify tests that use the same files on Travis, as multiple tests may fail if one compendium/workspace is faulty.
+You can use the hash to identify tests that use the same files on CI, as multiple tests may fail if one compendium/workspace is faulty.
 
-To run single tests on Travis (and thereby reducing the logs to only the ones of interest) you can use [_custom builds_](https://blog.travis-ci.com/2017-08-24-trigger-custom-build) and overwrite only the required `run` command:
+To run single tests on CI (and thereby reducing the logs to only the ones of interest) you can comment out parts of the build matrix or overwrite only the required `run` command in an [interactive debug session](https://github.com/marketplace/actions/debugging-with-tmate).
 
 ```yml
 script:
