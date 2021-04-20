@@ -346,6 +346,7 @@ describe('Direct upload of minimal workspace (rmd)', function () {
         it('should respond with HTTP 400 with valid JSON and error message when using content_type "compendium"', (done) => {
             request(global.test_host + '/api/v1/compendium', (err, res, body) => {
                 createCompendiumPostRequest('./test/workspace/minimal-rmd', cookie_o2r, 'workspace', (req) => {
+                    req.formData.content_type = "compendium";
 
                     request(req, (err, res, body) => {
                         assert.ifError(err);

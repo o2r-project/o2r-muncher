@@ -1203,7 +1203,7 @@ describe('API job steps', () => {
       });
     });
 
-    it('should not have an HTML file in the files list named as the main document (output_file naming works)', function (done) {
+    it.skip('should not have an HTML file in the files list named as the main document (output_file naming works)', function (done) {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
