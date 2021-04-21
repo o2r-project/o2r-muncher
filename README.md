@@ -1,18 +1,29 @@
 # o2r muncher
 
-[![Build Status](https://travis-ci.org/o2r-project/o2r-muncher.svg?branch=master)](https://travis-ci.org/o2r-project/o2r-muncher) [![](https://images.microbadger.com/badges/image/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own version badge on microbadger.com")
+[![Run tests](https://github.com/nuest/o2r-muncher/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/nuest/o2r-muncher/actions/workflows/tests.yml) [![](https://images.microbadger.com/badges/image/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own version badge on microbadger.com")
 
-Node.js implementation of endpoints of the [o2r API](https://o2r.info/api/).
+Node.js implementation of endpoints of the [o2r API](https://o2r.info/api/) to load compendia from third party repositories, handle direct user uploads, and execute research compendia.
 
 - `/api/` and `/api/v1/` (index of endpoints)
 - `/api/v1/compendium` (reading and metadata update)
 - `/api/v1/job` (execution of compendia)
 - `/api/v1/substitution` (combining compendia)
+- `/api/v1/environment` (computing environment metadata)
 
 Requirements:
 
 - Docker
 - MongoDB
+- Node.js `>=8`
+- bagit-python (`bagit.py`)
+- Docker socket access for running o2r-meta
+- unzip
+- wget
+
+## Supported repositories
+
+- Sciebo (https://sciebo.de)
+- Zenodo or Zenodo Sandbox (https://zenodo.org or https://sandbox.zenodo.org)
 
 ## Run
 
@@ -64,23 +75,55 @@ You can override these environment variables (configured in `config/config.js`) 
   Should an error be return when invalid metadata is stored? Defaults to `false`.
 - `MUNCHER_SAVE_IMAGE_TARBALL`
   Save the image tarball into the compendium after successful execution. Defaults to `true`, but useful to deactivate during development.
+- `MUNCHER_META_TOOL_OFFLINE`
+  Do not go online during metadata extraction to retrieve additional metadata, defaults to `false`.
+- `SESSION_SECRET`
+  String used to sign the session ID cookie, must match other microservices.
+- `SLACK_BOT_TOKEN`
+  Authentication token for a bot app on Slack. See section [Slack bot](#slack-bot).
+- `SLACK_VERIFICATION_TOKEN`
+  Token provided by Slack for interative messages and events, to be used to verify that requests are actually coming from Slack.
+- `SLACK_CHANNEL_STATUS`
+  Channel to post status messages to, defaults to `#monitoring`.
+- `SLACK_CHANNEL_LOAD`
+  Channel to post messages related to (up)loading to, defaults to `#monitoring`.
 
 The connection to the Docker API is build on [dockerode](https://www.npmjs.com/package/dockerode) which allows execution on any Docker host that exposes the port.
 Most commonly, the default configuration will be used, i.e. the local Docker socket is mounted at the default location into the container running muncher (see [above](#run))
+
+## Slack bot
+
+Documentation of Slack API: https://api.slack.com/bot-users, especially [interactive messages](https://api.slack.com/interactive-messages).
+
+The bot needs the permissions to join channels and post to them.
+Add the following scopes to the app in the section "OAuth & Permissions" in the bot's apps page.
+
+- `channels:write`
+- `chat:write:bot`
+- `bot`
+
+While adding the app to your Slack organisation, make sure to allow the bot to post the the desired channel.
+
+### Local bot development
+
+Start ngrok with `ngrok http 8088` and enter the public endpoint pointing to your local server at https://api.slack.com/apps/A6J6CDLQK/interactive-messages. ngrok also has a useful web interface at http://127.0.0.1:4040/inspect/http on all incoming requests.
+
+## Supported encodings
+
+The upload process may fail if certain files with unsupported encoding are detected: 
+
+The encoding of text files analyzed by the o2r metadata extraction tool [o2r-meta](https://github.com/o2r-project/o2r-meta) must be Unicode (`UTF-8`, `UTF-16BE`, ...) or Unicode compatible (e.g. `ISO-8859-1`). The supported encodings and the list of files checked can be configured in `config.js`. 
 
 ## Testing
 
 Testing is based on mocha integration tests.
 A MongoDB database must be running at the default port for the tests to work and must be started manually.
-Also `o2r-loader` must be running at the default port.
 
 **Attention:** The database is cleared completely several times during the tests!
 
 ```bash
 # must start with replica set for oplog (finder) to work, see https://docs.mongodb.com/manual/tutorial/convert-standalone-to-replica-set/ and https://docs.mongodb.com/manual/tutorial/deploy-replica-set-for-testing/
 mongod --dbpath ./db --replSet rso2r --smallfiles;
-
-# start o2r-loader
 
 # run tests
 npm test
@@ -100,14 +143,25 @@ DEBUG=*,-modem,-mocha:* mocha --bail --grep manifest
 
 The archives created to upload workspaces and compendia for testing are cached.
 Be aware that when you edit files in test workspaces and compendia, you must manually delete the cached files, e.g. `/tmp/o2r-muncher-upload_<hash>.zip`.
-You can use the hash to identify tests that use the same files on Travis, as multiple tests may fail if one compendium/workspace is faulty.
+You can use the hash to identify tests that use the same files on CI, as multiple tests may fail if one compendium/workspace is faulty.
 
-To run single tests on Travis (and thereby reducing the logs of loader and muncher to only the ones of interest) you can use [_custom builds_](https://blog.travis-ci.com/2017-08-24-trigger-custom-build) and overwrite only the required `run` command:
+To run single tests on CI (and thereby reducing the logs to only the ones of interest) you can comment out parts of the build matrix or overwrite only the required `run` command in an [interactive debug session](https://github.com/marketplace/actions/debugging-with-tmate).
 
-```
+```yml
 script:
   - DEBUG=*,mocha:*,-modem mocha ./test/ --grep "<name of the test>"
 ```
+
+### Public shares
+
+The tests for public shares (`sciebo_erc.js`, `sciebo_workspace.js` and `zenodo.js`) use ERC uploaded to the respective services.
+
+They can be found at
+
+* Sciebo: [public link](https://uni-muenster.sciebo.de/index.php/s/h5tNYXsS1Bsv4qr) | [private link](https://uni-muenster.sciebo.de/f/749265161)
+* Zenodo: https://sandbox.zenodo.org/deposit/69114
+
+For information on which share URL belongs to which compendium, see the file `README` in the [`integration_test_shares`](https://uni-muenster.sciebo.de/index.php/s/h5tNYXsS1Bsv4qr) folder.
 
 ## Development
 
@@ -127,13 +181,11 @@ docker images --no-trunc | grep erc | awk '{print $3}' | xargs --no-run-if-empty
 
 ### Steps for starting a local development environment _manually_
 
-The following steps assume that you have all the required projects (`o2r-contentbutler`, `o2r-muncher`, `o2r-loader`, `o2r-platform`) in one directory. Repository updates (`git pull`, `npm install`, `bower install` and the like) are not shown.
+The following steps assume that you have all the required projects (`o2r-muncher`, `o2r-platform`) in one directory. Repository updates (`git pull`, `npm install`, etc.) are not shown.
 
 ```bash
 mkdir /tmp/o2r-mongodb-data
 mongod --dbpath /tmp/o2r-mongodb-data
-
-# new terminal: start loader (default port 8088)
 
 # new terminal: start muncher (default port 8080)
 cd ../o2r-muncher
@@ -174,6 +226,18 @@ python -c "import bagit; bag = bagit.Bag('success-load-validate'); print('Is Bag
 
 # update bag
 python -c "import bagit; bag = bagit.Bag('success-load-validate'); bag.save(manifests=True);"
+```
+
+## Dockerfile
+
+The file `Dockerfile` describes the Docker image published at [Docker Hub](https://hub.docker.com/r/o2rproject/o2r-muncher/).
+
+```bash
+docker build --tag muncher .
+
+docker run --name mongodb -d -p 27017:27017 mongo:3.4
+docker run --name testmuncher -d -p 8080:8080 --link mongodb:mongodb -v /tmp/o2r:/tmp/o2r -v /var/run/docker.sock:/var/run/docker.sock -e MUNCHER_MONGODB=mongodb://mongodb:27017 -e DEBUG=* o2rproject/o2r-muncher:latest
+docker run --name testbouncer -d -p 8083:8083 --link mongodb:mongodb -v /tmp/o2r:/tmp/o2r -e BOUNCER_MONGODB=mongodb://mongodb:27017 -e DEBUG=* -e OAUTH_CLIENT_ID=... -e OAUTH_CLIENT_SECRET=... -e  OAUTH_URL_CALLBACK=http://localhost/api/v1/auth/login o2rproject/o2r-bouncer:latest
 ```
 
 ## License

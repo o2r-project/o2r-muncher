@@ -1,8 +1,8 @@
 ---
 title: "Testfile failing execution"
 author:
-    - name: "Daniel Nüst"
-    - affiliation: o2r team
+    - name: o2r user
+      affiliation: o2r team
 date: "2017"
 output: html_document
 ---

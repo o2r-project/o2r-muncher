@@ -92,6 +92,7 @@ c.user.level.manage_links = 500;
 // bagtainer configuration
 c.bagtainer = {};
 c.bagtainer.spec_version = {};
+c.bagtainer.supportedContentTypes = ["compendium", "workspace"];
 c.bagtainer.spec_version.supported = ['0.1', '1'];
 c.bagtainer.spec_version.default = '1';
 c.bagtainer.id_regex = /^[^-_.\n\r][a-zA-Z0-9\._-]*[^-_.\n\r]$/;
@@ -118,6 +119,7 @@ c.bagtainer.displayFilePath = 'metadata.o2r.displayfile';
 c.bagtainer.licensesPath = 'metadata.o2r.license';
 c.bagtainer.sessionFiles = ['sessioninfo.rdata', 'session_info.rdata', 'sessioninfo.rda', 'session_info.rda'];
 
+// TODO integrate options
 c.bagit = {};
 c.bagit.detectionFileName = 'bagit.txt';
 c.bagit.payloadDirectory = 'data';
@@ -125,6 +127,9 @@ c.bagit.validateFast = false;
 c.bagit.failOnValidationError = {};
 c.bagit.failOnValidationError.execute = false; // muncher never updates the bag
 c.bagit.stepResultAfterValidationError = 'skipped'; // it's not really a failure!
+c.bagit.validation = {};
+c.bagit.validation.fast = false;
+c.bagit.validation.failUpload = true;
 
 c.bagtainer.image = {};
 c.bagtainer.image.name = {
@@ -193,6 +198,14 @@ c.meta.container.default_create_options = {
 };
 c.meta.container.rm = yn(env.MUNCHER_META_TOOL_CONTAINER_RM || 'true');
 
+c.meta.extract = {};
+c.meta.extract.module = 'extract';
+c.meta.extract.outputDir = '.erc';
+c.meta.extract.targetElement = 'o2r';
+c.meta.extract.bestCandidateFile = 'metadata_raw.json';
+c.meta.extract.failOnNoMetadata = true;
+c.meta.extract.stayOffline = yn(env.MUNCHER_META_TOOL_OFFLINE) || false;
+
 c.meta.broker = {};
 c.meta.broker.module = 'broker';
 c.meta.broker.mappings = {
@@ -206,11 +219,11 @@ c.meta.broker.mappings = {
     file: 'metadata_zenodo_sandbox_1.json',
     mappingFile: 'broker/mappings/zenodo_sandbox-map.json'
   },
-  //o2r: {
-  //  targetElement: 'o2r',
-  //  file: 'metadata_o2r_1.json',
-  //  mappingFile: 'broker/mappings/o2r-map.json'
-  //} 
+  o2r: {
+    targetElement: 'o2r',
+    file: 'metadata_o2r_1.json',
+    mappingFile: 'broker/mappings/o2r-map.json'
+  }
 };
 c.meta.doiPath = 'metadata.o2r.identifier.doi';
 c.meta.validate = {};
@@ -222,6 +235,38 @@ c.meta.validate.schemas = [
     schema: 'schema/json/o2r-meta-schema.json'
   }
 ];
+
+// Encoding check settings
+// A list of analyzed files can be found here: https://github.com/o2r-project/o2r-meta#supported-files-and-formats-for-the-metadata-extraction-process
+c.encoding = {};
+c.encoding.supportedEncodings = ['ISO-8859-1', 'ISO-8859-2', 'UTF-8', 'UTF-16BE', 'UTF-16LE', 'UTF-32BE', 'UTF-32LE', 'windows-1252'];
+c.encoding.textFileRegex = '\.(txt|rmd|r|json|yml|yaml)$';
+c.encoding.confidenceThreshold = 60;
+
+c.webdav = {};
+c.webdav.allowedHosts = ['sciebo'];
+c.webdav.sciebo = {};
+c.webdav.sciebo.webdav_path = '/public.php/webdav/'; //end of webdav public webdav url
+//c.webdav.urlString = 'nextcloud/public.php/dav'; //nextcloud public webdav url
+
+// Zenodo configuration
+c.zenodo = {};
+// default URL and host that is used to download files if the URL itself is not specified in the request (e.g. via DOI or zenodo_record_id parameter)
+c.zenodo.default_url = 'https://sandbox.zenodo.org/';
+c.zenodo.default_host = 'sandbox.zenodo.org';
+
+// base urls for Zenodo and Zenodo sandbox
+c.zenodo.zenodo_sandbox_url = 'https://sandbox.zenodo.org/';
+c.zenodo.zenodo_url = 'https://zenodo.org/';
+
+// Slack
+c.slack = {};
+c.slack.enable = true;
+c.slack.bot_token = process.env.SLACK_BOT_TOKEN;
+c.slack.verification_token = process.env.SLACK_VERIFICATION_TOKEN;
+c.slack.channel = {};
+c.slack.channel.status = process.env.SLACK_CHANNEL_STATUS || '#monitoring';
+c.slack.channel.loadEvents = process.env.SLACK_CHANNEL_LOAD || '#monitoring';
 
 // sustitution options: metadata extraction and brokering options
 c.substitution = {};
@@ -271,6 +316,7 @@ c.containerit.filterBaseImagePkgs = {
 c.containerit.dInDBind = '/var/run/docker.sock:/var/run/docker.sock';
 c.containerit.maintainer = 'o2r';
 c.containerit.rm = yn(env.MUNCHER_CONTAINERIT_CONTAINER_RM || 'true');
+c.containerit.labelNamespace = 'info.o2r.';
 
 c.payload = {};
 c.payload.tarball = {};
@@ -282,9 +328,11 @@ c.payload.tarball.globPattern = '**/*';
 c.payload.tarball.ignore = [c.bagtainer.imageTarballFile, c.meta.dir + '/**'];
 
 c.body_parser_config = {
-  // increase limit for metadata uploads, see https://github.com/expressjs/body-parser#limit
-  limit: '50mb'
+  limit: '1gb'
 };
+c.upload = {};
+c.upload.timeout_seconds = 60 * 30; // 30 minutes
+
 
 c.download = {};
 c.download.defaults = {};

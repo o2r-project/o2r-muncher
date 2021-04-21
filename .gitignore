@@ -9,4 +9,4 @@ test/workspace/with-image-tarball/image\.tar
 
 test/workspace/with-image-tarball/with-image-tarball\.zip
 
-*.zip
+test/erc/dummy.zip

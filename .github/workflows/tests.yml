@@ -1,0 +1,63 @@
+name: Run tests
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    strategy:
+      max-parallel: 4
+      matrix:
+        test-set:
+          - compendium
+          - download
+          - job
+          - metadata
+          - execution
+          - substitution
+          - environment
+          - load
+        node-version: [12.x]
+
+    steps:
+    - name: Git checkout
+      uses: actions/checkout@v2
+
+    - name: Pull images
+      run: |
+        docker pull o2rproject/o2r-meta:latest
+        docker pull o2rproject/containerit:geospatial
+        docker pull mongo:3.4
+  
+    - name: Build images
+      run: |
+        docker build --file test/Dockerfile . > docker_image_build.log 2>&1
+        docker build --tag muncher .
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install deps for tests
+      run: |
+        npm install
+
+    - name: Start services
+      # The file test/direct_erc.js uses the testmuncher container to clean up in between tests
+      run: |
+        mkdir -p /tmp/o2r
+        docker run --name mongodb -d -p 27017:27017 mongo:3.4
+        docker run --name testmuncher     -d -p 8080:8080 --link mongodb:mongodb -v /tmp/o2r:/tmp/o2r -v /var/run/docker.sock:/var/run/docker.sock -e MUNCHER_MONGODB=mongodb://mongodb:27017 -e DEBUG=muncher,muncher:* muncher
+        sleep 10
+
+    - name: Run tests
+      run: |
+        TEST_JOB_POLL_INTERVAL=10000 npm run-script test_ci
+      env:
+        TEST_SET: ${{ matrix.test-set }}
+
+    - name: Logs
+      run: |
+        docker logs testmuncher
+        cat docker_image_build.log

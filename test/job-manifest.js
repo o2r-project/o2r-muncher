@@ -352,7 +352,7 @@ describe('Manifest creation during a job', () => {
       });
     });
 
-    it('should have the expected content in the manifest', function (done) {
+    it.skip('should have the expected content in the manifest', function (done) {
       request(global.test_host + '/api/v1/job/' + job_id + '/data/Dockerfile', (err, res, body) => {
         assert.ifError(err);
         assert.isNotObject(body, 'response is not JSON');

@@ -1,14 +1,13 @@
 ---
 title: "Ohne Berlin"
 author:
-- address: |
-    First GEO1 Second line
-  affiliation: University/Company
-  email: name@uni-muenster.de
-  name: Torben More Kraft
-  url: http://rstudio.com
-- affiliation: Affiliation
-  name: Second Author
+  - address: GEO1
+    affiliation: University/Company
+    email: name@uni-muenster.de
+    name: Torben More Kraft
+    url: http://rstudio.com
+  - affiliation: Affiliation
+    name: Second Author
 abstract: |
   Abstract Ohne Berlin abstract
 ---

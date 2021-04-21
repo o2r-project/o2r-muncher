@@ -1,7 +1,7 @@
 ---
 title: "Inline data checking"
 author:
-    - name: "Daniel Nüst"
+    - name: o2r user
       affiliation: o2r team
 date: "2018"
 output:
@@ -50,5 +50,6 @@ _You can have `r words[numbers[1]]` without `r words[numbers[2]]`, but you canno
 -- after Daniel Keys Moran
 
 ```{r quote, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+library("fortunes")
 fortunes::fortune()
 ```

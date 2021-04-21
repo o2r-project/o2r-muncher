@@ -30,7 +30,7 @@ const getFile = require('./util').getFile;
 const startJob = require('./util').startJob;
 
 
-describe('Substitution of data with two workspaces', function () {
+describe.skip('Substitution of data with two workspaces', function () {
     var base_id;
     var overlay_id;
     var metadataHandling = "keepBase";

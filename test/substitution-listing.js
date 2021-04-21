@@ -26,7 +26,7 @@ const uploadCompendium = require('./util').uploadCompendium;
 const createSubstitutionPostRequest = require('./util').createSubstitutionPostRequest;
 const publishCandidate = require('./util').publishCandidate;
 
-describe('Substitution listing', function () {
+describe.skip('Substitution listing', function () {
     var db = mongojs('localhost/muncher', ['compendia']);
 
     before(function (done) {

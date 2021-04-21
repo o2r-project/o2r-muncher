@@ -18,7 +18,6 @@
 const config = require('../config/config');
 const debug = require('debug')('muncher:link');
 const randomstring = require('randomstring');
-const urlJoin = require('url-join');
 
 const Compendium = require('../lib/model/compendium');
 const PublicLink = require('../lib/model/link');

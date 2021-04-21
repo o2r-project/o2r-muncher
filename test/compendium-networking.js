@@ -135,6 +135,11 @@ describe('Container networking', () => {
 
     before(function (done) {
       this.timeout(90000);
+
+      if (process.env.CI === "true") {
+        this.skip();
+      }
+
       db.compendia.drop(function (err, doc) {
 
         createCompendiumPostRequest('./test/workspace/ping_online', cookie_o2r, 'workspace', (req) => {
@@ -194,6 +199,79 @@ describe('Container networking', () => {
         assert.ifError(err);
         let response = JSON.parse(body);
         assert.include(JSON.stringify(response.steps.image_execute.text), 'bad address');
+        done();
+      });
+    });
+  });
+
+  describe.skip('a workspace that is on the allowlist and tries to go online does not fail execution', () => {
+    let compendium_id, job_id;
+
+    before(function (done) {
+      this.timeout(90000);
+      db.compendia.drop(function (err, doc) {
+
+        createCompendiumPostRequest('./test/workspace/ping_online', cookie_o2r, 'workspace', (req) => {
+          request(req, (err, res, body) => {
+            compendium_id = JSON.parse(body).id;
+            publishCandidate(compendium_id, cookie_o2r, () => {
+              startJob(compendium_id, id => {
+                job_id = id;
+                waitForJob(job_id, (finalStatus) => {
+
+                  // 
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should skip generate manifest because Dockerfile is already there', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.generate_manifest, 'status', 'skipped');
+        done();
+      });
+    });
+
+    it('should complete image build', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.image_build, 'status', 'success');
+        done();
+      });
+    });
+
+    it('should successfully complete image execute', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response.steps.image_execute, 'status', 'success');
+        done();
+      });
+    });
+
+    it('should successfully complete overall', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.propertyVal(response, 'status', 'success');
+        done();
+      });
+    });
+
+    it('should include the pings in the step log', (done) => {
+      request(global.test_host + '/api/v1/job/' + job_id + '?steps=image_execute', (err, res, body) => {
+        assert.ifError(err);
+        let response = JSON.parse(body);
+        assert.include(JSON.stringify(response.steps.image_execute.text), '64 bytes from');
+        assert.include(JSON.stringify(response.steps.image_execute.text), 'packets transmitted');
+        assert.include(JSON.stringify(response.steps.image_execute.text), 'o2r.info ping statistics');
         done();
       });
     });
