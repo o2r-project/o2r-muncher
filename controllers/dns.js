@@ -14,15 +14,3 @@
  * limitations under the License.
  *
  */
-var mongoose = require('mongoose');
-var timestamps = require('mongoose-timestamp');
-
-var User = new mongoose.Schema({
-    orcid: String,
-    name: {type: String, default: ''},
-    level: {type: Number, default: 0},
-    lastseenAt: {type: Date, default: Date.now}
-});
-User.plugin(timestamps);
-
-module.exports = mongoose.model('User', User);

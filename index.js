@@ -90,12 +90,15 @@ controllers.link = require('./controllers/link');
 controllers.download = require('./controllers/download');
 controllers.substitutions = require('./controllers/substitutions');
 controllers.environment = require('./controllers/environment');
+controllers.dns = require('./controllers/dns');
+controllers.publisher = require('./controllers/publisher');
 
 // check fs & create dirs if necessary
 fse.mkdirsSync(config.fs.incoming);
 fse.mkdirsSync(config.fs.compendium);
 fse.mkdirsSync(config.fs.job);
 fse.mkdirsSync(config.fs.cache);
+fse.mkdirsSync(config.fs.dns);
 fse.mkdirsSync(config.fs.deleted);
 fse.mkdirsSync(config.payload.tarball.tmpdir);
 
@@ -334,6 +337,11 @@ function initApp(callback) {
     app.get('/api/v1/substitution', controllers.substitutions.view);
 
     app.get('/api/v1/environment', controllers.environment.listEnvironments);
+
+    app.post('/api/v1/publisher', controllers.publisher.create);
+    app.put('/api/v1/publisher/update', controllers.publisher.update);
+    app.put('/api/v1/publisher/add_url', controllers.publisher.addUrl);
+    app.put('/api/v1/publisher/remove_url', controllers.publisher.removeUrl);
 
     fulfill();
   });
