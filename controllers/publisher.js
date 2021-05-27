@@ -69,7 +69,7 @@ exports.create = (req, res) => {
                             res.status(500).send({error: 'Error saving new publisher to database'});
                             return;
                         }
-                        debug('[%s] Successfully saved new publisher',)
+                        debug('[%s] Successfully saved new publisher', publisher_id)
                         res.status(200).send();
                         dnsBuilder.addPublisherToDns(publisher_id);
                     });
@@ -84,7 +84,7 @@ exports.create = (req, res) => {
         });
 }
 
-let update = (req, res) => {
+exports.update = (req, res) => {
     if (!req.body.id) {
         debug('Update publisher: No ID provided');
         res.status(400).send({error: 'No ID provided'});
@@ -111,6 +111,8 @@ let update = (req, res) => {
             debug('[%s] Updating Publisher, new url list: %O', publisherId, req.body.urls);
         }
 
+        let oldUrlList = publisher.urls;
+
         domain.validateDomains(req.body.urls)
             .then(() => {
                 domain.addDomainsToDb(req.body.urls)
@@ -124,11 +126,11 @@ let update = (req, res) => {
                                 res.status(500).send({error: 'Error updating publisher'});
                                 return;
                             }
-                            debug('[%s] Successfully updated publisher',)
+                            debug('[%s] Successfully updated publisher', publisher.id)
                             res.status(200).send();
                             dnsBuilder.removePublisherFromDns(publisher.id);
                             if (req.body.url) {
-                                domain.maybeDelete(req.body.url);
+                                domain.maybeDelete(oldUrlList);
                             }
                             dnsBuilder.addPublisherToDns(publisher.id);
                         });
@@ -143,7 +145,65 @@ let update = (req, res) => {
     });
 }
 
-exports.addUrl = function(req, res) {
+exports.addUrl = function (req, res) {
+    if (!req.body.id) {
+        debug('Update publisher: No ID provided');
+        res.status(400).send({error: 'No ID provided'});
+        return;
+    }
+
+    Publisher.findOne({id: req.body.id}, (err, publisher) => {
+        if (err) {
+            debug('[%s] Error finding publisher: %O', req.body.id, err);
+            res.status(500).send({error: 'Error finding publisher in database'});
+            return;
+        }
+        if (!publisher) {
+            debug('[%s] No publisher with this id found', req.body.id);
+            res.status(500).send({error: 'No publisher with this id found'});
+            return;
+        }
+
+        let urlArray = [];
+        urlArray.push(req.body.url);
+
+        domain.validateDomains(urlArray)
+            .then(() => {
+                domain.addDomainsToDb(urlArray)
+                    .then((urls) => {
+                        if (publisher.urls.includes(urls[0])) {
+                            res.status(400).send({error: 'Url is already in the list'});
+                            return;
+                        }
+
+                        publisher.urls.push(urls[0]);
+
+                        publisher.urls = publisher.urls.sort();
+
+                        publisher.save(err => {
+                            if (err) {
+                                debug('[%s] Error updating publisher: %O', publisher.id, err);
+                                res.status(500).send({error: 'Error updating publisher'});
+                                return;
+                            }
+                            debug('[%s] Successfully updated publisher', publisher.id)
+                            res.status(200).send();
+                            dnsBuilder.removePublisherFromDns(publisher.id);
+                            dnsBuilder.addPublisherToDns(publisher.id);
+                        });
+                    }).catch(err => {
+                    debug('[%s] Error saving domains provided by publisher: %O', publisher.id, err);
+                    res.status(500).send({error: 'Error updating publisher'});
+                });
+            })
+            .catch(err => {
+                debug('[%s] Url is not a valid domain: %O', publisher.id, err);
+                res.status(400).send({error: 'Url is not a valid domain: ' + err.toString()});
+            });
+    });
+}
+
+exports.removeUrl = function (req, res) {
     if (!req.body.id) {
         debug('Update publisher: No ID provided');
         res.status(400).send({error: 'No ID provided'});
@@ -162,38 +222,41 @@ exports.addUrl = function(req, res) {
             return;
         }
 
-        // TODO: Insert new URL in req.body.urls list and provide list to update()
+        let urlArray = [];
+        urlArray.push(req.body.url);
 
-        // req.body.urls = publisher.urls.push(req.body.url);
-        // req.body.name = publisher.name;
-        // update(req, res);
+        domain.validateDomains(urlArray)
+            .then(() => {
+                domain.addDomainsToDb(urlArray)
+                    .then((urls) => {
+                        if (publisher.urls.includes(urls[0])) {
+                            res.status(400).send({error: 'Url is not in the list'});
+                            return;
+                        }
+
+                        publisher.urls.splice(publisher.urls.indexOf(urls[0]), 1).sort();
+
+                        publisher.save(err => {
+                            if (err) {
+                                debug('[%s] Error updating publisher: %O', publisher.id, err);
+                                res.status(500).send({error: 'Error updating publisher'});
+                                return;
+                            }
+                            debug('[%s] Successfully updated publisher', publisher.id)
+                            res.status(200).send();
+                            dnsBuilder.removePublisherFromDns(publisher.id);
+                            if (req.body.url) {
+                                domain.maybeDelete(urls);
+                            }
+                            dnsBuilder.addPublisherToDns(publisher.id);
+                        });
+                    }).catch(err => {
+                    debug('[%s] Error saving domains provided by publisher: %O', publisher.id, err);
+                    res.status(500).send({error: 'Error updating publisher'});
+                });
+            })
+            .catch(err => {
+                res.status(400).send({error: 'List of urls includes invalid domains: ' + err.toString()});
+            });
     });
 }
-
-exports.removeUrl = function(req, res) {
-    if (!req.body.id) {
-        debug('Update publisher: No ID provided');
-        res.status(400).send({error: 'No ID provided'});
-        return;
-    }
-
-    Publisher.findOne({id: req.body.id}, (err, publisher) => {
-        if (err) {
-            debug('[%s] Error finding publisher: %O', publisher.id, err);
-            res.status(500).send({error: 'Error finding publisher in database'});
-            return;
-        }
-        if (!publisher) {
-            debug('[%s] No publisher with this id found', publisher.id);
-            res.status(500).send({error: 'No publisher with this id found'});
-            return;
-        }
-        // TODO: Delete URL from req.body.urls list and provide list to update()
-
-        // req.body.urls = publisher.urls.splice(publisher.urls.indexOf(req.body.url), 1);
-        // req.body.name = publisher.name;
-        // update(req, res);
-    });
-}
-
-exports.update = update;

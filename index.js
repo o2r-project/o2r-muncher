@@ -340,8 +340,8 @@ function initApp(callback) {
 
     app.post('/api/v1/publisher', controllers.publisher.create);
     app.put('/api/v1/publisher/update', controllers.publisher.update);
-    app.put('/api/v1/publisher/add_url', controllers.publisher.addUrl);
-    app.put('/api/v1/publisher/remove_url', controllers.publisher.removeUrl);
+    app.put('/api/v1/publisher/addurl', controllers.publisher.addUrl);
+    app.put('/api/v1/publisher/removeurl', controllers.publisher.removeUrl);
 
     fulfill();
   });
