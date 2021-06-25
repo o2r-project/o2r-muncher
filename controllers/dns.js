@@ -14,3 +14,52 @@
  * limitations under the License.
  *
  */
+
+let Dns = require('../lib/model/dns');
+let dnsManager = require('../lib/dns-manager');
+const debug = require('debug')('muncher:dns');
+
+exports.startServersOnStartup = function () {
+    return new Promise((fulfill, reject) => {
+        debug("Starting DNS servers on startup");
+        let promiseArray = [];
+        Dns.find((err, docs) => {
+            if (err) {
+                debug("Error searching for DNS Server configurations: %O", err);
+                reject(err);
+            } else if (docs.length < 1) {
+                debug("No DNS Server configurations in database");
+                reject("No DNS configurations in database");
+            } else {
+                for (let dns of docs) {
+                    promiseArray.push(new Promise((fulfill2, reject2) => {
+                        debug("Starting DNS Server: %s", dns.id);
+                        dnsManager
+                            .stopAndRemoveDnsServer(dns.id)
+                            .then(() => {
+                                buildNewDnsServer(dns.id)
+                                    .then(dnsManager.startNewDnsServer)
+                                    .then(() => {
+                                        debug("Successfully started DNS Server: %s", dns.id);
+                                        fulfill2();
+                                    })
+                                    .catch((err) => {
+                                        debug("Error starting DNS Server: %O", err);
+                                        reject2(err);
+                                    });
+                            });
+                    }));
+                }
+            }
+            Promise.all(promiseArray)
+                .then(() => {
+                    debug("Successfully started all DNS Servers");
+                    fulfill();
+                })
+                .catch((error) => {
+                    debug("Error starting DNS Servers: %O", error);
+                    reject(error);
+                });
+        });
+    });
+}

@@ -16,15 +16,21 @@
  */
 
 const config = require('../config/config');
-const debug = require('debug')('muncher:publisher');
+const debug = require('debug')('muncher:owner');
 const randomstring = require('randomstring');
 const dnsBuilder = require('../lib/dns-manager');
 const domain = require('../lib/domain');
+const journal = require('../lib/journal')
 
 let Publisher = require('../lib/model/publisher');
 let Domain = require('../lib/model/domain');
 
 exports.create = (req, res) => {
+    if (!req.isAuthenticated()) {
+        res.status('401').send();
+        return;
+    }
+
     let publisher_id = randomstring.generate(config.id_length);
     debug('[%s] Create new publisher with name: %s', publisher_id, req.body.name);
 
@@ -47,37 +53,50 @@ exports.create = (req, res) => {
         return;
     }
 
-    if (req.body.urls.length < 1) {
-        debug('[%s] Empty list of urls provided', publisher_id);
-        res.status(400).send({error: 'List of urls is empty'});
+    if (req.user.level < config.user.level.manage_publisher) {
+        debug('[%s] User is not allowed to create a publisher', publisher_id);
+        res.status(401).send();
         return;
     }
 
     domain.validateDomains(req.body.urls)
         .then(() => {
-            domain.addDomainsToDb(req.body.urls)
-                .then((urls) => {
-                    let newPublisher = new Publisher({
-                        id: publisher_id,
-                        name: req.body.name,
-                        urls: urls.sort()
-                    });
+            let journals = [];
+            if (req.body.journals)
+                journals = req.body.journals;
 
-                    newPublisher.save(err => {
-                        if (err) {
-                            debug('[%s] Error saving new publisher: %O', publisher_id, err);
+            journal.validateJournals(journals)
+                .then(() => {
+                    domain.addDomainsToDb(req.body.urls)
+                        .then((urls) => {
+                            let newPublisher = new Publisher({
+                                id: publisher_id,
+                                name: req.body.name,
+                                urls: urls.sort(),
+                                journals: journals,
+                                owner: req.user.orcid,
+                                journalCandidates: []
+                            });
+
+                            newPublisher.save(err => {
+                                if (err) {
+                                    debug('[%s] Error saving new publisher: %O', publisher_id, err);
+                                    res.status(500).send({error: 'Error saving new publisher to database'});
+                                    return;
+                                }
+                                debug('[%s] Successfully saved new publisher', publisher_id)
+                                res.status(200).send();
+                                dnsBuilder.addToDns(publisher_id, config.dns.priority.publisher);
+                            });
+                        })
+                        .catch(err => {
+                            debug('[%s] Error saving domains provided by publisher: %O', publisher_id, err);
                             res.status(500).send({error: 'Error saving new publisher to database'});
-                            return;
-                        }
-                        debug('[%s] Successfully saved new publisher', publisher_id)
-                        res.status(200).send();
-                        dnsBuilder.addPublisherToDns(publisher_id);
-                    });
+                        });
                 })
                 .catch(err => {
-                    debug('[%s] Error saving domains provided by publisher: %O', publisher_id, err);
-                    res.status(500).send({error: 'Error saving new publisher to database'});
-                });
+                    res.status(400).send({error: 'List of journals includes invalid journals: ' + err.toString()});
+                })
         })
         .catch(err => {
             res.status(400).send({error: 'List of urls includes invalid domains: ' + err.toString()});
@@ -85,9 +104,20 @@ exports.create = (req, res) => {
 }
 
 exports.update = (req, res) => {
+    if (!req.isAuthenticated()) {
+        res.status('401').send();
+        return;
+    }
+
     if (!req.body.id) {
         debug('Update publisher: No ID provided');
         res.status(400).send({error: 'No ID provided'});
+        return;
+    }
+
+    if (req.user.level < config.user.level.manage_publisher) {
+        debug('[%s] User is not allowed to edit a publisher', req.body.id);
+        res.status(401).send();
         return;
     }
 
@@ -104,40 +134,55 @@ exports.update = (req, res) => {
             res.status(500).send({error: 'No publisher with this id found'});
             return;
         }
+        if (req.user.orcid !== publisher.owner) {
+            res.status('403').send();
+            return;
+        }
         if (req.body.name) {
-            debug('[%s] Updating Publisher, new Name: %s', publisherId, req.body.name);
+            debug('[%s] Updating publisher, new Name: %s', publisherId, req.body.name);
         }
         if (req.body.urls) {
-            debug('[%s] Updating Publisher, new url list: %O', publisherId, req.body.urls);
+            debug('[%s] Updating publisher, new url list: %O', publisherId, req.body.urls);
         }
 
         let oldUrlList = publisher.urls;
 
         domain.validateDomains(req.body.urls)
             .then(() => {
-                domain.addDomainsToDb(req.body.urls)
-                    .then((urls) => {
-                        publisher.name = req.body.name;
-                        publisher.urls = urls.sort();
+                let journals = [];
+                if (req.body.journals)
+                    journals = req.body.journals;
 
-                        publisher.save(err => {
-                            if (err) {
-                                debug('[%s] Error updating publisher: %O', publisher.id, err);
-                                res.status(500).send({error: 'Error updating publisher'});
-                                return;
-                            }
-                            debug('[%s] Successfully updated publisher', publisher.id)
-                            res.status(200).send();
-                            dnsBuilder.removePublisherFromDns(publisher.id);
-                            if (req.body.url) {
-                                domain.maybeDelete(oldUrlList);
-                            }
-                            dnsBuilder.addPublisherToDns(publisher.id);
+                journal.validateJournals(journals)
+                    .then(() => {
+                        domain.addDomainsToDb(req.body.urls)
+                            .then((urls) => {
+                                publisher.name = req.body.name;
+                                publisher.urls = urls.sort();
+                                publisher.journals = journals;
+
+                                publisher.save(err => {
+                                    if (err) {
+                                        debug('[%s] Error updating publisher: %O', publisher.id, err);
+                                        res.status(500).send({error: 'Error updating publisher'});
+                                        return;
+                                    }
+                                    debug('[%s] Successfully updated publisher', publisher.id)
+                                    res.status(200).send();
+                                    dnsBuilder.removeJournalFromDns(publisher.id);
+                                    if (req.body.url) {
+                                        domain.maybeDelete(oldUrlList);
+                                    }
+                                    dnsBuilder.addToDns(publisher.id, config.dns.priority.publisher);
+                                });
+                            }).catch(err => {
+                            debug('[%s] Error saving domains provided by publisher: %O', publisher.id, err);
+                            res.status(500).send({error: 'Error updating publisher'});
                         });
-                    }).catch(err => {
-                    debug('[%s] Error saving domains provided by publisher: %O', publisher.id, err);
-                    res.status(500).send({error: 'Error updating publisher'});
-                });
+                    })
+                    .catch(err => {
+                        res.status(400).send({error: 'List of journals includes invalid journals: ' + err.toString()});
+                    })
             })
             .catch(err => {
                 res.status(400).send({error: 'List of urls includes invalid domains: ' + err.toString()});
@@ -146,9 +191,20 @@ exports.update = (req, res) => {
 }
 
 exports.addUrl = function (req, res) {
+    if (!req.isAuthenticated()) {
+        res.status('401').send();
+        return;
+    }
+
     if (!req.body.id) {
-        debug('Update publisher: No ID provided');
+        debug('Add URL: No ID provided');
         res.status(400).send({error: 'No ID provided'});
+        return;
+    }
+
+    if (req.user.level < config.user.level.manage_publisher) {
+        debug('[%s] User is not allowed to edit a publisher', req.body.id);
+        res.status(401).send();
         return;
     }
 
@@ -161,6 +217,10 @@ exports.addUrl = function (req, res) {
         if (!publisher) {
             debug('[%s] No publisher with this id found', req.body.id);
             res.status(500).send({error: 'No publisher with this id found'});
+            return;
+        }
+        if (req.user.orcid !== publisher.owner) {
+            res.status('403').send();
             return;
         }
 
@@ -188,8 +248,8 @@ exports.addUrl = function (req, res) {
                             }
                             debug('[%s] Successfully updated publisher', publisher.id)
                             res.status(200).send();
-                            dnsBuilder.removePublisherFromDns(publisher.id);
-                            dnsBuilder.addPublisherToDns(publisher.id);
+                            dnsBuilder.removeJournalFromDns(publisher.id);
+                            dnsBuilder.addToDns(publisher.id, config.dns.priority.publisher);
                         });
                     }).catch(err => {
                     debug('[%s] Error saving domains provided by publisher: %O', publisher.id, err);
@@ -204,9 +264,20 @@ exports.addUrl = function (req, res) {
 }
 
 exports.removeUrl = function (req, res) {
+    if (!req.isAuthenticated()) {
+        res.status('401').send();
+        return;
+    }
+
     if (!req.body.id) {
-        debug('Update publisher: No ID provided');
+        debug('Remove URL from publisher: No ID provided');
         res.status(400).send({error: 'No ID provided'});
+        return;
+    }
+
+    if (req.user.level < config.user.level.manage_publisher) {
+        debug('[%s] User is not allowed to edit a publisher', req.body.id);
+        res.status(401).send();
         return;
     }
 
@@ -221,6 +292,10 @@ exports.removeUrl = function (req, res) {
             res.status(500).send({error: 'No publisher with this id found'});
             return;
         }
+        if (req.user.orcid !== publisher.owner) {
+            res.status('403').send();
+            return;
+        }
 
         let urlArray = [];
         urlArray.push(req.body.url);
@@ -229,7 +304,7 @@ exports.removeUrl = function (req, res) {
             .then(() => {
                 domain.addDomainsToDb(urlArray)
                     .then((urls) => {
-                        if (publisher.urls.includes(urls[0])) {
+                        if (!publisher.urls.includes(urls[0])) {
                             res.status(400).send({error: 'Url is not in the list'});
                             return;
                         }
@@ -244,11 +319,11 @@ exports.removeUrl = function (req, res) {
                             }
                             debug('[%s] Successfully updated publisher', publisher.id)
                             res.status(200).send();
-                            dnsBuilder.removePublisherFromDns(publisher.id);
+                            dnsBuilder.removeJournalFromDns(publisher.id);
                             if (req.body.url) {
                                 domain.maybeDelete(urls);
                             }
-                            dnsBuilder.addPublisherToDns(publisher.id);
+                            dnsBuilder.addToDns(publisher.id, config.dns.priority.publisher);
                         });
                     }).catch(err => {
                     debug('[%s] Error saving domains provided by publisher: %O', publisher.id, err);
@@ -257,6 +332,343 @@ exports.removeUrl = function (req, res) {
             })
             .catch(err => {
                 res.status(400).send({error: 'List of urls includes invalid domains: ' + err.toString()});
+            });
+    });
+}
+
+exports.addJournal = function (req, res) {
+    if (!req.isAuthenticated()) {
+        res.status('401').send();
+        return;
+    }
+
+    if (!req.body.publisherId) {
+        debug('Add journal to publisher: No publisher ID provided');
+        res.status(400).send({error: 'No ID provided'});
+        return;
+    }
+
+    if (!req.body.journalId) {
+        debug('Add journal to publisher: No journal ID provided');
+        res.status(400).send({error: 'No ID provided'});
+        return;
+    }
+
+    if (req.user.level < config.user.level.manage_publisher) {
+        debug('[%s] User is not allowed to edit a publisher', req.body.id);
+        res.status(401).send();
+        return;
+    }
+
+    let publisherId = req.body.publisherId;
+    let journalId = req.body.journalId;
+
+    Publisher.findOne({id: publisherId}, (err, publisher) => {
+        if (err) {
+            debug('[%s] Error finding publisher: %O', publisherId, err);
+            res.status(500).send({error: 'Error finding publisher in database'});
+            return;
+        }
+        if (!publisher) {
+            debug('[%s] No publisher with this id found', publisherId);
+            res.status(500).send({error: 'No publisher with this id found'});
+            return;
+        }
+        if (req.user.orcid !== publisher.owner) {
+            res.status('403').send();
+            return;
+        }
+
+        let journals = [];
+        journals.push(journalId);
+
+        journal.validateJournals(journals)
+            .then(() => {
+                publisher.journals.push(journalId);
+                publisher.save(err => {
+                    if (err) {
+                        debug('[%s] Error updating publisher: %O', publisher.id, err);
+                        res.status(500).send({error: 'Error updating publisher'});
+                        return;
+                    }
+                    debug('[%s] Successfully updated publisher', publisher.id)
+                    res.status(200).send();
+                });
+            })
+            .catch(err => {
+                res.status(400).send({error: 'Journal not found: ' + err.toString()});
+            })
+    })
+}
+
+exports.confirmJournal = function (req, res) {
+    if (!req.isAuthenticated()) {
+        res.status('401').send();
+        return;
+    }
+
+    if (!req.body.publisherId) {
+        debug('Confirm journal: No publisher ID provided');
+        res.status(400).send({error: 'No ID provided'});
+        return;
+    }
+
+    if (!req.body.journalId) {
+        debug('Confirm journal: No journal ID provided');
+        res.status(400).send({error: 'No ID provided'});
+        return;
+    }
+
+    if (req.user.level < config.user.level.manage_publisher) {
+        debug('[%s] User is not allowed to edit a publisher', req.body.id);
+        res.status(401).send();
+        return;
+    }
+
+    let publisherId = req.body.publisherId;
+    let journalId = req.body.journalId;
+
+    Publisher.findOne({id: publisherId}, (err, publisher) => {
+        if (err || !publisher) {
+            debug('[%s] No publisher with this ID', publisherId);
+            res.status(404).send();
+            return;
+        }
+        if (req.user.orcid !== publisher.owner) {
+            res.status('403').send();
+            return;
+        }
+
+        journal.validateJournals([journalId])
+            .then(() => {
+                if (publisher.journalCandidates.includes(journalId)) {
+                    publisher.journalCandidates = publisher.journalCandidates.filter(el => el !== journalId);
+                    publisher.journals.push(journalId);
+
+                    publisher.save(err => {
+                        if (err) {
+                            debug('[%s] Error updating publisher: %O', publisher.id, err);
+                            res.status(500).send({error: 'Error updating publisher'});
+                            return;
+                        }
+                        debug('[%s] Successfully updated publisher', publisher.id)
+                        res.status(200).send();
+                    });
+                } else {
+                    debug('[%s] Journal is no candidate for this publisher', publisherId);
+                    res.status(500).send();
+                }
+            })
+            .catch(err => {
+                res.status(400).send({error: 'Journal not found: ' + err.toString()});
+            });
+    })
+}
+
+exports.removeJournal = function (req, res) {
+    if (!req.isAuthenticated()) {
+        res.status('401').send();
+        return;
+    }
+
+    if (!req.body.publisherId) {
+        debug('Remove journal: No publisher ID provided');
+        res.status(400).send({error: 'No ID provided'});
+        return;
+    }
+
+    if (!req.body.journalId) {
+        debug('Remove journal: No journal ID provided');
+        res.status(400).send({error: 'No ID provided'});
+        return;
+    }
+
+    if (req.user.level < config.user.level.manage_publisher) {
+        debug('[%s] User is not allowed to edit a publisher', req.body.id);
+        res.status(401).send();
+        return;
+    }
+
+    let publisherId = req.body.publisherId;
+    let journalId = req.body.journalId;
+
+    Publisher.findOne({id: publisherId}, (err, publisher) => {
+        if (err || !publisher) {
+            debug('[%s] No publisher with this ID', publisherId);
+            res.status(404).send();
+            return;
+        }
+        if (req.user.orcid !== publisher.owner) {
+            res.status('403').send();
+            return;
+        }
+
+        journal.validateJournals([journalId])
+            .then(() => {
+                if (publisher.journals.includes(journalId)) {
+                    publisher.journals = publisher.journals.filter(el => el !== journalId);
+
+                    publisher.save(err => {
+                        if (err) {
+                            debug('[%s] Error updating publisher: %O', publisher.id, err);
+                            res.status(500).send({error: 'Error updating publisher'});
+                            return;
+                        }
+                        debug('[%s] Successfully updated publisher', publisher.id)
+                        res.status(200).send();
+                    });
+                } else {
+                    debug('[%s] Journal does not belong to this publisher', publisherId);
+                    res.status(500).send();
+                }
+            })
+            .catch(err => {
+                res.status(400).send({error: 'Journal not found: ' + err.toString()});
+            });
+    })
+}
+
+exports.listPublishers = function(req, res) {
+    debug('Get list of publishers');
+    Publisher.find({}, '-_id id name urls journals', (err, publishers) => {
+        if (err){
+            debug('Error getting list of publishers from database: %O', err);
+            res.status(500).send("Error getting list of publishers from database");
+            return;
+        }
+
+        res.status(200).send(publishers);
+    })
+}
+
+exports.viewPublisher = function(req, res) {
+    if (!req.isAuthenticated()) {
+        req.status('401').send();
+        return;
+    }
+
+    if (!req.params.id) {
+        res.status('400').send("No ID provided!");
+        return;
+    }
+
+    let publisherId = req.params.id;
+
+    debug('[%s] Getting publisher', publisherId)
+
+    Publisher.findOne({id: publisherId}, '-_id id name urls journals', (err, publisher) => {
+        if (err) {
+            debug('[%s] Error getting Publisher from database: %O', publisherId, err);
+            res.status('500').send("Error getting Publisher from database");
+            return;
+        } else if(!publisher) {
+            debug('[%s] No Publisher with this ID found', publisherId);
+            res.status('404').send();
+            return;
+        }
+
+        res.status('200').send(publisher);
+    });
+}
+
+exports.getPublisher = function(req, res) {
+    if (!req.isAuthenticated()) {
+        req.status('401').send();
+        return;
+    }
+
+    if (!req.user || req.user.level === config.user.level.manage_publisher) {
+        req.status('403').send();
+        return;
+    }
+
+    if (!req.params.id) {
+        res.status('400').send("No ID provided!");
+        return;
+    }
+
+    let publisherId = req.params.id;
+
+    debug('[%s] Getting publisher', publisherId)
+
+    Publisher.findOne({id: publisherId}, (err, publisher) => {
+        if (err) {
+            debug('[%s] Error getting Publisher from database: %O', publisherId, err);
+            res.status('500').send("Error getting Publisher from database");
+            return;
+        }
+        if(!publisher) {
+            debug('[%s] No Publisher with this ID found', publisherId);
+            res.status('404').send();
+            return;
+        }
+        if (req.user.orcid !== publisher.owner) {
+            res.status('403').send();
+            return;
+        }
+
+        res.status('200').send(publisher);
+    });
+}
+
+exports.getPublisherDomains = function(req, res) {
+    if (!req.params.id) {
+        res.status('400').send("No ID provided!");
+        return;
+    }
+
+    let publisherId = req.params.id;
+
+    debug('[%s] Getting Publisher Domains', publisherId)
+
+    Publisher.findOne({id: publisherId}, (err, publisher) => {
+        if (err) {
+            debug('[%s] Error getting Publisher from database: %O', publisherId, err);
+            res.status('500').send("Error getting Publisher from database");
+            return;
+        }
+        if(!publisher) {
+            debug('[%s] No Publisher with this ID found', publisherId);
+            res.status('404').send();
+            return;
+        }
+        domain.getDomainsForPublisher(publisher)
+            .then(domains => {
+                res.status('200').send(domains);
+            })
+            .catch(err => {
+                res.status('500').send();
+            });
+    });
+}
+
+exports.getPublisherJournals = function(req, res) {
+    if (!req.params.id) {
+        res.status('400').send("No ID provided!");
+        return;
+    }
+
+    let publisherId = req.params.id;
+
+    debug('[%s] Getting Publisher Journals', publisherId)
+
+    Publisher.findOne({id: publisherId}, (err, publisher) => {
+        if (err) {
+            debug('[%s] Error getting Publisher from database: %O', publisherId, err);
+            res.status('500').send("Error getting Publisher from database");
+            return;
+        }
+        if(!publisher) {
+            debug('[%s] No Publisher with this ID found', publisherId);
+            res.status('404').send();
+            return;
+        }
+        journal.getJournalsForPublisher(publisher)
+            .then(domains => {
+                res.status('200').send(domains);
+            })
+            .catch(err => {
+                res.status('500').send();
             });
     });
 }

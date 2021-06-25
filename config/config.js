@@ -89,6 +89,9 @@ c.user.level.view_candidates = 500;
 c.user.level.view_status = 1000;
 c.user.level.delete_compendium = 1000;
 c.user.level.manage_links = 500;
+c.user.level.manage_publisher = 1000;
+c.user.level.validate_journal = 1000;
+c.user.level.manage_journal = 500;
 
 // bagtainer configuration
 c.bagtainer = {};
@@ -149,7 +152,6 @@ c.bagtainer.docker.create_options = {
   Env: ['O2R_MUNCHER=true'],
   Memory: 4294967296, // 4G
   MemorySwap: 8589934592, // double of 4G
-  NetworkDisabled: true,
   User: env.MUNCHER_CONTAINER_USER || '1000' // user name depends on image, use id to be save
 };
 c.bagtainer.rm = yn(env.EXECUTE_CONTAINER_RM || 'true');
@@ -168,7 +170,7 @@ c.email.sender = env.MUNCHER_EMAIL_SENDER;
 // template for sending emails
 //if (emailTransporter) {
 //  let mail = {
-//    from: config.email.sender, // sender address 
+//    from: config.email.sender, // sender address
 //    to: config.email.receivers,
 //    subject: '[o2r platform] something happened',
 //    text: '...'
@@ -295,19 +297,28 @@ c.substitution.docker.cmd = 'docker run -it --rm';
 c.substitution.docker.imageNamePrefix = 'erc:';
 
 c.dns = {};
+c.dns.dnsmasq = {};
+c.dns.priority = {};
 c.dns.dockerfile = "" +
     "FROM alpine:edge\n" +
     "RUN apk --no-cache add dnsmasq\n" +
     "EXPOSE 53/tcp 53/udp\n" +
     "COPY dnsmasq.conf /etc/dnsmasq.conf\n" +
     "CMD [\"dnsmasq\", \"--no-daemon\"]";
-c.dns.dnsmasq = {};
 c.dns.dnsmasq.default = "" +
     "log-queries\n" +
     "no-hosts\n" +
     "no-resolv\n" +
     "cache-size=100000\n";
 c.dns.dnsmasq.filterDummy = "server=/";
+c.dns.priority.publisher = 100;
+c.dns.priority.journal = 50;
+
+c.journal = {};
+c.journal.priority = 50;
+
+c.publisher = {};
+c.publisher.priority = 100;
 
 c.checker = {};
 c.checker.diffFileName = 'check.html';

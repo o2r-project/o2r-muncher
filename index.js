@@ -44,7 +44,7 @@ var dbOptions = {
 mongoose.connection.on('error', (err) => {
   debug('Could not connect to MongoDB @ %s: %s'.red, dbURI, err);
 });
-// If the Node process ends, close the Mongoose connection 
+// If the Node process ends, close the Mongoose connection
 process.on('SIGINT', function () {
   mongoose.connection.close(function () {
     debug('Mongoose default connection disconnected through app termination signal (SIGINT)');
@@ -91,6 +91,7 @@ controllers.download = require('./controllers/download');
 controllers.substitutions = require('./controllers/substitutions');
 controllers.environment = require('./controllers/environment');
 controllers.dns = require('./controllers/dns');
+controllers.journal = require('./controllers/journal');
 controllers.publisher = require('./controllers/publisher');
 
 // check fs & create dirs if necessary
@@ -338,10 +339,28 @@ function initApp(callback) {
 
     app.get('/api/v1/environment', controllers.environment.listEnvironments);
 
-    app.post('/api/v1/publisher', controllers.publisher.create);
+    app.post('/api/v1//publisher', controllers.publisher.create);
+    app.get('/api/v1/publisher', controllers.publisher.listPublishers)
+    app.get('/api/v1/publisher/:id', controllers.publisher.getPublisher)
+    app.get('/api/v1/publisher/:id/view', controllers.publisher.viewPublisher)
+    app.get('/api/v1/publisher/:id/domains', controllers.publisher.getPublisherDomains)
+    app.get('/api/v1/publisher/:id/journals', controllers.publisher.getPublisherJournals)
     app.put('/api/v1/publisher/update', controllers.publisher.update);
     app.put('/api/v1/publisher/addurl', controllers.publisher.addUrl);
     app.put('/api/v1/publisher/removeurl', controllers.publisher.removeUrl);
+    app.put('/api/v1/publisher/addjournal', controllers.publisher.addJournal);
+    app.put('/api/v1/publisher/confirmjournal', controllers.publisher.confirmJournal);
+    app.put('/api/v1/publisher/removejournal', controllers.publisher.removeJournal);
+
+    app.post('/api/v1/journal', controllers.journal.create);
+    app.get('/api/v1/journal', controllers.publisher.listJournal)
+    app.get('/api/v1/journal/:id', controllers.publisher.getJournal)
+    app.get('/api/v1/journal/:id/view', controllers.publisher.viewJournal)
+    app.get('/api/v1/journal/:id/domains', controllers.publisher.getJournalDomains)
+    app.put('/api/v1/journal/update', controllers.journal.update);
+    app.put('/api/v1/journal/addurl', controllers.journal.addUrl);
+    app.put('/api/v1/journal/removeurl', controllers.journal.removeUrl);
+    app.put('/api/v1/journal/addtopublisher', controllers.journal.addToPublisher);
 
     fulfill();
   });
@@ -370,6 +389,16 @@ function initApp(callback) {
         fulfill();
       });
     }
+  });
+
+  startDnsServers = new Promise((fulfill, reject) => {
+    controllers.dns.startServersOnStartup()
+        .then(() => {
+          fulfill();
+        })
+        .catch((err) => {
+          reject(err);
+        })
   });
 
   logVersions = new Promise((fulfill, reject) => {
@@ -404,6 +433,10 @@ function initApp(callback) {
     .then(logVersions)
     .then(configureEmailTransporter)
     .then(configureExpressApp)
+    .then(startDnsServers)
+    .catch((err) => {
+        debug('ERROR starting DNS Servers, this may result in problems later: %O', err);
+      })
     .then(configureSlack)
     .then(startListening)
     .then(() => {
