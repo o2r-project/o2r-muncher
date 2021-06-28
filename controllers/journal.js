@@ -152,7 +152,7 @@ exports.update = (req, res) => {
                             }
                             debug('[%s] Successfully updated journal', journal.id)
                             res.status(200).send();
-                            dnsBuilder.removeJournalFromDns(journal.id);
+                            dnsBuilder.removeJournalFromDns(journal.id, config.dns.priority.journal);
                             if (req.body.url) {
                                 domain.maybeDelete(oldUrlList);
                             }
@@ -228,7 +228,7 @@ exports.addUrl = function (req, res) {
                             }
                             debug('[%s] Successfully updated journal', journal.id)
                             res.status(200).send();
-                            dnsBuilder.removeJournalFromDns(journal.id);
+                            dnsBuilder.removeJournalFromDns(journal.id, config.dns.priority.journal);
                             dnsBuilder.addToDns(journal.id, config.dns.priority.journal);
                         });
                     }).catch(err => {
@@ -301,7 +301,7 @@ exports.removeUrl = function (req, res) {
                             }
                             debug('[%s] Successfully updated journal', journal.id)
                             res.status(200).send();
-                            dnsBuilder.removeJournalFromDns(journal.id);
+                            dnsBuilder.removeJournalFromDns(journal.id, config.dns.priority.journal);
                             if (req.body.url) {
                                 domain.maybeDelete(urls);
                             }

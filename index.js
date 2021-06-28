@@ -339,7 +339,7 @@ function initApp(callback) {
 
     app.get('/api/v1/environment', controllers.environment.listEnvironments);
 
-    app.post('/api/v1//publisher', controllers.publisher.create);
+    app.post('/api/v1/publisher', controllers.publisher.create);
     app.get('/api/v1/publisher', controllers.publisher.listPublishers)
     app.get('/api/v1/publisher/:id', controllers.publisher.getPublisher)
     app.get('/api/v1/publisher/:id/view', controllers.publisher.viewPublisher)
@@ -353,10 +353,10 @@ function initApp(callback) {
     app.put('/api/v1/publisher/removejournal', controllers.publisher.removeJournal);
 
     app.post('/api/v1/journal', controllers.journal.create);
-    app.get('/api/v1/journal', controllers.publisher.listJournal)
-    app.get('/api/v1/journal/:id', controllers.publisher.getJournal)
-    app.get('/api/v1/journal/:id/view', controllers.publisher.viewJournal)
-    app.get('/api/v1/journal/:id/domains', controllers.publisher.getJournalDomains)
+    app.get('/api/v1/journal', controllers.journal.listJournal)
+    app.get('/api/v1/journal/:id', controllers.journal.getJournal)
+    app.get('/api/v1/journal/:id/view', controllers.journal.viewJournal)
+    app.get('/api/v1/journal/:id/domains', controllers.journal.getJournalDomains)
     app.put('/api/v1/journal/update', controllers.journal.update);
     app.put('/api/v1/journal/addurl', controllers.journal.addUrl);
     app.put('/api/v1/journal/removeurl', controllers.journal.removeUrl);

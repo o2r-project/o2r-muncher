@@ -26,6 +26,7 @@ let Publisher = require('../lib/model/publisher');
 let Domain = require('../lib/model/domain');
 
 exports.create = (req, res) => {
+    console.log("HERE");
     if (!req.isAuthenticated()) {
         res.status('401').send();
         return;
@@ -169,7 +170,7 @@ exports.update = (req, res) => {
                                     }
                                     debug('[%s] Successfully updated publisher', publisher.id)
                                     res.status(200).send();
-                                    dnsBuilder.removeJournalFromDns(publisher.id);
+                                    dnsBuilder.removeJournalFromDns(publisher.id, config.dns.priority.publisher);
                                     if (req.body.url) {
                                         domain.maybeDelete(oldUrlList);
                                     }
@@ -248,7 +249,7 @@ exports.addUrl = function (req, res) {
                             }
                             debug('[%s] Successfully updated publisher', publisher.id)
                             res.status(200).send();
-                            dnsBuilder.removeJournalFromDns(publisher.id);
+                            dnsBuilder.removeJournalFromDns(publisher.id, config.dns.priority.publisher);
                             dnsBuilder.addToDns(publisher.id, config.dns.priority.publisher);
                         });
                     }).catch(err => {
@@ -319,7 +320,7 @@ exports.removeUrl = function (req, res) {
                             }
                             debug('[%s] Successfully updated publisher', publisher.id)
                             res.status(200).send();
-                            dnsBuilder.removeJournalFromDns(publisher.id);
+                            dnsBuilder.removeJournalFromDns(publisher.id, config.dns.priority.publisher);
                             if (req.body.url) {
                                 domain.maybeDelete(urls);
                             }
@@ -577,8 +578,8 @@ exports.getPublisher = function(req, res) {
         return;
     }
 
-    if (!req.user || req.user.level === config.user.level.manage_publisher) {
-        req.status('403').send();
+    if (!req.user || req.user.level < config.user.level.manage_publisher) {
+        res.status('403').send();
         return;
     }
 
