@@ -42,15 +42,15 @@ exports.create = (req, res) => {
         return;
     }
 
-    if (!req.body.urls) {
-        debug('[%s] urls parameter not provided', publisher_id);
-        res.status(400).send({error: 'urls required'});
+    if (!req.body.domains) {
+        debug('[%s] domains parameter not provided', publisher_id);
+        res.status(400).send({error: 'domains required'});
         return;
     }
 
-    if (!Array.isArray(req.body.urls)) {
-        debug('[%s] urls parameter is not an array', publisher_id);
-        res.status(400).send({error: 'urls not array'});
+    if (!Array.isArray(req.body.domains)) {
+        debug('[%s] domains parameter is not an array', publisher_id);
+        res.status(400).send({error: 'domains not array'});
         return;
     }
 
@@ -60,7 +60,7 @@ exports.create = (req, res) => {
         return;
     }
 
-    domain.validateDomains(req.body.urls)
+    domain.validateDomains(req.body.domains)
         .then(() => {
             let journals = [];
             if (req.body.journals)
@@ -68,12 +68,12 @@ exports.create = (req, res) => {
 
             journal.validateJournals(journals)
                 .then(() => {
-                    domain.addDomainsToDb(req.body.urls)
-                        .then((urls) => {
+                    domain.addDomainsToDb(req.body.domains)
+                        .then((domains) => {
                             let newPublisher = new Publisher({
                                 id: publisher_id,
                                 name: req.body.name,
-                                urls: urls.sort(),
+                                domains: domains.sort(),
                                 journals: journals,
                                 owner: req.user.orcid,
                                 journalCandidates: []
@@ -100,7 +100,7 @@ exports.create = (req, res) => {
                 })
         })
         .catch(err => {
-            res.status(400).send({error: 'List of urls includes invalid domains: ' + err.toString()});
+            res.status(400).send({error: 'List of domains includes invalid domains: ' + err.toString()});
         });
 }
 
@@ -142,13 +142,13 @@ exports.update = (req, res) => {
         if (req.body.name) {
             debug('[%s] Updating publisher, new Name: %s', publisherId, req.body.name);
         }
-        if (req.body.urls) {
-            debug('[%s] Updating publisher, new url list: %O', publisherId, req.body.urls);
+        if (req.body.domains) {
+            debug('[%s] Updating publisher, new domain list: %O', publisherId, req.body.domains);
         }
 
-        let oldUrlList = publisher.urls;
+        let oldDomainList = publisher.domains;
 
-        domain.validateDomains(req.body.urls)
+        domain.validateDomains(req.body.domains)
             .then(() => {
                 let journals = [];
                 if (req.body.journals)
@@ -156,10 +156,10 @@ exports.update = (req, res) => {
 
                 journal.validateJournals(journals)
                     .then(() => {
-                        domain.addDomainsToDb(req.body.urls)
-                            .then((urls) => {
+                        domain.addDomainsToDb(req.body.domains)
+                            .then((domains) => {
                                 publisher.name = req.body.name;
-                                publisher.urls = urls.sort();
+                                publisher.domains = domains.sort();
                                 publisher.journals = journals;
 
                                 publisher.save(err => {
@@ -171,8 +171,8 @@ exports.update = (req, res) => {
                                     debug('[%s] Successfully updated publisher', publisher.id)
                                     res.status(200).send();
                                     dnsBuilder.removeJournalFromDns(publisher.id, config.dns.priority.publisher);
-                                    if (req.body.url) {
-                                        domain.maybeDelete(oldUrlList);
+                                    if (req.body.domains) {
+                                        domain.maybeDelete(oldDomainList);
                                     }
                                     dnsBuilder.addToDns(publisher.id, config.dns.priority.publisher);
                                 });
@@ -186,19 +186,19 @@ exports.update = (req, res) => {
                     })
             })
             .catch(err => {
-                res.status(400).send({error: 'List of urls includes invalid domains: ' + err.toString()});
+                res.status(400).send({error: 'List of domains includes invalid domains: ' + err.toString()});
             });
     });
 }
 
-exports.addUrl = function (req, res) {
+exports.addDomain = function (req, res) {
     if (!req.isAuthenticated()) {
         res.status('401').send();
         return;
     }
 
     if (!req.body.id) {
-        debug('Add URL: No ID provided');
+        debug('Add domain: No ID provided');
         res.status(400).send({error: 'No ID provided'});
         return;
     }
@@ -225,21 +225,21 @@ exports.addUrl = function (req, res) {
             return;
         }
 
-        let urlArray = [];
-        urlArray.push(req.body.url);
+        let domainArray = [];
+        domainArray.push(req.body.url);
 
-        domain.validateDomains(urlArray)
+        domain.validateDomains(domainArray)
             .then(() => {
-                domain.addDomainsToDb(urlArray)
-                    .then((urls) => {
-                        if (publisher.urls.includes(urls[0])) {
-                            res.status(400).send({error: 'Url is already in the list'});
+                domain.addDomainsToDb(domainArray)
+                    .then((domains) => {
+                        if (publisher.domains.includes(domains[0])) {
+                            res.status(400).send({error: 'Domain is already in the list'});
                             return;
                         }
 
-                        publisher.urls.push(urls[0]);
+                        publisher.domains.push(domains[0]);
 
-                        publisher.urls = publisher.urls.sort();
+                        publisher.domains = publisher.domains.sort();
 
                         publisher.save(err => {
                             if (err) {
@@ -258,20 +258,20 @@ exports.addUrl = function (req, res) {
                 });
             })
             .catch(err => {
-                debug('[%s] Url is not a valid domain: %O', publisher.id, err);
-                res.status(400).send({error: 'Url is not a valid domain: ' + err.toString()});
+                debug('[%s] Domain is not a valid domain: %O', publisher.id, err);
+                res.status(400).send({error: 'Domain is not a valid domain: ' + err.toString()});
             });
     });
 }
 
-exports.removeUrl = function (req, res) {
+exports.removeDomain = function (req, res) {
     if (!req.isAuthenticated()) {
         res.status('401').send();
         return;
     }
 
     if (!req.body.id) {
-        debug('Remove URL from publisher: No ID provided');
+        debug('Remove Domain from publisher: No ID provided');
         res.status(400).send({error: 'No ID provided'});
         return;
     }
@@ -298,19 +298,19 @@ exports.removeUrl = function (req, res) {
             return;
         }
 
-        let urlArray = [];
-        urlArray.push(req.body.url);
+        let domainArray = [];
+        domainArray.push(req.body.url);
 
-        domain.validateDomains(urlArray)
+        domain.validateDomains(domainArray)
             .then(() => {
-                domain.addDomainsToDb(urlArray)
-                    .then((urls) => {
-                        if (!publisher.urls.includes(urls[0])) {
-                            res.status(400).send({error: 'Url is not in the list'});
+                domain.addDomainsToDb(domainArray)
+                    .then((domains) => {
+                        if (!publisher.domains.includes(domains[0])) {
+                            res.status(400).send({error: 'Domain is not in the list'});
                             return;
                         }
 
-                        publisher.urls.splice(publisher.urls.indexOf(urls[0]), 1).sort();
+                        publisher.domains.splice(publisher.domains.indexOf(domains[0]), 1).sort();
 
                         publisher.save(err => {
                             if (err) {
@@ -321,8 +321,8 @@ exports.removeUrl = function (req, res) {
                             debug('[%s] Successfully updated publisher', publisher.id)
                             res.status(200).send();
                             dnsBuilder.removeJournalFromDns(publisher.id, config.dns.priority.publisher);
-                            if (req.body.url) {
-                                domain.maybeDelete(urls);
+                            if (req.body.domains) {
+                                domain.maybeDelete(domains);
                             }
                             dnsBuilder.addToDns(publisher.id, config.dns.priority.publisher);
                         });
@@ -332,7 +332,7 @@ exports.removeUrl = function (req, res) {
                 });
             })
             .catch(err => {
-                res.status(400).send({error: 'List of urls includes invalid domains: ' + err.toString()});
+                res.status(400).send({error: 'List of domains includes invalid domains: ' + err.toString()});
             });
     });
 }
@@ -531,7 +531,7 @@ exports.removeJournal = function (req, res) {
 
 exports.listPublishers = function(req, res) {
     debug('Get list of publishers');
-    Publisher.find({}, '-_id id name urls journals', (err, publishers) => {
+    Publisher.find({}, '-_id id name domains journals', (err, publishers) => {
         if (err){
             debug('Error getting list of publishers from database: %O', err);
             res.status(500).send("Error getting list of publishers from database");
@@ -557,7 +557,7 @@ exports.viewPublisher = function(req, res) {
 
     debug('[%s] Getting publisher', publisherId)
 
-    Publisher.findOne({id: publisherId}, '-_id id name urls journals', (err, publisher) => {
+    Publisher.findOne({id: publisherId}, '-_id id name domains journals', (err, publisher) => {
         if (err) {
             debug('[%s] Error getting Publisher from database: %O', publisherId, err);
             res.status('500').send("Error getting Publisher from database");

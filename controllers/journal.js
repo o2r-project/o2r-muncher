@@ -41,15 +41,15 @@ exports.create = (req, res) => {
         return;
     }
 
-    if (!req.body.urls) {
-        debug('[%s] urls parameter not provided', journal_id);
-        res.status(400).send({error: 'urls required'});
+    if (!req.body.domains) {
+        debug('[%s] domains parameter not provided', journal_id);
+        res.status(400).send({error: 'domains required'});
         return;
     }
 
-    if (!Array.isArray(req.body.urls)) {
-        debug('[%s] urls parameter is not an array', journal_id);
-        res.status(400).send({error: 'urls not array'});
+    if (!Array.isArray(req.body.domains)) {
+        debug('[%s] domains parameter is not an array', journal_id);
+        res.status(400).send({error: 'domains not array'});
         return;
     }
 
@@ -59,14 +59,14 @@ exports.create = (req, res) => {
         return;
     }
 
-    domain.validateDomains(req.body.urls)
+    domain.validateDomains(req.body.domains)
         .then(() => {
-            domain.addDomainsToDb(req.body.urls)
-                .then((urls) => {
+            domain.addDomainsToDb(req.body.domains)
+                .then((domains) => {
                     let newJournal = new Journal({
                         id: journal_id,
                         name: req.body.name,
-                        urls: urls.sort(),
+                        domains: domains.sort(),
                         owner: req.user.orcid
                     });
 
@@ -87,7 +87,7 @@ exports.create = (req, res) => {
                 });
         })
         .catch(err => {
-            res.status(400).send({error: 'List of urls includes invalid domains: ' + err.toString()});
+            res.status(400).send({error: 'List of domains includes invalid domains: ' + err.toString()});
         });
 }
 
@@ -131,18 +131,18 @@ exports.update = (req, res) => {
         if (req.body.name) {
             debug('[%s] Updating journal, new Name: %s', journalId, req.body.name);
         }
-        if (req.body.urls) {
-            debug('[%s] Updating journal, new url list: %O', journalId, req.body.urls);
+        if (req.body.domains) {
+            debug('[%s] Updating journal, new domains list: %O', journalId, req.body.domains);
         }
 
-        let oldUrlList = journal.urls;
+        let oldDomainList = journal.domains;
 
-        domain.validateDomains(req.body.urls)
+        domain.validateDomains(req.body.domains)
             .then(() => {
-                domain.addDomainsToDb(req.body.urls)
-                    .then((urls) => {
+                domain.addDomainsToDb(req.body.domains)
+                    .then((domains) => {
                         journal.name = req.body.name;
-                        journal.urls = urls.sort();
+                        journal.domains = domains.sort();
 
                         journal.save(err => {
                             if (err) {
@@ -153,8 +153,8 @@ exports.update = (req, res) => {
                             debug('[%s] Successfully updated journal', journal.id)
                             res.status(200).send();
                             dnsBuilder.removeJournalFromDns(journal.id, config.dns.priority.journal);
-                            if (req.body.url) {
-                                domain.maybeDelete(oldUrlList);
+                            if (req.body.domains) {
+                                domain.maybeDelete(oldDomainList);
                             }
                             dnsBuilder.addToDns(journal.id, config.dns.priority.journal);
                         });
@@ -164,19 +164,19 @@ exports.update = (req, res) => {
                 });
             })
             .catch(err => {
-                res.status(400).send({error: 'List of urls includes invalid domains: ' + err.toString()});
+                res.status(400).send({error: 'List of domains includes invalid domains: ' + err.toString()});
             });
     });
 }
 
-exports.addUrl = function (req, res) {
+exports.addDomain = function (req, res) {
     if (!req.isAuthenticated()) {
         res.status('401').send();
         return;
     }
 
     if (!req.body.id) {
-        debug('Add URL: No ID provided');
+        debug('Add domain: No ID provided');
         res.status(400).send({error: 'No ID provided'});
         return;
     }
@@ -204,21 +204,21 @@ exports.addUrl = function (req, res) {
             return;
         }
 
-        let urlArray = [];
-        urlArray.push(req.body.url);
+        let domainArray = [];
+        domainArray.push(req.body.url);
 
-        domain.validateDomains(urlArray)
+        domain.validateDomains(domainArray)
             .then(() => {
-                domain.addDomainsToDb(urlArray)
-                    .then((urls) => {
-                        if (journal.urls.includes(urls[0])) {
-                            res.status(400).send({error: 'Url is already in the list'});
+                domain.addDomainsToDb(domainArray)
+                    .then((domains) => {
+                        if (journal.domains.includes(domains[0])) {
+                            res.status(400).send({error: 'domain is already in the list'});
                             return;
                         }
 
-                        journal.urls.push(urls[0]);
+                        journal.domains.push(domains[0]);
 
-                        journal.urls = journal.urls.sort();
+                        journal.domains = journal.domains.sort();
 
                         journal.save(err => {
                             if (err) {
@@ -237,20 +237,20 @@ exports.addUrl = function (req, res) {
                 });
             })
             .catch(err => {
-                debug('[%s] Url is not a valid domain: %O', journal.id, err);
-                res.status(400).send({error: 'Url is not a valid domain: ' + err.toString()});
+                debug('[%s] Domain is not a valid domain: %O', journal.id, err);
+                res.status(400).send({error: 'Domain is not a valid domain: ' + err.toString()});
             });
     });
 }
 
-exports.removeUrl = function (req, res) {
+exports.removeDomain = function (req, res) {
     if (!req.isAuthenticated()) {
         res.status('401').send();
         return;
     }
 
     if (!req.body.id) {
-        debug('Remove URL from journal: No ID provided');
+        debug('Remove Domain from journal: No ID provided');
         res.status(400).send({error: 'No ID provided'});
         return;
     }
@@ -279,19 +279,19 @@ exports.removeUrl = function (req, res) {
         }
 
 
-        let urlArray = [];
-        urlArray.push(req.body.url);
+        let domainArray = [];
+        domainArray.push(req.body.url);
 
-        domain.validateDomains(urlArray)
+        domain.validateDomains(domainArray)
             .then(() => {
-                domain.addDomainsToDb(urlArray)
-                    .then((urls) => {
-                        if (!journal.urls.includes(urls[0])) {
-                            res.status(400).send({error: 'Url is not in the list'});
+                domain.addDomainsToDb(domainArray)
+                    .then((domains) => {
+                        if (!journal.domains.includes(domains[0])) {
+                            res.status(400).send({error: 'Domain is not in the list'});
                             return;
                         }
 
-                        journal.urls.splice(journal.urls.indexOf(urls[0]), 1).sort();
+                        journal.domains.splice(journal.domains.indexOf(domains[0]), 1).sort();
 
                         journal.save(err => {
                             if (err) {
@@ -302,8 +302,8 @@ exports.removeUrl = function (req, res) {
                             debug('[%s] Successfully updated journal', journal.id)
                             res.status(200).send();
                             dnsBuilder.removeJournalFromDns(journal.id, config.dns.priority.journal);
-                            if (req.body.url) {
-                                domain.maybeDelete(urls);
+                            if (req.body.domains) {
+                                domain.maybeDelete(domains);
                             }
                             dnsBuilder.addToDns(journal.id, config.dns.priority.journal);
                         });
@@ -313,7 +313,7 @@ exports.removeUrl = function (req, res) {
                 });
             })
             .catch(err => {
-                res.status(400).send({error: 'List of urls includes invalid domains: ' + err.toString()});
+                res.status(400).send({error: 'List of domains includes invalid domains: ' + err.toString()});
             });
     });
 }
@@ -361,10 +361,10 @@ exports.addToPublisher = function (req, res) {
     });
 }
 
-exports.listJournal = function(req, res) {
+exports.listJournal = function (req, res) {
     debug('Get list of journals');
-    Journal.find({}, '-_id id name urls compendia', (err, journals) => {
-        if (err){
+    Journal.find({}, '-_id id name domains compendia', (err, journals) => {
+        if (err) {
             debug('Error getting list of journals from database: %O', err);
             res.status(500).send("Error getting list of journals from database");
             return;
@@ -374,7 +374,7 @@ exports.listJournal = function(req, res) {
     })
 }
 
-exports.viewJournal = function(req, res) {
+exports.viewJournal = function (req, res) {
     if (!req.isAuthenticated()) {
         req.status('401').send();
         return;
@@ -389,12 +389,12 @@ exports.viewJournal = function(req, res) {
 
     debug('[%s] Getting journal', journalId)
 
-    Journal.findOne({id: journalId}, '-_id id name urls compendia', (err, journal) => {
+    Journal.findOne({id: journalId}, '-_id id name domains compendia', (err, journal) => {
         if (err) {
             debug('[%s] Error getting Journal from database: %O', journalId, err);
             res.status('500').send("Error getting Journal from database");
             return;
-        } else if(!journal) {
+        } else if (!journal) {
             debug('[%s] No Journal with this ID found', journalId);
             res.status('404').send();
             return;
@@ -404,7 +404,7 @@ exports.viewJournal = function(req, res) {
     });
 }
 
-exports.getJournal = function(req, res) {
+exports.getJournal = function (req, res) {
     if (!req.isAuthenticated()) {
         req.status('401').send();
         return;
@@ -430,7 +430,7 @@ exports.getJournal = function(req, res) {
             res.status('500').send("Error getting Journal from database");
             return;
         }
-        if(!journal) {
+        if (!journal) {
             debug('[%s] No Journal with this ID found', journalId);
             res.status('404').send();
             return;
@@ -444,7 +444,7 @@ exports.getJournal = function(req, res) {
     });
 }
 
-exports.getJournalDomains = function(req, res) {
+exports.getJournalDomains = function (req, res) {
     if (!req.params.id) {
         res.status('400').send("No ID provided!");
         return;
@@ -460,7 +460,7 @@ exports.getJournalDomains = function(req, res) {
             res.status('500').send("Error getting Journal from database");
             return;
         }
-        if(!journal) {
+        if (!journal) {
             debug('[%s] No Journal with this ID found', journalId);
             res.status('404').send();
             return;
@@ -473,4 +473,55 @@ exports.getJournalDomains = function(req, res) {
                 res.status('500').send();
             });
     });
+}
+
+exports.getPossibleJournalsFromDomainList = function (req, res) {
+    if (!req.body.domains) {
+        debug('domains parameter not provided');
+        res.status(400).send({error: 'domains required'});
+        return;
+    }
+
+    if (!Array.isArray(req.body.domains)) {
+        debug('domains parameter is not an array');
+        res.status(400).send({error: 'domains not array'});
+        return;
+    }
+
+    debug("Asking for possible Journals based on domain list: %O", req.body.domains);
+
+    domain.parseDomains(req.domains)
+        .then(domains => {
+            let promiseArray = [];
+            let domainIds = [];
+            for (let domain of domains) {
+                promiseArray.push(new Promise(async (fulfill, reject) => {
+                    domain.checkExistence(domain)
+                        .then(resDomain => {
+                            domainIds.push(resDomain.id);
+                            fulfill();
+                        })
+                        .catch(domain => {
+                            reject(domain);
+                        });
+                }));
+
+                Promise.all(promiseArray)
+                    .then(() => {
+                        Journal.find({domains: {$all: domainIds}}, (err, journals) => {
+                            if (err || !journals || !Array.isArray(journals) || journals.length < 1) {
+                                debug("Found no journal for queried domain list");
+                                res.status('404').send("No journal found for the queried domains");
+                            } else {
+                                debug("Found journals for queried domain list: %O", journals);
+                                res.status('200').send(journals);
+                            }
+                        })
+                    })
+                    .catch(err => {
+                        debug("Found no journal for queried domain list");
+                        res.status('404').send("No journal found for the queried domains");
+                    });
+            }
+        });
 }
