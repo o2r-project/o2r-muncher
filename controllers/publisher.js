@@ -23,10 +23,8 @@ const domain = require('../lib/domain');
 const journal = require('../lib/journal')
 
 let Publisher = require('../lib/model/publisher');
-let Domain = require('../lib/model/domain');
 
 exports.create = (req, res) => {
-    console.log("HERE");
     if (!req.isAuthenticated()) {
         res.status('401').send();
         return;

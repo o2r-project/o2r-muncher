@@ -325,6 +325,7 @@ function initApp(callback) {
 
     app.get('/api/v1/compendium/:id/metadata', controllers.compendium.viewCompendiumMetadata);
     app.put('/api/v1/compendium/:id/metadata', upload.any(), controllers.compendium.updateCompendiumMetadata);
+    app.put('/api/v1/compendium/:id/journal', controllers.compendium.addCompendiumToJournal)
 
     app.get('/api/v1/job', controllers.job.listJobs);
     app.post('/api/v1/job', upload.any(), controllers.job.createJob);
