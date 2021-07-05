@@ -93,6 +93,7 @@ controllers.environment = require('./controllers/environment');
 controllers.dns = require('./controllers/dns');
 controllers.journal = require('./controllers/journal');
 controllers.publisher = require('./controllers/publisher');
+controllers.repository = require('./controllers/repository');
 
 // check fs & create dirs if necessary
 fse.mkdirsSync(config.fs.incoming);
@@ -353,15 +354,19 @@ function initApp(callback) {
     app.put('/api/v1/publisher/removejournal', controllers.publisher.removeJournal);
 
     app.post('/api/v1/journal', controllers.journal.create);
+    app.get('/api/v1/journal/possiblejournals', controllers.journal.getPossibleJournalsFromDomainList)
     app.get('/api/v1/journal', controllers.journal.listJournal)
     app.get('/api/v1/journal/:id', controllers.journal.getJournal)
     app.get('/api/v1/journal/:id/view', controllers.journal.viewJournal)
     app.get('/api/v1/journal/:id/domains', controllers.journal.getJournalDomains)
-    app.get('/api/v1/journal/possiblejournals', controllers.journal.getPossibleJournalsFromDomainList)
     app.put('/api/v1/journal/update', controllers.journal.update);
     app.put('/api/v1/journal/adddomain', controllers.journal.addDomain);
     app.put('/api/v1/journal/removedomain', controllers.journal.removeDomain);
     app.put('/api/v1/journal/addtopublisher', controllers.journal.addToPublisher);
+
+    app.get('/api/v1/repository', controllers.repository.listRepositories);
+    app.get('/api/v1/repository/filter', controllers.repository.getRepositoryFilter);
+    app.get('/api/v1/repository/:id', controllers.repository.getRepository);
 
     fulfill();
   });

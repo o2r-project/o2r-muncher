@@ -490,13 +490,13 @@ exports.getPossibleJournalsFromDomainList = function (req, res) {
 
     debug("Asking for possible Journals based on domain list: %O", req.body.domains);
 
-    domain.parseDomains(req.domains)
+    domain.parseDomains(req.body.domains)
         .then(domains => {
             let promiseArray = [];
             let domainIds = [];
-            for (let domain of domains) {
+            for (let dom of domains) {
                 promiseArray.push(new Promise(async (fulfill, reject) => {
-                    domain.checkExistence(domain)
+                    domain.checkExistence(dom)
                         .then(resDomain => {
                             domainIds.push(resDomain.id);
                             fulfill();
@@ -505,23 +505,23 @@ exports.getPossibleJournalsFromDomainList = function (req, res) {
                             reject(domain);
                         });
                 }));
-
-                Promise.all(promiseArray)
-                    .then(() => {
-                        Journal.find({domains: {$all: domainIds}}, (err, journals) => {
-                            if (err || !journals || !Array.isArray(journals) || journals.length < 1) {
-                                debug("Found no journal for queried domain list");
-                                res.status('404').send("No journal found for the queried domains");
-                            } else {
-                                debug("Found journals for queried domain list: %O", journals);
-                                res.status('200').send(journals);
-                            }
-                        })
-                    })
-                    .catch(err => {
-                        debug("Found no journal for queried domain list");
-                        res.status('404').send("No journal found for the queried domains");
-                    });
             }
+
+            Promise.all(promiseArray)
+                .then(() => {
+                    Journal.find({domains: {$all: domainIds}}, (err, journals) => {
+                        if (err || !journals || !Array.isArray(journals) || journals.length < 1) {
+                            debug("Found no journal for queried domain list");
+                            res.status('404').send("No journal found for the queried domains");
+                        } else {
+                            debug("Found journals for queried domain list: %O", journals);
+                            res.status('200').send(journals);
+                        }
+                    })
+                })
+                .catch(err => {
+                    debug("Found no journal for queried domain list");
+                    res.status('404').send("No journal found for the queried domains");
+                });
         });
 }

@@ -16,7 +16,7 @@
  */
 
 const config = require('../config/config');
-const debug = require('debug')('muncher:owner');
+const debug = require('debug')('muncher:publisher');
 const randomstring = require('randomstring');
 const dnsBuilder = require('../lib/dns-manager');
 const domain = require('../lib/domain');
@@ -529,10 +529,10 @@ exports.removeJournal = function (req, res) {
     })
 }
 
-exports.listPublishers = function(req, res) {
+exports.listPublishers = function (req, res) {
     debug('Get list of publishers');
     Publisher.find({}, '-_id id name domains journals', (err, publishers) => {
-        if (err){
+        if (err) {
             debug('Error getting list of publishers from database: %O', err);
             res.status(500).send("Error getting list of publishers from database");
             return;
@@ -542,7 +542,7 @@ exports.listPublishers = function(req, res) {
     })
 }
 
-exports.viewPublisher = function(req, res) {
+exports.viewPublisher = function (req, res) {
     if (!req.isAuthenticated()) {
         req.status('401').send();
         return;
@@ -562,7 +562,7 @@ exports.viewPublisher = function(req, res) {
             debug('[%s] Error getting Publisher from database: %O', publisherId, err);
             res.status('500').send("Error getting Publisher from database");
             return;
-        } else if(!publisher) {
+        } else if (!publisher) {
             debug('[%s] No Publisher with this ID found', publisherId);
             res.status('404').send();
             return;
@@ -572,7 +572,7 @@ exports.viewPublisher = function(req, res) {
     });
 }
 
-exports.getPublisher = function(req, res) {
+exports.getPublisher = function (req, res) {
     if (!req.isAuthenticated()) {
         req.status('401').send();
         return;
@@ -598,7 +598,7 @@ exports.getPublisher = function(req, res) {
             res.status('500').send("Error getting Publisher from database");
             return;
         }
-        if(!publisher) {
+        if (!publisher) {
             debug('[%s] No Publisher with this ID found', publisherId);
             res.status('404').send();
             return;
@@ -612,7 +612,7 @@ exports.getPublisher = function(req, res) {
     });
 }
 
-exports.getPublisherDomains = function(req, res) {
+exports.getPublisherDomains = function (req, res) {
     if (!req.params.id) {
         res.status('400').send("No ID provided!");
         return;
@@ -628,7 +628,7 @@ exports.getPublisherDomains = function(req, res) {
             res.status('500').send("Error getting Publisher from database");
             return;
         }
-        if(!publisher) {
+        if (!publisher) {
             debug('[%s] No Publisher with this ID found', publisherId);
             res.status('404').send();
             return;
@@ -643,7 +643,7 @@ exports.getPublisherDomains = function(req, res) {
     });
 }
 
-exports.getPublisherJournals = function(req, res) {
+exports.getPublisherJournals = function (req, res) {
     if (!req.params.id) {
         res.status('400').send("No ID provided!");
         return;
@@ -659,7 +659,7 @@ exports.getPublisherJournals = function(req, res) {
             res.status('500').send("Error getting Publisher from database");
             return;
         }
-        if(!publisher) {
+        if (!publisher) {
             debug('[%s] No Publisher with this ID found', publisherId);
             res.status('404').send();
             return;
