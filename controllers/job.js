@@ -265,7 +265,7 @@ exports.createJob = (req, res) => {
     }
 
     // check compendium existence and load its metadata
-    Compendium.findOne({ id: ident.compendium }).select('id user publisher candidate metadata bag compendium').exec((err, compendium) => {
+    Compendium.findOne({ id: ident.compendium }).select('id user journal candidate metadata bag compendium').exec((err, compendium) => {
       // eslint-disable-next-line no-eq-null, eqeqeq
       if (err || compendium == null) {
         debug('[%s] compendium not found, cannot create job: %o', job_id, ident);
@@ -282,7 +282,7 @@ exports.createJob = (req, res) => {
           var executionJob = new Job({
             id: job_id,
             user: req.user.orcid,
-            publisher: compendium.publisher,
+            journal: compendium.journal,
             compendium_id: id
           });
 

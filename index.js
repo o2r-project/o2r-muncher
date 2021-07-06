@@ -325,7 +325,7 @@ function initApp(callback) {
 
     app.get('/api/v1/compendium/:id/metadata', controllers.compendium.viewCompendiumMetadata);
     app.put('/api/v1/compendium/:id/metadata', upload.any(), controllers.compendium.updateCompendiumMetadata);
-    app.put('/api/v1/compendium/:id/journal', controllers.compendium.addCompendiumToJournal)
+    app.put('/api/v1/compendium/:id/journal', controllers.compendium.addCompendiumToJournal);
 
     app.get('/api/v1/job', controllers.job.listJobs);
     app.post('/api/v1/job', upload.any(), controllers.job.createJob);
@@ -342,28 +342,29 @@ function initApp(callback) {
     app.get('/api/v1/environment', controllers.environment.listEnvironments);
 
     app.post('/api/v1/publisher', controllers.publisher.create);
-    app.get('/api/v1/publisher', controllers.publisher.listPublishers)
-    app.get('/api/v1/publisher/:id', controllers.publisher.getPublisher)
-    app.get('/api/v1/publisher/:id/view', controllers.publisher.viewPublisher)
-    app.get('/api/v1/publisher/:id/domains', controllers.publisher.getPublisherDomains)
-    app.get('/api/v1/publisher/:id/journals', controllers.publisher.getPublisherJournals)
-    app.put('/api/v1/publisher/update', controllers.publisher.update);
-    app.put('/api/v1/publisher/adddomain', controllers.publisher.addDomain);
-    app.put('/api/v1/publisher/removedomain', controllers.publisher.removeDomain);
-    app.put('/api/v1/publisher/addjournal', controllers.publisher.addJournal);
-    app.put('/api/v1/publisher/confirmjournal', controllers.publisher.confirmJournal);
-    app.put('/api/v1/publisher/removejournal', controllers.publisher.removeJournal);
+    app.get('/api/v1/publisher', controllers.publisher.listPublishers);
+    app.get('/api/v1/publisher/:id', controllers.publisher.getPublisher);
+    app.get('/api/v1/publisher/:id/view', controllers.publisher.viewPublisher);
+    app.get('/api/v1/publisher/:id/domains', controllers.publisher.getPublisherDomains);
+    app.get('/api/v1/publisher/:id/journals', controllers.publisher.getPublisherJournals);
+    app.put('/api/v1/publisher/:id/update', controllers.publisher.update);
+    app.put('/api/v1/publisher/:id/adddomain', controllers.publisher.addDomain);
+    app.put('/api/v1/publisher/:id/removedomain', controllers.publisher.removeDomain);
+    app.put('/api/v1/publisher/:id/addjournal', controllers.publisher.addJournal);
+    app.put('/api/v1/publisher/:id/confirmjournal', controllers.publisher.confirmJournal);
+    app.put('/api/v1/publisher/:id/removejournal', controllers.publisher.removeJournal);
 
     app.post('/api/v1/journal', controllers.journal.create);
-    app.get('/api/v1/journal/possiblejournals', controllers.journal.getPossibleJournalsFromDomainList)
-    app.get('/api/v1/journal', controllers.journal.listJournal)
-    app.get('/api/v1/journal/:id', controllers.journal.getJournal)
-    app.get('/api/v1/journal/:id/view', controllers.journal.viewJournal)
-    app.get('/api/v1/journal/:id/domains', controllers.journal.getJournalDomains)
-    app.put('/api/v1/journal/update', controllers.journal.update);
-    app.put('/api/v1/journal/adddomain', controllers.journal.addDomain);
-    app.put('/api/v1/journal/removedomain', controllers.journal.removeDomain);
-    app.put('/api/v1/journal/addtopublisher', controllers.journal.addToPublisher);
+    app.get('/api/v1/journal', controllers.journal.listJournal);
+    app.get('/api/v1/journal/possiblejournals', controllers.journal.getPossibleJournalsFromDomainList);
+    app.get('/api/v1/journal/:id', controllers.journal.getJournal);
+    app.get('/api/v1/journal/:id/view', controllers.journal.viewJournal);
+    app.get('/api/v1/journal/:id/domains', controllers.journal.getJournalDomains);
+    app.put('/api/v1/journal/:id/update', controllers.journal.update);
+    app.put('/api/v1/journal/:id/adddomain', controllers.journal.addDomain);
+    app.put('/api/v1/journal/:id/removedomain', controllers.journal.removeDomain);
+    app.put('/api/v1/journal/:id/addtopublisher', controllers.journal.addToPublisher);
+    app.put('/api/v1/journal/:id/acceptCompendium', controllers.journal.acceptCompendium);
 
     app.get('/api/v1/repository', controllers.repository.listRepositories);
     app.get('/api/v1/repository/filter', controllers.repository.getRepositoryFilter);

@@ -108,19 +108,19 @@ exports.update = (req, res) => {
         return;
     }
 
-    if (!req.body.id) {
+    if (!req.params.id) {
         debug('Update publisher: No ID provided');
         res.status(400).send({error: 'No ID provided'});
         return;
     }
 
     if (req.user.level < config.user.level.manage_publisher) {
-        debug('[%s] User is not allowed to edit a publisher', req.body.id);
+        debug('[%s] User is not allowed to edit a publisher', req.params.id);
         res.status(401).send();
         return;
     }
 
-    let publisherId = req.body.id;
+    let publisherId = req.params.id;
 
     Publisher.findOne({id: publisherId}, (err, publisher) => {
         if (err) {
@@ -195,26 +195,26 @@ exports.addDomain = function (req, res) {
         return;
     }
 
-    if (!req.body.id) {
+    if (!req.params.id) {
         debug('Add domain: No ID provided');
         res.status(400).send({error: 'No ID provided'});
         return;
     }
 
     if (req.user.level < config.user.level.manage_publisher) {
-        debug('[%s] User is not allowed to edit a publisher', req.body.id);
+        debug('[%s] User is not allowed to edit a publisher', req.params.id);
         res.status(401).send();
         return;
     }
 
-    Publisher.findOne({id: req.body.id}, (err, publisher) => {
+    Publisher.findOne({id: req.params.id}, (err, publisher) => {
         if (err) {
-            debug('[%s] Error finding publisher: %O', req.body.id, err);
+            debug('[%s] Error finding publisher: %O', req.params.id, err);
             res.status(500).send({error: 'Error finding publisher in database'});
             return;
         }
         if (!publisher) {
-            debug('[%s] No publisher with this id found', req.body.id);
+            debug('[%s] No publisher with this id found', req.params.id);
             res.status(500).send({error: 'No publisher with this id found'});
             return;
         }
@@ -268,19 +268,19 @@ exports.removeDomain = function (req, res) {
         return;
     }
 
-    if (!req.body.id) {
+    if (!req.params.id) {
         debug('Remove Domain from publisher: No ID provided');
         res.status(400).send({error: 'No ID provided'});
         return;
     }
 
     if (req.user.level < config.user.level.manage_publisher) {
-        debug('[%s] User is not allowed to edit a publisher', req.body.id);
+        debug('[%s] User is not allowed to edit a publisher', req.params.id);
         res.status(401).send();
         return;
     }
 
-    Publisher.findOne({id: req.body.id}, (err, publisher) => {
+    Publisher.findOne({id: req.params.id}, (err, publisher) => {
         if (err) {
             debug('[%s] Error finding publisher: %O', publisher.id, err);
             res.status(500).send({error: 'Error finding publisher in database'});
@@ -341,7 +341,7 @@ exports.addJournal = function (req, res) {
         return;
     }
 
-    if (!req.body.publisherId) {
+    if (!req.params.id) {
         debug('Add journal to publisher: No publisher ID provided');
         res.status(400).send({error: 'No ID provided'});
         return;
@@ -354,12 +354,12 @@ exports.addJournal = function (req, res) {
     }
 
     if (req.user.level < config.user.level.manage_publisher) {
-        debug('[%s] User is not allowed to edit a publisher', req.body.id);
+        debug('[%s] User is not allowed to edit a publisher', req.params.id);
         res.status(401).send();
         return;
     }
 
-    let publisherId = req.body.publisherId;
+    let publisherId = req.params.id;
     let journalId = req.body.journalId;
 
     Publisher.findOne({id: publisherId}, (err, publisher) => {
@@ -406,7 +406,7 @@ exports.confirmJournal = function (req, res) {
         return;
     }
 
-    if (!req.body.publisherId) {
+    if (!req.params.id) {
         debug('Confirm journal: No publisher ID provided');
         res.status(400).send({error: 'No ID provided'});
         return;
@@ -419,12 +419,12 @@ exports.confirmJournal = function (req, res) {
     }
 
     if (req.user.level < config.user.level.manage_publisher) {
-        debug('[%s] User is not allowed to edit a publisher', req.body.id);
+        debug('[%s] User is not allowed to edit a publisher', req.params.id);
         res.status(401).send();
         return;
     }
 
-    let publisherId = req.body.publisherId;
+    let publisherId = req.params.id;
     let journalId = req.body.journalId;
 
     Publisher.findOne({id: publisherId}, (err, publisher) => {
@@ -470,7 +470,7 @@ exports.removeJournal = function (req, res) {
         return;
     }
 
-    if (!req.body.publisherId) {
+    if (!req.params.id) {
         debug('Remove journal: No publisher ID provided');
         res.status(400).send({error: 'No ID provided'});
         return;
@@ -483,12 +483,12 @@ exports.removeJournal = function (req, res) {
     }
 
     if (req.user.level < config.user.level.manage_publisher) {
-        debug('[%s] User is not allowed to edit a publisher', req.body.id);
+        debug('[%s] User is not allowed to edit a publisher', req.params.id);
         res.status(401).send();
         return;
     }
 
-    let publisherId = req.body.publisherId;
+    let publisherId = req.params.id;
     let journalId = req.body.journalId;
 
     Publisher.findOne({id: publisherId}, (err, publisher) => {

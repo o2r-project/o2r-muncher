@@ -314,12 +314,6 @@ c.dns.dnsmasq.filterDummy = "server=/";
 c.dns.priority.publisher = 100;
 c.dns.priority.journal = 50;
 
-c.journal = {};
-c.journal.priority = 50;
-
-c.publisher = {};
-c.publisher.priority = 100;
-
 c.checker = {};
 c.checker.diffFileName = 'check.html';
 

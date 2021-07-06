@@ -841,12 +841,12 @@ exports.addCompendiumToJournal = (req, res) => {
         return;
     }
 
-    if (!req.query.journal) {
-        res.status('400').send('No jounrnal id provided!');
+    if (!req.body.hasOwnProperty('journal')) {
+        res.status('400').send('No journal id provided!');
         return;
     }
 
-    debug('[%s] Push compendium to journal %s as candidate', req.params.id, req.query.journal);
+    debug('[%s] Push compendium to journal %s as candidate', req.params.id, req.body.journal);
 
     resolve_public_link(req.params.id, (ident) => {
         let id;
@@ -870,9 +870,9 @@ exports.addCompendiumToJournal = (req, res) => {
                 return;
             }
 
-            Journal.findOne({id: req.query.journal}, (err, journal) => {
+            Journal.findOne({id: req.body.journal}, (err, journal) => {
                 if (err || !journal) {
-                    debug('[%s] Could not find Journal with ID: %s', id, req.query.journal);
+                    debug('[%s] Could not find Journal with ID: %s', id, req.body.journal);
                     res.status('404').send();
                     return;
                 }

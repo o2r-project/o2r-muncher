@@ -21,8 +21,10 @@ const randomstring = require('randomstring');
 const dnsBuilder = require('../lib/dns-manager');
 const domain = require('../lib/domain');
 const publisher = require('../lib/publisher');
+const resolve_public_link = require('./link').resolve_public_link;
 
 let Journal = require('../lib/model/journal');
+const Compendium = require('../lib/model/compendium');
 
 exports.create = (req, res) => {
     if (!req.isAuthenticated()) {
@@ -96,19 +98,19 @@ exports.update = (req, res) => {
         return;
     }
 
-    if (!req.body.id) {
+    if (!req.params.id) {
         debug('Update journal: No ID provided');
         res.status(400).send({error: 'No ID provided'});
         return;
     }
 
     if (req.user.level < config.user.level.manage_journal) {
-        debug('[%s] User is not allowed to edit a journal', req.body.id);
+        debug('[%s] User is not allowed to edit a journal', req.params.id);
         res.status(401).send();
         return;
     }
 
-    let journalId = req.body.id;
+    let journalId = req.params.id;
 
     Journal.findOne({id: journalId}, (err, journal) => {
         if (err) {
@@ -174,26 +176,26 @@ exports.addDomain = function (req, res) {
         return;
     }
 
-    if (!req.body.id) {
+    if (!req.params.id) {
         debug('Add domain: No ID provided');
         res.status(400).send({error: 'No ID provided'});
         return;
     }
 
     if (req.user.level < config.user.level.manage_journal) {
-        debug('[%s] User is not allowed to edit a journal', req.body.id);
+        debug('[%s] User is not allowed to edit a journal', req.params.id);
         res.status(401).send();
         return;
     }
 
-    Journal.findOne({id: req.body.id}, (err, journal) => {
+    Journal.findOne({id: req.params.id}, (err, journal) => {
         if (err) {
-            debug('[%s] Error finding journal: %O', req.body.id, err);
+            debug('[%s] Error finding journal: %O', req.params.id, err);
             res.status(500).send({error: 'Error finding journal in database'});
             return;
         }
         if (!journal) {
-            debug('[%s] No journal with this id found', req.body.id);
+            debug('[%s] No journal with this id found', req.params.id);
             res.status(500).send({error: 'No journal with this id found'});
             return;
         }
@@ -248,26 +250,26 @@ exports.removeDomain = function (req, res) {
         return;
     }
 
-    if (!req.body.id) {
+    if (!req.params.id) {
         debug('Remove Domain from journal: No ID provided');
         res.status(400).send({error: 'No ID provided'});
         return;
     }
 
     if (req.user.level < config.user.level.manage_journal) {
-        debug('[%s] User is not allowed to edit a journal', req.body.id);
+        debug('[%s] User is not allowed to edit a journal', req.params.id);
         res.status(401).send();
         return;
     }
 
-    Journal.findOne({id: req.body.id}, (err, journal) => {
+    Journal.findOne({id: req.params.id}, (err, journal) => {
         if (err) {
-            debug('[%s] Error finding journal: %O', journal.id, err);
+            debug('[%s] Error finding journal: %O', req.params.id, err);
             res.status(500).send({error: 'Error finding journal in database'});
             return;
         }
         if (!journal) {
-            debug('[%s] No journal with this id found', journal.id);
+            debug('[%s] No journal with this id found', req.params.id);
             res.status(500).send({error: 'No journal with this id found'});
             return;
         }
@@ -323,19 +325,19 @@ exports.addToPublisher = function (req, res) {
         return;
     }
 
-    if (!req.body.id) {
+    if (!req.params.id) {
         debug('Add Journal to Publisher: No ID provided');
         res.status(400).send({error: 'No ID provided'});
         return;
     }
 
     if (req.user.level < config.user.level.manage_journal) {
-        debug('[%s] User is not allowed to edit a journal', req.body.id);
+        debug('[%s] User is not allowed to edit a journal', req.params.id);
         res.status(401).send();
         return;
     }
 
-    Journal.findOne({id: req.body.id}, (err, journal) => {
+    Journal.findOne({id: req.params.id}, (err, journal) => {
         if (err) {
             res.status('500').send();
             return;
@@ -523,4 +525,86 @@ exports.getPossibleJournalsFromDomainList = function (req, res) {
                     res.status('404').send("No journal found for the queried domains");
                 });
         });
+}
+
+exports.acceptCompendium = function (req, res) {
+    if (!req.params.id) {
+        res.status('400').send("No ID provided!");
+        return;
+    }
+
+    if (!req.body.hasOwnProperty('compendium')) {
+        res.status('400').send("No ID provided!");
+        return;
+    }
+
+    if (!req.user.isAuthenticated()) {
+        res.status('401').send();
+        return;
+    }
+
+    let journalId = req.params.id;
+    let compendiumId = req.body.compendium;
+
+    debug("[%s] Accept compendium %s", journalId, compendiumId);
+
+    resolve_public_link(req.params.id, (ident) => {
+        let id;
+        if (ident.is_link) {
+            id = ident.link;
+            debug('[%s] Compendium is public link', id);
+        } else {
+            id = ident.compendium;
+        }
+
+        Journal.findOne({id: journalId}, (err, journal) => {
+            if (err || !journal) {
+                debug("[%s] No journal found", journalId);
+                res.status('404').send();
+                return;
+            }
+
+            if (journal.owner !== req.user.orcid) {
+                debug("[%s] User is not owner of this journal", journalId);
+                res.status('403').send();
+                return;
+            }
+
+            Compendium.findOne({id: id}, (err, compendium) => {
+                if (err || !compendium) {
+                    debug("[%s] No compendium found with id %s", journalId, id);
+                    res.status('404').send();
+                    return;
+                }
+
+                if (!journal.compendiaCandidates.includes(id)) {
+                    debug("[%s] Compendium %s is not candidate for this journal", journalId, id);
+                    res.status('400').send();
+                    return;
+                }
+
+                let index = journal.compendiaCandidates.indexOf(id);
+                journal.compendiaCandidates.splice(index, 1);
+                compendium.journal = journal.id;
+
+                journal.save(err => {
+                    if (err) {
+                        debug('[%s] Error saving journal: %O', journalId, err);
+                        res.status(500).send({error: 'Error saving journal to database'});
+                        return;
+                    }
+                    debug('[%s] Successfully saved journal', journalId);
+                    compendium.save(err => {
+                        if (err) {
+                            debug('[%s] Error saving compendium: %O', journalId, err);
+                            res.status(500).send({error: 'Error saving compendium to database'});
+                            return;
+                        }
+                        debug('[%s] Successfully accepted compendium %s at this journal', journalId, id);
+                        res.status(200).send();
+                    });
+                });
+            });
+        });
+    });
 }
