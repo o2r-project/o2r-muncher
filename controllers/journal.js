@@ -538,7 +538,7 @@ exports.acceptCompendium = function (req, res) {
         return;
     }
 
-    if (!req.user.isAuthenticated()) {
+    if (!req.isAuthenticated()) {
         res.status('401').send();
         return;
     }
@@ -548,13 +548,12 @@ exports.acceptCompendium = function (req, res) {
 
     debug("[%s] Accept compendium %s", journalId, compendiumId);
 
-    resolve_public_link(req.params.id, (ident) => {
-        let id;
+    resolve_public_link(compendiumId, (ident) => {
         if (ident.is_link) {
-            id = ident.link;
-            debug('[%s] Compendium is public link', id);
+            compendiumId = ident.link;
+            debug('[%s] Compendium is public link', compendiumId);
         } else {
-            id = ident.compendium;
+            compendiumId = ident.compendium;
         }
 
         Journal.findOne({id: journalId}, (err, journal) => {
@@ -570,20 +569,20 @@ exports.acceptCompendium = function (req, res) {
                 return;
             }
 
-            Compendium.findOne({id: id}, (err, compendium) => {
+            Compendium.findOne({id: compendiumId}, (err, compendium) => {
                 if (err || !compendium) {
-                    debug("[%s] No compendium found with id %s", journalId, id);
+                    debug("[%s] No compendium found with id %s", journalId, compendiumId);
                     res.status('404').send();
                     return;
                 }
 
-                if (!journal.compendiaCandidates.includes(id)) {
-                    debug("[%s] Compendium %s is not candidate for this journal", journalId, id);
+                if (!journal.compendiaCandidates.includes(compendiumId)) {
+                    debug("[%s] Compendium %s is not candidate for this journal", journalId, compendiumId);
                     res.status('400').send();
                     return;
                 }
 
-                let index = journal.compendiaCandidates.indexOf(id);
+                let index = journal.compendiaCandidates.indexOf(compendiumId);
                 journal.compendiaCandidates.splice(index, 1);
                 compendium.journal = journal.id;
 
@@ -600,7 +599,7 @@ exports.acceptCompendium = function (req, res) {
                             res.status(500).send({error: 'Error saving compendium to database'});
                             return;
                         }
-                        debug('[%s] Successfully accepted compendium %s at this journal', journalId, id);
+                        debug('[%s] Successfully accepted compendium %s at this journal', journalId, compendiumId);
                         res.status(200).send();
                     });
                 });
