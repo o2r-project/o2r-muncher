@@ -37,7 +37,7 @@ const PublicLink = require('../lib/model/link');
 const alwaysStepFields = ["start", "end", "status"];
 const allStepsValue = "all";
 
-exports.listJobs = (req, res) => { 
+exports.listJobs = (req, res) => {
   var answer = {};
   var filter = {};
   var limit = parseInt(req.query.limit || config.list_limit, 10);
@@ -103,7 +103,7 @@ exports.listJobs = (req, res) => {
             let link_ids = links.map((link) => {
               return link.id;
             });
-      
+
             if (requestedFields.length < 1) {
               answer.results = jobs.map((job) => {
                 if (link_ids.indexOf(job.compendium_id) < 0 || job.compendium_id === req.query.compendium_id)
@@ -113,19 +113,19 @@ exports.listJobs = (req, res) => {
               });
             } else {
               answer.results = jobs.map((job) => {
-                if (link_ids.indexOf(job.compendium_id) < 0) 
+                if (link_ids.indexOf(job.compendium_id) < 0)
                   jobItem = { id: job.id };
                   requestedFields.forEach((elem) => {
                     jobItem[elem] = job[elem];
                   });
-        
+
                   return jobItem;
               }).filter(elem => {
                 return elem != null;
               });
             }
-      
-            done(answer); 
+
+            done(answer);
           }
         });
       }
@@ -252,7 +252,7 @@ exports.createJob = (req, res) => {
       req.user = { orcid: 'link.' + ident.link };
     } else {
       id = ident.compendium;
-    
+
       // check user level
       if (!ident.is_link && !req.isAuthenticated()) {
         res.status(401).send({ error: 'user is not authenticated' });
@@ -265,7 +265,7 @@ exports.createJob = (req, res) => {
     }
 
     // check compendium existence and load its metadata
-    Compendium.findOne({ id: ident.compendium }).select('id user candidate metadata bag compendium').exec((err, compendium) => {
+    Compendium.findOne({ id: ident.compendium }).select('id user journal candidate metadata bag compendium').exec((err, compendium) => {
       // eslint-disable-next-line no-eq-null, eqeqeq
       if (err || compendium == null) {
         debug('[%s] compendium not found, cannot create job: %o', job_id, ident);
@@ -282,6 +282,7 @@ exports.createJob = (req, res) => {
           var executionJob = new Job({
             id: job_id,
             user: req.user.orcid,
+            journal: compendium.journal,
             compendium_id: id
           });
 
