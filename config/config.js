@@ -37,8 +37,12 @@ c.api_version = 1;
 c.version = require('../package.json').version;
 
 // network & database
+const URL = require('url').URL;
 c.net.port = env.MUNCHER_PORT || 8080;
 c.mongo.location = env.MUNCHER_MONGODB || 'mongodb://localhost:27017/';
+c.mongo.URL = new URL(c.mongo.location);
+c.mongo.hostname = c.mongo.URL.hostname;
+c.mongo.port = c.mongo.URL.port;
 c.mongo.database = env.MUNCHER_MONGODB_DATABASE || 'muncher';
 c.mongo.initial_connection_attempts = 30;
 c.mongo.initial_connection_max_delay = 5000;
@@ -108,9 +112,10 @@ c.bagtainer.configFile = {
 c.bagtainer.mountLocationInContainer = '/erc';
 c.bagtainer.keepContainers = false; // set this to true for debugging runtime options
 c.bagtainer.keepImages = true;
+c.bagtainer.saveIfFailure = yn(env.MUNCHER_SAVE_IMAGE_ON_FAILURE || 'true');
 c.bagtainer.saveImageTarball = yn(env.MUNCHER_SAVE_IMAGE_TARBALL || 'true');
 c.bagtainer.imageTarballFile = 'image.tar';
-c.bagtainer.validateBagBeforeExecute = true; // bag validation will fail, but useful to highlight the changes in compendium
+c.bagtainer.validateBagBeforeExecute = true; // bag validation will often fail, but useful to highlight the changes in compendium
 c.bagtainer.validateCompendiumBeforeExecute = true;
 c.bagtainer.failOnValidationError = true;
 c.bagtainer.manifestFile = 'Dockerfile';
@@ -297,7 +302,7 @@ c.checker = {};
 c.checker.diffFileName = 'check.html';
 
 c.containerit = {};
-c.containerit.image = env.MUNCHER_CONTAINERIT_IMAGE || 'o2rproject/containerit:geospatial-0.6.0.9003';
+c.containerit.image = env.MUNCHER_CONTAINERIT_IMAGE || 'o2rproject/containerit:geospatial-0.6.0.9004';
 c.containerit.default_create_options = {
   CpuShares: 256,
   Env: ['O2R_MUNCHER=true', 'O2R_MUNCHER_VERSION=' + c.version],
@@ -333,13 +338,17 @@ c.body_parser_config = {
 c.upload = {};
 c.upload.timeout_seconds = 60 * 30; // 30 minutes
 
-
 c.download = {};
 c.download.defaults = {};
 c.download.defaults.statConcurrency = 4; // archiver.js default is '4'
 c.download.defaults.tar = {};
 c.download.defaults.tar.gzipOptions = {}; // https://nodejs.org/api/zlib.html#zlib_class_options
 c.download.defaults.includeImage = true;
+
+// socket.io (namespaces etc.)
+c.socketio = {};
+c.socketio.namespaces = {};
+c.socketio.namespaces.job = '/api/v1/logs/job';
 
 // filename prepend of substitution file
 c.substitutionFilePrepend = 'overlay_';

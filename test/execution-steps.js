@@ -1170,12 +1170,12 @@ describe('API job steps', () => {
       });
     });
 
-    it('should have skipped the step image_save', function (done) {
+    it('should not have skipped the step image_save', function (done) {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
-        assert.propertyVal(response.steps.image_save, 'status', 'skipped');
+        assert.propertyVal(response.steps.image_save, 'status', 'success');
         done();
       });
     });
@@ -1260,12 +1260,12 @@ describe('API job steps', () => {
       });
     });
 
-    it('should skip the step image_save', function (done) {
+    it('should complete the step image_save', function (done) {
       request(global.test_host + '/api/v1/job/' + job_id, (err, res, body) => {
         assert.ifError(err);
         let response = JSON.parse(body);
 
-        assert.propertyVal(response.steps.image_save, 'status', 'skipped');
+        assert.propertyVal(response.steps.image_save, 'status', 'success');
         done();
       });
     });
@@ -1312,7 +1312,7 @@ describe('API job steps', () => {
     var job_id;
 
     before(function (done) {
-      this.timeout(90000);
+      this.timeout(180000);
       db.compendia.drop(function (err, doc) {
         db.jobs.drop(function (err, doc) {
           createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {

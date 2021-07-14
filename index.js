@@ -61,6 +61,27 @@ const app = express();
 app.use(compression());
 app.use(bodyParser.json(config.body_parser_config));
 
+const server = require('http').createServer(app);
+
+// Socket.io
+const MongoWatch = require('mongo-watch');
+const objectify = require('./lib/util').objectify;
+const merge = require('lodash.merge');
+const Job = require('./lib/model/job');
+debug("Opening socket.io at port %s and namespaces %o", config.net.port, config.socketio.namespaces);
+const socketio = require('socket.io')(server);
+const joblog = socketio.of(config.socketio.namespaces.job);
+socketio.serveClient(true);
+
+if (!joblog) {
+  debug('joblog does not exist, shutting down: %s', joblog);
+  process.exit(1);
+}
+
+joblog.on('connection', function (socket) {
+  debug('Someone connected to joblog: %s', socket.id);
+});
+
 const dispatch = require('./controllers/dispatch').dispatch;
 const slackbot = require('./lib/slack');
 
@@ -377,8 +398,46 @@ function initApp(callback) {
     });
   });
 
+  initWatch = new Promise((fulfill, reject) => {
+    debug("Watchgin changes in MongoDB oplog using host '%s' and port '%s'", config.mongo.hostname, config.mongo.port);
+    var watcher = new MongoWatch({
+      format: 'pretty',
+      host: config.mongo.hostname,
+      port: config.mongo.port
+    });
+
+    // emit changes through socket.io
+    watcher.watch(config.mongo.database + '.jobs', event => {
+      if (event.operation === 'update') {
+        if (event.data.$set) {
+          // only partial update, retrieve the job id from the complete document
+          Job.findById(event.targetId, (err, job) => {
+            let data = { partial: true, id: job.id, steps: {} }
+            //convert object-strings to objects
+            for (var name in event.data.$set) {
+              let obj = objectify(name, event.data.$set[name]);
+              //console.log(obj)
+              data = merge(data, obj);
+            }
+            debug('%o', event.data.$set);
+            debug('Update!            %o', data);
+            joblog.emit('set', data);
+          });
+        } else {
+          // whole document has been updated.
+          debug('Document update!   %o', event.data);
+          event.data.partial = false;
+          joblog.emit('document', event.data);
+        }
+      }
+    });
+
+    fullfill();
+  });
+
+
   startListening = new Promise((fulfill, reject) => {
-    app.listen(config.net.port, () => {
+    server.listen(config.net.port, () => {
       debug('muncher %s with API version %s waiting for requests on port %s'.green,
         config.version,
         config.api_version,
@@ -397,6 +456,7 @@ function initApp(callback) {
     .then(configureEmailTransporter)
     .then(configureExpressApp)
     .then(configureSlack)
+    .then(initWatch)
     .then(startListening)
     .then(() => {
       callback(null);

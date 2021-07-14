@@ -18,10 +18,8 @@
 // General modules
 const config = require('../config/config');
 var debug = require('debug')('muncher:load:direct_upload');
-const fs = require('fs');
 const slackBot = require('../lib/slack');
 
-var Compendium = require('../lib/model/compendium');
 var Uploader = require('../lib/uploader').Uploader;
 
 exports.create = (req, res) => {

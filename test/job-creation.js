@@ -49,7 +49,7 @@ describe('Creation of a job', () => {
     let job_id = '';
 
     before(function (done) {
-      this.timeout(90000);
+      this.timeout(180000);
       createCompendiumPostRequest('./test/workspace/failing-execution', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           let compendium_id = JSON.parse(body).id;
@@ -113,7 +113,7 @@ describe('Creation of a job', () => {
     let job_id = '';
 
     before(function (done) {
-      this.timeout(90000);
+      this.timeout(180000);
       createCompendiumPostRequest('./test/workspace/failing-manifest-generation', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           let compendium_id = JSON.parse(body).id;
