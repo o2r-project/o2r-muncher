@@ -125,7 +125,7 @@ describe('Updating workspace metadata', () => {
   describe('Updating workspace metadata must also update the generated compendium configuration file (erc.yml)', () => {
     let compendium_id = '';
     before(function (done) {
-      this.timeout(90000);
+      this.timeout(180000);
       createCompendiumPostRequest('./test/workspace/rmd-data', cookie_o2r, 'workspace', (req) => {
         request(req, (err, res, body) => {
           compendium_id = JSON.parse(body).id;
