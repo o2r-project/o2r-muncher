@@ -1,6 +1,6 @@
 # o2r muncher
 
-[![Run tests](https://github.com/nuest/o2r-muncher/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/nuest/o2r-muncher/actions/workflows/tests.yml) [![](https://images.microbadger.com/badges/image/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own version badge on microbadger.com")
+[![Run tests](https://github.com/nuest/o2r-muncher/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/nuest/o2r-muncher/actions/workflows/tests.yml) [![MicroBadger image badge](https://images.microbadger.com/badges/image/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own image badge on microbadger.com") [![MicroBadger version badge](https://images.microbadger.com/badges/version/o2rproject/o2r-muncher.svg)](https://microbadger.com/images/o2rproject/o2r-muncher "Get your own version badge on microbadger.com")
 
 Node.js implementation of endpoints of the [o2r API](https://o2r.info/api/) to load compendia from third party repositories, handle direct user uploads, and execute research compendia.
 
@@ -22,8 +22,14 @@ Requirements:
 
 ## Supported repositories
 
-- Sciebo (https://sciebo.de)
-- Zenodo or Zenodo Sandbox (https://zenodo.org or https://sandbox.zenodo.org)
+- Sciebo (<https://sciebo.de>)
+- Zenodo or Zenodo Sandbox (<https://zenodo.org> or <https://sandbox.zenodo.org>)
+
+## Preparing the MongoDB
+
+This service uses the [MongoDB oplog](https://docs.mongodb.com/manual/core/replica-set-oplog/) (operations log), which is normally used in replication sets, to trigger status events for clients.
+The oplog originally records all changes to the master MongoDB and provides them to potential replications.
+On a single-server installation, this is not enabled by default, so you will need to [enable replication](https://docs.mongodb.com/manual/replication/) to enable the oplog.
 
 ## Run
 
@@ -75,6 +81,8 @@ You can override these environment variables (configured in `config/config.js`) 
   Should an error be return when invalid metadata is stored? Defaults to `false`.
 - `MUNCHER_SAVE_IMAGE_TARBALL`
   Save the image tarball into the compendium after successful execution. Defaults to `true`, but useful to deactivate during development.
+- `MUNCHER_SAVE_IMAGE_ON_FAILURE`
+  Save the image even if the check was not successful. Defaults to `true`, because the final call needs to be made by human.
 - `MUNCHER_META_TOOL_OFFLINE`
   Do not go online during metadata extraction to retrieve additional metadata, defaults to `false`.
 - `SESSION_SECRET`
@@ -91,9 +99,11 @@ You can override these environment variables (configured in `config/config.js`) 
 The connection to the Docker API is build on [dockerode](https://www.npmjs.com/package/dockerode) which allows execution on any Docker host that exposes the port.
 Most commonly, the default configuration will be used, i.e. the local Docker socket is mounted at the default location into the container running muncher (see [above](#run))
 
-## Slack bot
+## Bots
 
-Documentation of Slack API: https://api.slack.com/bot-users, especially [interactive messages](https://api.slack.com/interactive-messages).
+### Slack Bot
+
+See documentation of the [Slack API](https://api.slack.com/bot-users), especially [interactive messages](https://api.slack.com/interactive-messages).
 
 The bot needs the permissions to join channels and post to them.
 Add the following scopes to the app in the section "OAuth & Permissions" in the bot's apps page.
@@ -104,15 +114,24 @@ Add the following scopes to the app in the section "OAuth & Permissions" in the 
 
 While adding the app to your Slack organisation, make sure to allow the bot to post the the desired channel.
 
-### Local bot development
-
-Start ngrok with `ngrok http 8088` and enter the public endpoint pointing to your local server at https://api.slack.com/apps/A6J6CDLQK/interactive-messages. ngrok also has a useful web interface at http://127.0.0.1:4040/inspect/http on all incoming requests.
+For **local Slack bot development**, start `ngrok` with `ngrok http 8088` and enter the public endpoint pointing to your local server at <https://api.slack.com/apps/A6J6CDLQK/interactive-messages>. `ngrok` also has a useful web interface at <http://127.0.0.1:4040/inspect/http> on all incoming requests.
 
 ## Supported encodings
 
 The upload process may fail if certain files with unsupported encoding are detected: 
 
-The encoding of text files analyzed by the o2r metadata extraction tool [o2r-meta](https://github.com/o2r-project/o2r-meta) must be Unicode (`UTF-8`, `UTF-16BE`, ...) or Unicode compatible (e.g. `ISO-8859-1`). The supported encodings and the list of files checked can be configured in `config.js`. 
+The encoding of text files analyzed by the o2r metadata extraction tool [o2r-meta](https://github.com/o2r-project/o2r-meta) must be Unicode (`UTF-8`, `UTF-16BE`, ...) or Unicode compatible (e.g. `ISO-8859-1`). The supported encodings and the list of files checked can be configured in `config.js`.
+
+## Live logs
+
+The current status of a job logs is published using [WebSocket](https://en.wikipedia.org/wiki/WebSocket)s using the [socket.io](http://socket.io/) library. You can connect to the namespace `api/v1/logs/job` with the corresponding Socket.io JavaScript library:
+
+```JavaScript
+var socket = io('http://<host>/api/v1/logs/job');
+```
+
+See an example in `test/index.html`.
+
 
 ## Testing
 
@@ -244,4 +263,4 @@ docker run --name testbouncer -d -p 8083:8083 --link mongodb:mongodb -v /tmp/o2r
 
 o2r muncher is licensed under Apache License, Version 2.0, see file LICENSE.
 
-Copyright (C) 2017 - o2r project.
+Copyright (C) 2021 - o2r project.

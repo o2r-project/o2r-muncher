@@ -1,0 +1,146 @@
+<!doctype html>
+<html>
+  <head>
+    <title>o2r API live update test page</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Open Sans', sans-serif;
+      }
+      .status {
+        border: 1px solid black;
+        padding: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>o2r API live update test page</h1>
+    
+    <p>Job(s):&nbsp;<span id="jobid" style="border: 1px; font-weight: bold;"></span></p>
+    <p>Validate bag:&nbsp;<span id="status_bag" class="status"></span></p>
+    <p>Validate compendium:&nbsp;<span id="status_compendium" class="status"></span></p>
+    <p>Generate manifest:&nbsp;<span id="status_manifest" class="status"></span></p>
+    <p>Image build:&nbsp;<span id="status_prepare" class="status"></span></p>
+    <p>Image build:&nbsp;<span id="status_build" class="status"></span></p>
+    <p>Image execute:&nbsp;<span id="status_execute" class="status"></span></p>
+    <p>Check:&nbsp;<span id="status_check" class="status"></span></p>
+
+    Log: <pre id="log" style="border: 1px solid black;"></pre>
+
+    <script src="https://cdn.socket.io/4.1.2/socket.io.js"></script>
+    <script>
+      // Setup socket.io to connect to the server and the namespace '/api/v1/logs/job'.
+      var socket = io('http://localhost/api/v1/logs/job');
+      //var socket = io('https://o2r.uni-muenster.de/api/v1/logs/job');
+      socket.on('connect', function(data) {
+        console.log('connected!');
+        seen = [];
+        console.log(JSON.stringify(socket, function(key, val) {
+          if (val != null && typeof val == "object") {
+                if (seen.indexOf(val) >= 0) {
+                    return;
+                }
+                seen.push(val);
+            }
+            return val;
+        }));
+      });
+
+      function setBackgroundStatus(status, element) {
+          switch (status) {
+            case "queued":
+              element.style.backgroundColor = "#f0f0f0";
+              break;
+            case "running":
+              element.style.backgroundColor = "#ffffdd";
+              break;
+            case "success":
+              element.style.backgroundColor = "#ddffdd";
+              break;
+            case "failure":
+              element.style.backgroundColor = "#ffdddd";
+              break;
+            default:
+              break;
+          }
+      }
+      var jobid = new Set();
+
+      function update(event) {
+        console.log(event);
+        if(event.steps === undefined)
+          return;
+
+        jobid.add(event.id);
+        document.getElementById("jobid").innerHTML = Array.from(jobid).join(',&nbsp');    
+        
+        if(event.steps.validate_bag !== undefined && event.steps.validate_bag.status !== undefined) {
+          let element = document.getElementById("status_bag");
+          element.innerHTML = event.steps.validate_bag.status;
+          setBackgroundStatus(event.steps.validate_bag.status, element);
+        }
+        if(event.steps.validate_compendium !== undefined && event.steps.validate_compendium.status !== undefined) {
+          let element = document.getElementById("status_compendium");
+          element.innerHTML = event.steps.validate_compendium.status;
+          setBackgroundStatus(event.steps.validate_compendium.status, element);
+        }
+        if(event.steps.generate_manifest !== undefined && event.steps.generate_manifest.status !== undefined) {
+          let element = document.getElementById("status_manifest");
+          element.innerHTML = event.steps.generate_manifest.status;
+          setBackgroundStatus(event.steps.generate_manifest.status, element);
+        }
+        if(event.steps.image_prepare !== undefined && event.steps.image_prepare.status !== undefined) {
+          document.getElementById("status_prepare").innerHTML = event.steps.image_prepare.status;
+          setBackgroundStatus(event.steps.image_prepare.status, document.getElementById("status_prepare"));
+        }
+        if(event.steps.image_build !== undefined && event.steps.image_build.status !== undefined) {
+          document.getElementById("status_build").innerHTML = event.steps.image_build.status;
+          setBackgroundStatus(event.steps.image_build.status, document.getElementById("status_build"));
+        }
+        if(event.steps.image_execute !== undefined && event.steps.image_execute.status !== undefined) {
+          document.getElementById("status_execute").innerHTML = event.steps.image_execute.status;
+          setBackgroundStatus(event.steps.image_execute.status, document.getElementById("status_execute"));
+        }
+        if(event.steps.check !== undefined && event.steps.check.status !== undefined) {
+          document.getElementById("status_check").innerHTML = event.steps.check.status;
+          setBackgroundStatus(event.steps.check.status, document.getElementById("status_check"));
+        }
+
+        if(event.steps.validate_bag !== undefined && event.steps.validate_bag.text !== undefined) {
+          document.getElementById("log").innerHTML += "\nVALIDATE BAG:        " + JSON.stringify(event.steps.validate_bag.text);
+        }
+        if(event.steps.validate_compendium !== undefined && event.steps.validate_compendium.text !== undefined) {
+          document.getElementById("log").innerHTML += "\nVALIDATE COMPENDIUM: " + JSON.stringify(event.steps.validate_compendium.text);
+        }
+        if(event.steps.generate_manifest !== undefined && event.steps.validate_dockerfile.text !== undefined) {
+          document.getElementById("log").innerHTML += "\nGENERATE MANIFEST:   " + JSON.stringify(event.steps.generate_manifest.text);
+        }
+        if(event.steps.image_prepare !== undefined && event.steps.image_prepare.text !== undefined) {
+          document.getElementById("log").innerHTML += "\nIMAGE PREPARE:       " + JSON.stringify(event.steps.image_prepare.text);
+        }
+        if(event.steps.image_build !== undefined && event.steps.image_build.text !== undefined) {
+          document.getElementById("log").innerHTML += "\nIMAGE BUILD:         " + JSON.stringify(event.steps.image_build.text);
+        }
+        if(event.steps.image_execute !== undefined && event.steps.image_execute.text !== undefined) {
+          document.getElementById("log").innerHTML += "\nIMAGE EXECUTE:       " + JSON.stringify(event.steps.image_execute.text);
+        }
+        if(event.steps.check !== undefined && event.steps.check.text !== undefined) {
+          document.getElementById("log").innerHTML += "\nCHECK:                " + JSON.stringify(event.steps.check.text);
+        }
+        if(event.steps.cleanup !== undefined && event.steps.cleanup.text !== undefined) {
+          document.getElementById("log").innerHTML += "\nCLEANUP:             " + JSON.stringify(event.steps.cleanup.text);
+        }
+      }
+
+      socket.on("document", (event) => {
+        console.log('DOCUMENT EVENT');
+        update(event);
+      });
+      socket.on("set", (event) => {
+        console.log('SET EVENT');
+        update(event);
+      });
+    </script>
+  </body>
+</html>
