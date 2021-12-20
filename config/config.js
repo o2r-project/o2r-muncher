@@ -90,7 +90,6 @@ c.user.level.view_status = 1000;
 c.user.level.delete_compendium = 1000;
 c.user.level.manage_links = 500;
 c.user.level.manage_publisher = 1000;
-c.user.level.validate_journal = 1000;
 c.user.level.manage_journal = 500;
 
 // bagtainer configuration

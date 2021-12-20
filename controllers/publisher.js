@@ -84,7 +84,7 @@ exports.create = (req, res) => {
                                     return;
                                 }
                                 debug('[%s] Successfully saved new publisher', publisher_id)
-                                res.status(200).send();
+                                res.status(200).send({id: publisher_id});
                                 dnsBuilder.addToDns(publisher_id, config.dns.priority.publisher);
                             });
                         })

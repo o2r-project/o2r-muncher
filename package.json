@@ -9,7 +9,8 @@
     "test": "DEBUG=*,-modem,-mocha:* mocha",
     "test_ci": "DEBUG=*,-modem,-mocha:* mocha ./test/$TEST_SET*.js --exit",
     "test_ci_async_dump": "DEBUG=*,-modem,-mocha:* mocha ./test/ --require test/async-dump",
-    "test_clean_upload_cache": "rm /tmp/o2r-*.zip"
+    "test_clean_upload_cache": "rm /tmp/o2r-*.zip",
+    "test_publisher": "DEBUG=*,-modem,-mocha:* mocha ./test/publisher.js"
   },
   "author": "o2r-project (https://o2r.info)",
   "license": "Apache-2.0",

@@ -192,11 +192,28 @@ exports.deleteCompendium = (req, res) => {
                                             res.status(500).send({error: err.message});
                                         } else {
                                             debug('[%s] Deleted!', compendium.id);
-                                            res.sendStatus(204);
+                                            // Delete also entry at journal
+                                            debug('[%s] Also remove compendium entry from journal if needed', compendium.id);
+                                            Journal.findOne({compandia: compendium.id}, (err, journal) => {
+                                                if (err)
+                                                    debug('[%s] Error getting journal from database: %s', compendium.id, err);
+                                                else if (!journal)
+                                                    debug('[%s] Compendium has no entry at any journal', compendium.id);
+                                                else {
+                                                    journal.domains.splice(journal.domains.indexOf(domains[0]), 1).sort();
+                                                    journal.save(err => {
+                                                        if (err)
+                                                            debug('[%s] Error saving updated journal: %s', compendium.id, err);
+                                                        else
+                                                            debug('[%s] Successfully removed compendium from journal', compendium.id);
+                                                    });
+                                                    res.sendStatus(204);
+                                                }
+                                            });
                                         }
                                     });
                                 }
-                                ;
+
                             });
                         } else {
                             debug('[%s] Error: user does not have rights but promise fulfilled', id);

@@ -78,7 +78,7 @@ exports.create = (req, res) => {
                             return;
                         }
                         debug('[%s] Successfully saved new journal', journal_id)
-                        res.status(200).send();
+                        res.status(200).send({id: journal_id});
                         dnsBuilder.addToDns(journal_id, config.dns.priority.journal);
                     });
                 })
@@ -139,9 +139,16 @@ exports.update = (req, res) => {
         let oldDomainList = journal.domains;
 
         domain.validateDomains(req.body.domains)
-            .then(() => {
+            .then(async () => {
                 domain.addDomainsToDb(req.body.domains)
-                    .then((domains) => {
+                    .then(async (domains) => {
+                        let belongsToPublisher = await publisher.includesJournal(journalId);
+
+                        if (belongsToPublisher && !journal.domains.every(d => belongsToPublisher.domains.includes(d))) {
+                            res.status(500).send({error: 'Publisher does not allow all domains!'});
+                            return;
+                        }
+
                         journal.name = req.body.name;
                         journal.domains = domains.sort();
 
@@ -211,7 +218,14 @@ exports.addDomain = function (req, res) {
         domain.validateDomains(domainArray)
             .then(() => {
                 domain.addDomainsToDb(domainArray)
-                    .then((domains) => {
+                    .then(async (domains) => {
+                        let belongsToPublisher = await publisher.includesJournal(journal.id);
+
+                        if (belongsToPublisher && !journal.domains.every(d => belongsToPublisher.domains.includes(d))) {
+                            res.status(500).send({error: 'Publisher does not allow all domains!'});
+                            return;
+                        }
+
                         if (journal.domains.includes(domains[0])) {
                             res.status(400).send({error: 'domain is already in the list'});
                             return;
@@ -350,14 +364,14 @@ exports.addToPublisher = function (req, res) {
             res.status('403').send();
             return;
         }
-        publisher.addJournal(req.body.publisher, journal.id)
+        publisher.addJournal(req.body.publisher, journal)
             .then(() => {
                 debug('[%s] Successfully added journal as candidate to publisher %s', journal.id, req.body.publisher);
                 res.status(200).send();
             })
             .catch(err => {
                 debug('[%s] Error adding journal as candidate to publisher %s: %O', journal.id, req.body.publisher, err);
-                res.status(400).send({error: 'Error adding journal as candidate to publisher'});
+                res.status(400).send({error: err});
             });
     });
 }
@@ -543,6 +557,11 @@ exports.acceptCompendium = function (req, res) {
         return;
     }
 
+    if (req.user.level < config.user.level.manage_journal) {
+        res.status(401).send();
+        return;
+    }
+
     let journalId = req.params.id;
     let compendiumId = req.body.compendium;
 
@@ -585,6 +604,7 @@ exports.acceptCompendium = function (req, res) {
                 let index = journal.compendiaCandidates.indexOf(compendiumId);
                 journal.compendiaCandidates.splice(index, 1);
                 compendium.journal = journal.id;
+                journal.compendia.push(compendiumId)
 
                 journal.save(err => {
                     if (err) {
