@@ -1,0 +1,35 @@
+
+
+  Create journal
+    as admin
+      ✔ should return status code 200 (53ms)
+      ✔ should return status code 400 without domains parameter
+      ✔ should return status code 400 without name parameter
+    as editor
+      ✔ should return status code 200
+    as a known user
+      ✔ should return status code 401
+    as a user
+      ✔ should return status code 401
+
+  Add domain to journal
+    as admin
+      ✔ should return status code 200
+    as unauthorised user
+      ✔ should return status code 403
+
+  Remove domain from journal
+    as admin
+      ✔ should return status code 200
+    as unauthorised user
+      ✔ should return status code 403
+
+  Add journal to publisher
+    as admin or editor
+      ✔ should return status code 200
+    as unauthorised user
+      ✔ should return status code 401
+
+
+  12 passing (3s)
+

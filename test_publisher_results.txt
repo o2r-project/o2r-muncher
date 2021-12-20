@@ -1,0 +1,41 @@
+
+
+  Create publisher
+    as admin
+      ✔ should return status code 200 (124ms)
+      ✔ should return status code 400 without domains parameter
+      ✔ should return status code 400 without name parameter
+    as editor
+      ✔ should return status code 401
+    as a known user
+      ✔ should return status code 401
+    as a user
+      ✔ should return status code 401
+
+  Add domain to publisher
+    as admin
+      ✔ should return status code 200
+    as unauthorised user
+      ✔ should return status code 401
+
+  Remove domain from publisher
+    as admin
+      ✔ should return status code 200
+    as unauthorised user
+      ✔ should return status code 401
+
+  Add journal to publisher
+    as admin
+      ✔ should return status code 200
+    as unauthorised user
+      ✔ should return status code 401
+
+  Remove journal from publisher
+    as admin
+      ✔ should return status code 200
+    as unauthorised user
+      ✔ should return status code 401
+
+
+  14 passing (3s)
+
