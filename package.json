@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@hapi/mimos": "^4.0.2",
-    "ajv": "^5.5.2",
+    "ajv": "^6.12.3",
     "archiver": "^3.1.1",
     "backoff": "^2.5.0",
     "bagit": "^0.0.3",
